@@ -167,6 +167,7 @@ func GenerateFullBlock(
 			Attestations:      atts,
 			VoluntaryExits:    exits,
 			Deposits:          newDeposits,
+			ShardTransitions: make([]*ethpb.ShardTransition, 0), // TODO(0): Generate shard transition data.
 		},
 	}
 	if err := bState.SetSlot(currentSlot); err != nil {
@@ -436,6 +437,8 @@ func GenerateAttestations(bState *stateTrie.BeaconState, privs []*bls.SecretKey,
 				Epoch: currentEpoch,
 				Root:  targetRoot,
 			},
+			ShardHeadRoot: make([]byte, 32), // TODO(0): Fill in real root.
+			ShardTransitionRoot: make([]byte, 32),
 		}
 
 		dataRoot, err := helpers.ComputeSigningRoot(attData, domain)
@@ -461,6 +464,7 @@ func GenerateAttestations(bState *stateTrie.BeaconState, privs []*bls.SecretKey,
 			att := &ethpb.Attestation{
 				Data:            attData,
 				AggregationBits: aggregationBits,
+				CustodyBitsBlocks: bitfield.NewBitlist(params.BeaconConfig().MaxValidatorsPerCommittee), // TODO(0): Use actual bitlist.
 				Signature:       bls.AggregateSignatures(sigs).Marshal(),
 			}
 			attestations = append(attestations, att)

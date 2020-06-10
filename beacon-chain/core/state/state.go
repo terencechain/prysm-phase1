@@ -201,6 +201,10 @@ func OptimizedGenesisBeaconState(genesisTime uint64, preState *stateTrie.BeaconS
 		BodyRoot:   bodyRoot[:],
 	}
 
+	// Phase 1 shard set ups.
+	// TODO(0): Align this with the spec.
+	state.ShardStates = make([]*ethpb.ShardState, 0)
+
 	return stateTrie.InitializeFromProto(state)
 }
 

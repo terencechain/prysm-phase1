@@ -113,6 +113,7 @@ type BeaconChainConfig struct {
 }
 
 type ShardChainConfig struct {
+	MaxShard                      uint64   // MaxShard defines the max shard allowed to crosslink with beacon chain.
 	MaxShardBlockSize             uint64   // MaxShardBlockSize defines the max shard block size.
 	TargetShardBlockSize          uint64   // TargetShardBlockSize defines the target shard block size.
 	DomainShardProposal           [4]byte  // DomainShardProposal defines the BLS signature domain for shard proposal.
@@ -229,6 +230,7 @@ var defaultBeaconConfig = &BeaconChainConfig{
 }
 
 var defaultShardChainConfig = &ShardChainConfig{
+	MaxShard: 64,
 	MaxShardBlockSize:             1 << 20,
 	TargetShardBlockSize:          1 << 18,
 	DomainShardProposal:           bytesutil.ToBytes4(bytesutil.Bytes4(128)),
