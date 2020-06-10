@@ -284,3 +284,16 @@ func CopyValidator(val *ethpb.Validator) *ethpb.Validator {
 		WithdrawableEpoch:          val.WithdrawableEpoch,
 	}
 }
+
+// CopyShardState copies the provided pending shard state object.
+func CopyShardState(val *ethpb.ShardState) *ethpb.ShardState {
+	if val == nil {
+		return nil
+	}
+	return &ethpb.ShardState{
+		Slot:             val.Slot,
+		GasPrice:         val.GasPrice,
+		TransitionDigest: bytesutil.SafeCopyBytes(val.TransitionDigest),
+		LatestBlockRoot:  bytesutil.SafeCopyBytes(val.LatestBlockRoot),
+	}
+}

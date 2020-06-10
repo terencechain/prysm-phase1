@@ -24,6 +24,7 @@ func init() {
 	fieldMap[validators] = compositeArray
 	fieldMap[previousEpochAttestations] = compositeArray
 	fieldMap[currentEpochAttestations] = compositeArray
+	fieldMap[shardStates] = compositeArray
 }
 
 type fieldIndex int
@@ -58,6 +59,9 @@ const (
 	previousJustifiedCheckpoint
 	currentJustifiedCheckpoint
 	finalizedCheckpoint
+	currentEpochStartShard
+	shardStates
+	onlineCountDown
 )
 
 // List of current data types the state supports.

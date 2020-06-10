@@ -10,6 +10,7 @@ go_library(
         "hash_function.go",
         "helpers.go",
         "merkleize.go",
+        "shard.go",
         "state_root.go",
         "trie_helpers.go",
         "validators.go",

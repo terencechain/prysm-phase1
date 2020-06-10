@@ -753,3 +753,97 @@ func (b *BeaconState) FinalizedCheckpointEpoch() uint64 {
 
 	return b.state.FinalizedCheckpoint.Epoch
 }
+
+// ShardStates corresponding to shard states on the beacon chain.
+func (b *BeaconState) ShardStates() []*ethpb.ShardState {
+	if !b.HasInnerState() {
+		return nil
+	}
+	if b.state.ShardStates == nil {
+		return nil
+	}
+
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+
+	res := make([]*ethpb.ShardState, len(b.state.ShardStates))
+	for i := 0; i < len(res); i++ {
+		res[i] = CopyShardState(b.state.ShardStates[i])
+	}
+	return res
+}
+
+// ShardStateAtIndex corresponding to shard state of an input index on the beacon chain.
+func (b *BeaconState) ShardStateAtIndex(index uint64) *ethpb.ShardState {
+	if !b.HasInnerState() {
+		return nil
+	}
+	if b.state.ShardStates == nil {
+		return nil
+	}
+
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+
+	return CopyShardState(b.state.ShardStates[index])
+}
+
+// ShardStateLength corresponding to the number of shard states on the beacon chain.
+func (b *BeaconState) ShardStateLength() uint64 {
+	if !b.HasInnerState() {
+		return 0
+	}
+	if b.state.ShardStates == nil {
+		return 0
+	}
+
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+
+	return uint64(len(b.state.ShardStates))
+}
+
+// OnlineCountdowns of validators participating in consensus on the beacon chain.
+func (b *BeaconState) OnlineCountdowns() []uint64 {
+	if !b.HasInnerState() {
+		return nil
+	}
+	if b.state.OnlineCountdown == nil {
+		return nil
+	}
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+
+	res := make([]uint64, len(b.state.OnlineCountdown))
+	copy(res, b.state.OnlineCountdown)
+	return res
+}
+
+// OnlineCountdownAtIndex of validator with the provided index.
+func (b *BeaconState) OnlineCountdownAtIndex(idx uint64) (uint64, error) {
+	if !b.HasInnerState() {
+		return 0, ErrNilInnerState
+	}
+	if b.state.OnlineCountdown == nil {
+		return 0, nil
+	}
+
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+
+	if len(b.state.OnlineCountdown) <= int(idx) {
+		return 0, fmt.Errorf("index of %d does not exist", idx)
+	}
+	return b.state.OnlineCountdown[idx], nil
+}
+
+// CurrentEpochStartShard of the current beacon chain state.
+func (b *BeaconState) CurrentEpochStartShard() uint64 {
+	if !b.HasInnerState() {
+		return 0
+	}
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+
+	return b.state.CurrentEpochStartShard
+}

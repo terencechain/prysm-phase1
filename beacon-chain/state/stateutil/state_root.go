@@ -76,6 +76,7 @@ func (h *stateRootHasher) hashTreeRootState(state *pb.BeaconState) ([32]byte, er
 			return [32]byte{}, err
 		}
 	}
+
 	return bitwiseMerkleize(hashutil.CustomSHA256Hasher(), fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))
 }
 
@@ -84,8 +85,8 @@ func (h *stateRootHasher) computeFieldRoots(state *pb.BeaconState) ([][]byte, er
 		return nil, errors.New("nil state")
 	}
 	hasher := hashutil.CustomSHA256Hasher()
-	// There are 21 fields in the beacon state.
-	fieldRoots := make([][]byte, 21)
+	// There are 24 fields in the beacon state.
+	fieldRoots := make([][]byte, 24)
 
 	// Genesis time root.
 	genesisRoot := Uint64Root(state.GenesisTime)
@@ -221,6 +222,25 @@ func (h *stateRootHasher) computeFieldRoots(state *pb.BeaconState) ([][]byte, er
 		return nil, errors.Wrap(err, "could not compute finalized checkpoint merkleization")
 	}
 	fieldRoots[20] = finalRoot[:]
+
+	// EpochStartShard uint root.
+	epochStartShardRoot := Uint64Root(state.CurrentEpochStartShard)
+	fieldRoots[21] = epochStartShardRoot[:]
+
+	// ShardStates slice root.
+	shardStatesRoot, err := shardStatesRoot(state.ShardStates)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not compute shard state merkleization")
+	}
+	fieldRoots[22] = shardStatesRoot[:]
+
+	// OnelineCountDown slice root.
+	onlineCountDownRoot, err := OnlineCountDownRoot(state.OnlineCountdown)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not compute online countdown merkleization")
+	}
+	fieldRoots[23] = onlineCountDownRoot[:]
+
 	return fieldRoots, nil
 }
 

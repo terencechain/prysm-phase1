@@ -727,6 +727,100 @@ func (b *BeaconState) SetPreviousJustifiedCheckpoint(val *ethpb.Checkpoint) erro
 	return nil
 }
 
+// SetShardState for the beacon state. This PR updates the entire
+// list to a new value by overwriting the previous one.
+func (b *BeaconState) SetShardState(val []*ethpb.ShardState) error {
+	if !b.HasInnerState() {
+		return ErrNilInnerState
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.sharedFieldReferences[shardStates].refs--
+	b.sharedFieldReferences[shardStates] = &reference{refs: 1}
+
+	b.state.ShardStates = val
+	b.markFieldAsDirty(shardStates)
+	b.rebuildTrie[shardStates] = true
+	return nil
+}
+
+// SetShardStateAtIndex for the beacon state. This PR updates the shard
+// state at index to a new value by overwriting the previous one.
+func (b *BeaconState) SetShardStateAtIndex(index uint64, val *ethpb.ShardState) error {
+	if !b.HasInnerState() {
+		return ErrNilInnerState
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.sharedFieldReferences[shardStates].refs--
+	b.sharedFieldReferences[shardStates] = &reference{refs: 1}
+
+	b.state.ShardStates[index] = val
+	b.markFieldAsDirty(shardStates)
+	b.rebuildTrie[shardStates] = true
+	return nil
+}
+
+// SetOnlineCountdowns for the beacon state. This PR updates the entire
+// list to a new value by overwriting the previous one.
+func (b *BeaconState) SetOnlineCountdowns(val []uint64) error {
+	if !b.HasInnerState() {
+		return ErrNilInnerState
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.sharedFieldReferences[onlineCountDown].refs--
+	b.sharedFieldReferences[onlineCountDown] = &reference{refs: 1}
+
+	b.state.OnlineCountdown = val
+	b.markFieldAsDirty(onlineCountDown)
+	return nil
+}
+
+// UpdateOnlineCountdownAtIndex for the beacon state. This method updates the balance
+// at a specific index to a new value.
+func (b *BeaconState) UpdateOnlineCountdownAtIndex(idx uint64, val uint64) error {
+	if !b.HasInnerState() {
+		return ErrNilInnerState
+	}
+	if len(b.state.OnlineCountdown) <= int(idx) {
+		return errors.Errorf("invalid index provided %d", idx)
+	}
+
+	b.lock.RLock()
+	countdown := b.state.OnlineCountdown
+	if b.sharedFieldReferences[onlineCountDown].refs > 1 {
+		countdown = b.OnlineCountdowns()
+		b.sharedFieldReferences[onlineCountDown].MinusRef()
+		b.sharedFieldReferences[onlineCountDown] = &reference{refs: 1}
+	}
+	b.lock.RUnlock()
+
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	countdown[idx] = val
+	b.state.OnlineCountdown = countdown
+	b.markFieldAsDirty(onlineCountDown)
+	return nil
+}
+
+// SetEpochStartShard for the beacon state.
+func (b *BeaconState) SetEpochStartShard(val uint64) error {
+	if !b.HasInnerState() {
+		return ErrNilInnerState
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.state.CurrentEpochStartShard = val
+	b.markFieldAsDirty(currentEpochStartShard)
+	return nil
+}
+
 // SetCurrentJustifiedCheckpoint for the beacon state.
 func (b *BeaconState) SetCurrentJustifiedCheckpoint(val *ethpb.Checkpoint) error {
 	if !b.HasInnerState() {

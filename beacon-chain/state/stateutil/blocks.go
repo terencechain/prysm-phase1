@@ -82,10 +82,11 @@ func BlockBodyRoot(body *ethpb.BeaconBlockBody) ([32]byte, error) {
 			Attestations:      make([]*ethpb.Attestation, 0),
 			Deposits:          make([]*ethpb.Deposit, 0),
 			VoluntaryExits:    make([]*ethpb.SignedVoluntaryExit, 0),
+			ShardTransitions: make([]*ethpb.ShardTransition, 0),
 		}
 	}
 	hasher := hashutil.CustomSHA256Hasher()
-	fieldRoots := make([][32]byte, 8)
+	fieldRoots := make([][32]byte, 9)
 	rawRandao := bytesutil.ToBytes96(body.RandaoReveal)
 	packedRandao, err := pack([][]byte{rawRandao[:]})
 	if err != nil {
@@ -133,6 +134,12 @@ func BlockBodyRoot(body *ethpb.BeaconBlockBody) ([32]byte, error) {
 		return [32]byte{}, err
 	}
 	fieldRoots[7] = exitRoot
+
+	shardTransitionRoot, err := ssz.HashTreeRootWithCapacity(body.ShardTransitions, params.ShardConfig().MaxShard)
+	if err != nil {
+		return [32]byte{}, err
+	}
+	fieldRoots[8] = shardTransitionRoot
 	return bitwiseMerkleizeArrays(hasher, fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))
 }
 

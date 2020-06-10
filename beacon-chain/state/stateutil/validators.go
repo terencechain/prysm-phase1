@@ -233,3 +233,41 @@ func (h *stateRootHasher) validatorRoot(hasher HashFn, validator *ethpb.Validato
 	}
 	return valRoot, nil
 }
+
+// OnlineCountDownRoot computes the HashTreeRoot Merkleization of
+// a list of validator uint64 online count down period according to the eth2
+// Simple Serialize specification.
+func OnlineCountDownRoot(countDown []uint64) ([32]byte, error) {
+	hasher := hashutil.CustomSHA256Hasher()
+	countDownMarshaling := make([][]byte, 0)
+	for i := 0; i < len(countDown); i++ {
+		countDownBuf := make([]byte, 8)
+		binary.LittleEndian.PutUint64(countDownBuf, countDown[i])
+		countDownMarshaling = append(countDownMarshaling, countDownBuf)
+	}
+	countDownChunks, err := pack(countDownMarshaling)
+	if err != nil {
+		return [32]byte{}, errors.Wrap(err, "could not pack countDown into chunks")
+	}
+	maxBalCap := params.BeaconConfig().ValidatorRegistryLimit
+	elemSize := uint64(8)
+	balLimit := (maxBalCap*elemSize + 31) / 32
+	if balLimit == 0 {
+		if len(countDown) == 0 {
+			balLimit = 1
+		} else {
+			balLimit = uint64(len(countDown))
+		}
+	}
+	countDownRootsRoot, err := bitwiseMerkleize(hasher, countDownChunks, uint64(len(countDownChunks)), balLimit)
+	if err != nil {
+		return [32]byte{}, errors.Wrap(err, "could not compute countDown merkleization")
+	}
+	countDownRootsBuf := new(bytes.Buffer)
+	if err := binary.Write(countDownRootsBuf, binary.LittleEndian, uint64(len(countDown))); err != nil {
+		return [32]byte{}, errors.Wrap(err, "could not marshal countDown length")
+	}
+	countDownRootsBufRoot := make([]byte, 32)
+	copy(countDownRootsBufRoot, countDownRootsBuf.Bytes())
+	return mixInLength(countDownRootsRoot, countDownRootsBufRoot), nil
+}

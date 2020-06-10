@@ -33,15 +33,15 @@ func InitializeFromProtoUnsafe(st *pbp2p.BeaconState) (*BeaconState, error) {
 
 	b := &BeaconState{
 		state:                 st,
-		dirtyFields:           make(map[fieldIndex]interface{}, 21),
-		dirtyIndices:          make(map[fieldIndex][]uint64, 21),
-		stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, 21),
-		sharedFieldReferences: make(map[fieldIndex]*reference, 10),
-		rebuildTrie:           make(map[fieldIndex]bool, 21),
+		dirtyFields:           make(map[fieldIndex]interface{}, 24),
+		dirtyIndices:          make(map[fieldIndex][]uint64, 24),
+		stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, 24),
+		sharedFieldReferences: make(map[fieldIndex]*reference, 12),
+		rebuildTrie:           make(map[fieldIndex]bool, 24),
 		valIdxMap:             coreutils.ValidatorIndexMap(st.Validators),
 	}
 
-	for i := 0; i < 21; i++ {
+	for i := 0; i < 24; i++ {
 		b.dirtyFields[fieldIndex(i)] = true
 		b.rebuildTrie[fieldIndex(i)] = true
 		b.dirtyIndices[fieldIndex(i)] = []uint64{}
@@ -63,6 +63,8 @@ func InitializeFromProtoUnsafe(st *pbp2p.BeaconState) (*BeaconState, error) {
 	b.sharedFieldReferences[validators] = &reference{refs: 1}
 	b.sharedFieldReferences[balances] = &reference{refs: 1}
 	b.sharedFieldReferences[historicalRoots] = &reference{refs: 1}
+	b.sharedFieldReferences[shardStates] = &reference{refs: 1}
+	b.sharedFieldReferences[onlineCountDown] = &reference{refs: 1}
 
 	return b, nil
 }
@@ -80,6 +82,7 @@ func (b *BeaconState) Copy() *BeaconState {
 			GenesisTime:      b.state.GenesisTime,
 			Slot:             b.state.Slot,
 			Eth1DepositIndex: b.state.Eth1DepositIndex,
+			CurrentEpochStartShard: b.state.CurrentEpochStartShard,
 
 			// Large arrays, infrequently changed, constant size.
 			RandaoMixes:               b.state.RandaoMixes,
@@ -89,11 +92,13 @@ func (b *BeaconState) Copy() *BeaconState {
 			CurrentEpochAttestations:  b.state.CurrentEpochAttestations,
 			Slashings:                 b.state.Slashings,
 			Eth1DataVotes:             b.state.Eth1DataVotes,
+			ShardStates:               b.state.ShardStates,
 
 			// Large arrays, increases over time.
 			Validators:      b.state.Validators,
 			Balances:        b.state.Balances,
 			HistoricalRoots: b.state.HistoricalRoots,
+			OnlineCountdown: b.state.OnlineCountdown,
 
 			// Everything else, too small to be concerned about, constant size.
 			Fork:                        b.Fork(),
@@ -105,11 +110,11 @@ func (b *BeaconState) Copy() *BeaconState {
 			FinalizedCheckpoint:         b.FinalizedCheckpoint(),
 			GenesisValidatorsRoot:       b.GenesisValidatorRoot(),
 		},
-		dirtyFields:           make(map[fieldIndex]interface{}, 21),
-		dirtyIndices:          make(map[fieldIndex][]uint64, 21),
-		rebuildTrie:           make(map[fieldIndex]bool, 21),
-		sharedFieldReferences: make(map[fieldIndex]*reference, 10),
-		stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, 21),
+		dirtyFields:           make(map[fieldIndex]interface{}, 24),
+		dirtyIndices:          make(map[fieldIndex][]uint64, 24),
+		rebuildTrie:           make(map[fieldIndex]bool, 24),
+		sharedFieldReferences: make(map[fieldIndex]*reference, 12),
+		stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, 24),
 
 		// Copy on write validator index map.
 		valIdxMap: b.valIdxMap,
@@ -183,7 +188,7 @@ func (b *BeaconState) HashTreeRoot(ctx context.Context) ([32]byte, error) {
 		}
 		layers := merkleize(fieldRoots)
 		b.merkleLayers = layers
-		b.dirtyFields = make(map[fieldIndex]interface{}, 21)
+		b.dirtyFields = make(map[fieldIndex]interface{}, 24)
 	}
 
 	for field := range b.dirtyFields {
@@ -358,6 +363,12 @@ func (b *BeaconState) rootSelector(field fieldIndex) ([32]byte, error) {
 		return stateutil.CheckpointRoot(hasher, b.state.CurrentJustifiedCheckpoint)
 	case finalizedCheckpoint:
 		return stateutil.CheckpointRoot(hasher, b.state.FinalizedCheckpoint)
+	case currentEpochStartShard:
+		return stateutil.Uint64Root(b.state.CurrentEpochStartShard), nil
+	case shardStates:
+		return b.recomputeFieldTrie(field, b.state.ShardStates)
+	case onlineCountDown:
+		return stateutil.OnlineCountDownRoot(b.state.OnlineCountdown)
 	}
 	return [32]byte{}, errors.New("invalid field index provided")
 }
