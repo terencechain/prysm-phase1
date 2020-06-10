@@ -112,6 +112,20 @@ type BeaconChainConfig struct {
 	ForkVersionSchedule map[uint64][]byte // Schedule of fork versions by epoch number.
 }
 
+type ShardChainConfig struct {
+	MaxShardBlockSize             uint64   // MaxShardBlockSize defines the max shard block size.
+	TargetShardBlockSize          uint64   // TargetShardBlockSize defines the target shard block size.
+	DomainShardProposal           [4]byte  // DomainShardProposal defines the BLS signature domain for shard proposal.
+	DomainShardCommittee          [4]byte  // DomainShardCommittee defines the BLS signature domain for shard committee.
+	Phase1GenesisSlot             uint64   // Phase1GenesisSlot defines the slot when phase 1 genesis
+	GasPriceAdjustmentCoefficient uint64   // GasPriceAdjustmentCoefficient defines the gas price adjustment coefficient.
+	MaxGasPrice                   uint64   // MaxGasPrice defines the max gas price.
+	MinGasPrice                   uint64   // MinGasPrice defines the min gas price.
+	ShardCommitteePeriod          uint64   // ShardCommitteePeriod defines the shard committee period.
+	ShardBlockOffsets             []uint64 // ShardBlockOffsets defines the shard block offsets.
+	OnlineCountDown               uint64   // OnlineCountDown defines the default count down start number.
+}
+
 var defaultBeaconConfig = &BeaconChainConfig{
 	// Constants (Non-configurable)
 	FarFutureEpoch:           1<<64 - 1,
@@ -214,11 +228,30 @@ var defaultBeaconConfig = &BeaconChainConfig{
 	},
 }
 
+var defaultShardChainConfig = &ShardChainConfig{
+	MaxShardBlockSize:             1 << 20,
+	TargetShardBlockSize:          1 << 18,
+	DomainShardProposal:           bytesutil.ToBytes4(bytesutil.Bytes4(128)),
+	DomainShardCommittee:          bytesutil.ToBytes4(bytesutil.Bytes4(129)),
+	GasPriceAdjustmentCoefficient: 8,
+	MaxGasPrice:                   16384,
+	MinGasPrice:                   8,
+	ShardCommitteePeriod:          256,
+	ShardBlockOffsets:             []uint64{1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233},
+	OnlineCountDown:               8,
+}
+
 var beaconConfig = defaultBeaconConfig
+var shardConfig = defaultShardChainConfig
 
 // BeaconConfig retrieves beacon chain config.
 func BeaconConfig() *BeaconChainConfig {
 	return beaconConfig
+}
+
+// ShardConfig retrieves shard chain config.
+func ShardConfig() *ShardChainConfig {
+	return shardConfig
 }
 
 // MainnetConfig returns the default config to
