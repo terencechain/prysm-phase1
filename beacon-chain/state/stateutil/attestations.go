@@ -95,9 +95,8 @@ func marshalAttestationData(data *ethpb.AttestationData) []byte {
 }
 
 func attestationRoot(hasher HashFn, att *ethpb.Attestation) ([32]byte, error) {
-	fieldRoots := make([][32]byte, 3)
+	fieldRoots := make([][32]byte, 4)
 
-	// Bitfield.
 	aggregationRoot, err := bitlistRoot(hasher, att.AggregationBits, params.BeaconConfig().MaxValidatorsPerCommittee)
 	if err != nil {
 		return [32]byte{}, err
@@ -110,6 +109,12 @@ func attestationRoot(hasher HashFn, att *ethpb.Attestation) ([32]byte, error) {
 	}
 	fieldRoots[1] = dataRoot
 
+	custodyRoot, err := bitlistRoot(hasher, att.CustodyBitsBlocks, params.BeaconConfig().MaxValidatorsPerCommittee)
+	if err != nil {
+		return [32]byte{}, err
+	}
+	fieldRoots[2] = custodyRoot
+
 	signatureBuf := bytesutil.ToBytes96(att.Signature)
 	packedSig, err := pack([][]byte{signatureBuf[:]})
 	if err != nil {
@@ -119,7 +124,7 @@ func attestationRoot(hasher HashFn, att *ethpb.Attestation) ([32]byte, error) {
 	if err != nil {
 		return [32]byte{}, err
 	}
-	fieldRoots[2] = sigRoot
+	fieldRoots[3] = sigRoot
 	return bitwiseMerkleizeArrays(hasher, fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))
 }
 
@@ -155,7 +160,7 @@ func blockAttestationRoot(atts []*ethpb.Attestation) ([32]byte, error) {
 }
 
 func attestationDataRoot(hasher HashFn, data *ethpb.AttestationData) ([32]byte, error) {
-	fieldRoots := make([][]byte, 5)
+	fieldRoots := make([][]byte, 7)
 
 	if data != nil {
 		// Slot.
@@ -174,19 +179,27 @@ func attestationDataRoot(hasher HashFn, data *ethpb.AttestationData) ([32]byte, 
 		blockRoot := bytesutil.ToBytes32(data.BeaconBlockRoot)
 		fieldRoots[2] = blockRoot[:]
 
-		// Source
+		// Source.
 		sourceRoot, err := CheckpointRoot(hasher, data.Source)
 		if err != nil {
 			return [32]byte{}, errors.Wrap(err, "could not compute source checkpoint merkleization")
 		}
 		fieldRoots[3] = sourceRoot[:]
 
-		// Target
+		// Target.
 		targetRoot, err := CheckpointRoot(hasher, data.Target)
 		if err != nil {
 			return [32]byte{}, errors.Wrap(err, "could not compute target checkpoint merkleization")
 		}
 		fieldRoots[4] = targetRoot[:]
+
+		// Shard head root.
+		shardHeadRoot := bytesutil.ToBytes32(data.ShardHeadRoot)
+		fieldRoots[5] = shardHeadRoot[:]
+
+		// Shard transition root.
+		shardTransitionRoot := bytesutil.ToBytes32(data.ShardTransitionRoot)
+		fieldRoots[6] = shardTransitionRoot[:]
 	}
 
 	return bitwiseMerkleize(hasher, fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))

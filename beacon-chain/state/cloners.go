@@ -39,6 +39,7 @@ func CopyAttestation(att *ethpb.Attestation) *ethpb.Attestation {
 	}
 	return &ethpb.Attestation{
 		AggregationBits: bytesutil.SafeCopyBytes(att.AggregationBits),
+		CustodyBitsBlocks: bytesutil.SafeCopyBytes(att.CustodyBitsBlocks),
 		Data:            CopyAttestationData(att.Data),
 		Signature:       bytesutil.SafeCopyBytes(att.Signature),
 	}
@@ -55,6 +56,8 @@ func CopyAttestationData(attData *ethpb.AttestationData) *ethpb.AttestationData 
 		BeaconBlockRoot: bytesutil.SafeCopyBytes(attData.BeaconBlockRoot),
 		Source:          CopyCheckpoint(attData.Source),
 		Target:          CopyCheckpoint(attData.Target),
+		ShardTransitionRoot: attData.ShardTransitionRoot,
+		ShardHeadRoot: attData.ShardHeadRoot,
 	}
 }
 
