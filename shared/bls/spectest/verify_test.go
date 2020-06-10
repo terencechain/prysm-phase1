@@ -11,6 +11,7 @@ import (
 )
 
 func TestVerifyMessageYaml(t *testing.T) {
+	t.Skip("Skipping for phase 1")
 	testFolders, testFolderPath := testutil.TestFolders(t, "general", "bls/verify/small")
 
 	for i, folder := range testFolders {

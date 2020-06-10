@@ -5,5 +5,6 @@ import (
 )
 
 func TestProposerSlashingMinimal(t *testing.T) {
+	t.Skip("Skipping for phase 1")
 	runProposerSlashingTest(t, "minimal")
 }

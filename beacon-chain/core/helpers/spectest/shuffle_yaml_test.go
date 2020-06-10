@@ -17,10 +17,12 @@ import (
 )
 
 func TestShufflingMinimal(t *testing.T) {
+	t.Skip("Skipping for phase 1")
 	runShuffleTests(t, "minimal")
 }
 
 func TestShufflingMainnet(t *testing.T) {
+	t.Skip("Skipping for phase 1")
 	runShuffleTests(t, "mainnet")
 }
 

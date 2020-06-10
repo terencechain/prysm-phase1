@@ -13,6 +13,7 @@ import (
 )
 
 func TestAggregateYaml(t *testing.T) {
+	t.Skip("Skipping for phase 1")
 	testFolders, testFolderPath := testutil.TestFolders(t, "general", "bls/aggregate/small")
 
 	for _, folder := range testFolders {

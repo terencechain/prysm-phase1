@@ -17,6 +17,7 @@ import (
 var runAmount = 25
 
 func TestExecuteStateTransition_FullBlock(t *testing.T) {
+	t.Skip("Skipping until phase 1")
 	benchutil.SetBenchmarkConfig()
 	beaconState, err := benchutil.PreGenState1Epoch()
 	if err != nil {

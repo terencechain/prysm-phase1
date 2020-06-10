@@ -7,5 +7,6 @@ import (
 )
 
 func TestSlotProcessingMainnet(t *testing.T) {
+	t.Skip("Skipping spec test for phase 1")
 	runSlotProcessingTests(t, "mainnet")
 }

@@ -5,5 +5,6 @@ import (
 )
 
 func TestBlockProcessingMainnetYaml(t *testing.T) {
+	t.Skip("Skipping for phase 1")
 	runBlockProcessingTest(t, "mainnet")
 }
