@@ -28,7 +28,7 @@ func (b *BeaconState) MarshalSSZ() ([]byte, error) {
 // MarshalSSZTo ssz marshals the BeaconState object to a target array
 func (b *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 	var err error
-	offset := int(2687377)
+	offset := int(2687393)
 
 	// Field (0) 'GenesisTime'
 	dst = ssz.MarshalUint64(dst, b.GenesisTime)
@@ -165,6 +165,17 @@ func (b *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 		return nil, err
 	}
 
+	// Field (21) 'CurrentEpochStartShard'
+	dst = ssz.MarshalUint64(dst, b.CurrentEpochStartShard)
+
+	// Offset (22) 'ShardStates'
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(b.ShardStates) * 80
+
+	// Offset (23) 'OnlineCountdown'
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(b.OnlineCountdown) * 8
+
 	// Field (7) 'HistoricalRoots'
 	if len(b.HistoricalRoots) > 16777216 {
 		return nil, errMarshalList
@@ -237,6 +248,24 @@ func (b *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 		}
 	}
 
+	// Field (22) 'ShardStates'
+	if len(b.ShardStates) > 64 {
+		return nil, errMarshalList
+	}
+	for ii := 0; ii < len(b.ShardStates); ii++ {
+		if dst, err = b.ShardStates[ii].MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+
+	// Field (23) 'OnlineCountdown'
+	if len(b.OnlineCountdown) > 1099511627776 {
+		return nil, errMarshalList
+	}
+	for ii := 0; ii < len(b.OnlineCountdown); ii++ {
+		dst = ssz.MarshalUint64(dst, b.OnlineCountdown[ii])
+	}
+
 	return dst, err
 }
 
@@ -244,12 +273,12 @@ func (b *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 	var err error
 	size := uint64(len(buf))
-	if size < 2687377 {
+	if size < 2687393 {
 		return errSize
 	}
 
 	tail := buf
-	var o7, o9, o11, o12, o15, o16 uint64
+	var o7, o9, o11, o12, o15, o16, o22, o23 uint64
 
 	// Field (0) 'GenesisTime'
 	b.GenesisTime = ssz.UnmarshallUint64(buf[0:8])
@@ -368,6 +397,19 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 		return err
 	}
 
+	// Field (21) 'CurrentEpochStartShard'
+	b.CurrentEpochStartShard = ssz.UnmarshallUint64(buf[2687377:2687385])
+
+	// Offset (22) 'ShardStates'
+	if o22 = ssz.ReadOffset(buf[2687385:2687389]); o22 > size || o16 > o22 {
+		return errOffset
+	}
+
+	// Offset (23) 'OnlineCountdown'
+	if o23 = ssz.ReadOffset(buf[2687389:2687393]); o23 > size || o22 > o23 {
+		return errOffset
+	}
+
 	// Field (7) 'HistoricalRoots'
 	{
 		buf = tail[o7:o9]
@@ -466,7 +508,7 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 
 	// Field (16) 'CurrentEpochAttestations'
 	{
-		buf = tail[o16:]
+		buf = tail[o16:o22]
 		num, err := ssz.DecodeDynamicLength(buf, 4096)
 		if err != nil {
 			return err
@@ -485,12 +527,49 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 			return err
 		}
 	}
+
+	// Field (22) 'ShardStates'
+	{
+		buf = tail[o22:o23]
+		num, ok := ssz.DivideInt(len(buf), 80)
+		if !ok {
+			return errDivideInt
+		}
+		if num > 64 {
+			return errListTooBig
+		}
+		b.ShardStates = make([]*v1alpha1.ShardState, num)
+		for ii := 0; ii < num; ii++ {
+			if b.ShardStates[ii] == nil {
+				b.ShardStates[ii] = new(v1alpha1.ShardState)
+			}
+			if err = b.ShardStates[ii].UnmarshalSSZ(buf[ii*80 : (ii+1)*80]); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Field (23) 'OnlineCountdown'
+	{
+		buf = tail[o23:]
+		num, ok := ssz.DivideInt(len(buf), 8)
+		if !ok {
+			return errDivideInt
+		}
+		if num > 1099511627776 {
+			return errListTooBig
+		}
+		b.OnlineCountdown = ssz.ExtendUint64(b.OnlineCountdown, num)
+		for ii := 0; ii < num; ii++ {
+			b.OnlineCountdown[ii] = ssz.UnmarshallUint64(buf[ii*8 : (ii+1)*8])
+		}
+	}
 	return err
 }
 
 // SizeSSZ returns the ssz encoded size in bytes for the BeaconState object
 func (b *BeaconState) SizeSSZ() (size int) {
-	size = 2687377
+	size = 2687393
 
 	// Field (7) 'HistoricalRoots'
 	size += len(b.HistoricalRoots) * 32
@@ -515,6 +594,12 @@ func (b *BeaconState) SizeSSZ() (size int) {
 		size += 4
 		size += b.CurrentEpochAttestations[ii].SizeSSZ()
 	}
+
+	// Field (22) 'ShardStates'
+	size += len(b.ShardStates) * 80
+
+	// Field (23) 'OnlineCountdown'
+	size += len(b.OnlineCountdown) * 8
 
 	return
 }
@@ -580,7 +665,7 @@ func (p *PendingAttestation) MarshalSSZ() ([]byte, error) {
 // MarshalSSZTo ssz marshals the PendingAttestation object to a target array
 func (p *PendingAttestation) MarshalSSZTo(dst []byte) ([]byte, error) {
 	var err error
-	offset := int(148)
+	offset := int(213)
 
 	// Offset (0) 'AggregationBits'
 	dst = ssz.WriteOffset(dst, offset)
@@ -600,6 +685,9 @@ func (p *PendingAttestation) MarshalSSZTo(dst []byte) ([]byte, error) {
 	// Field (3) 'ProposerIndex'
 	dst = ssz.MarshalUint64(dst, p.ProposerIndex)
 
+	// Field (4) 'CrosslinkSuccess'
+	dst = ssz.MarshalBool(dst, p.CrosslinkSuccess)
+
 	// Field (0) 'AggregationBits'
 	dst = append(dst, p.AggregationBits...)
 
@@ -610,7 +698,7 @@ func (p *PendingAttestation) MarshalSSZTo(dst []byte) ([]byte, error) {
 func (p *PendingAttestation) UnmarshalSSZ(buf []byte) error {
 	var err error
 	size := uint64(len(buf))
-	if size < 148 {
+	if size < 213 {
 		return errSize
 	}
 
@@ -626,15 +714,18 @@ func (p *PendingAttestation) UnmarshalSSZ(buf []byte) error {
 	if p.Data == nil {
 		p.Data = new(v1alpha1.AttestationData)
 	}
-	if err = p.Data.UnmarshalSSZ(buf[4:132]); err != nil {
+	if err = p.Data.UnmarshalSSZ(buf[4:196]); err != nil {
 		return err
 	}
 
 	// Field (2) 'InclusionDelay'
-	p.InclusionDelay = ssz.UnmarshallUint64(buf[132:140])
+	p.InclusionDelay = ssz.UnmarshallUint64(buf[196:204])
 
 	// Field (3) 'ProposerIndex'
-	p.ProposerIndex = ssz.UnmarshallUint64(buf[140:148])
+	p.ProposerIndex = ssz.UnmarshallUint64(buf[204:212])
+
+	// Field (4) 'CrosslinkSuccess'
+	p.CrosslinkSuccess = ssz.UnmarshalBool(buf[212:213])
 
 	// Field (0) 'AggregationBits'
 	{
@@ -646,7 +737,7 @@ func (p *PendingAttestation) UnmarshalSSZ(buf []byte) error {
 
 // SizeSSZ returns the ssz encoded size in bytes for the PendingAttestation object
 func (p *PendingAttestation) SizeSSZ() (size int) {
-	size = 148
+	size = 213
 
 	// Field (0) 'AggregationBits'
 	size += len(p.AggregationBits)
