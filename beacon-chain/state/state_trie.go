@@ -79,9 +79,9 @@ func (b *BeaconState) Copy() *BeaconState {
 	dst := &BeaconState{
 		state: &pbp2p.BeaconState{
 			// Primitive types, safe to copy.
-			GenesisTime:      b.state.GenesisTime,
-			Slot:             b.state.Slot,
-			Eth1DepositIndex: b.state.Eth1DepositIndex,
+			GenesisTime:            b.state.GenesisTime,
+			Slot:                   b.state.Slot,
+			Eth1DepositIndex:       b.state.Eth1DepositIndex,
 			CurrentEpochStartShard: b.state.CurrentEpochStartShard,
 
 			// Large arrays, infrequently changed, constant size.

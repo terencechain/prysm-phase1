@@ -96,13 +96,13 @@ func TestServer_ListAttestations_Genesis(t *testing.T) {
 	att := &ethpb.Attestation{
 		Signature: make([]byte, 96),
 		Data: &ethpb.AttestationData{
-			Slot:            2,
-			CommitteeIndex:  1,
-			Target:          &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
-			Source:          &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
-			BeaconBlockRoot: make([]byte, 32),
+			Slot:                2,
+			CommitteeIndex:      1,
+			Target:              &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
+			Source:              &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
+			BeaconBlockRoot:     make([]byte, 32),
 			ShardTransitionRoot: make([]byte, 32),
-			ShardHeadRoot: make([]byte, 32),
+			ShardHeadRoot:       make([]byte, 32),
 		},
 	}
 
@@ -172,11 +172,11 @@ func TestServer_ListAttestations_NoPagination(t *testing.T) {
 						{
 							Signature: make([]byte, 96),
 							Data: &ethpb.AttestationData{
-								Target:          &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
-								Source:          &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
-								BeaconBlockRoot: bytesutil.PadTo([]byte("root"), 32),
-								Slot:            i,
-								ShardHeadRoot: make([]byte, 32),
+								Target:              &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
+								Source:              &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
+								BeaconBlockRoot:     bytesutil.PadTo([]byte("root"), 32),
+								Slot:                i,
+								ShardHeadRoot:       make([]byte, 32),
 								ShardTransitionRoot: make([]byte, 32),
 							},
 							AggregationBits: bitfield.Bitlist{0b11},
@@ -349,13 +349,13 @@ func TestServer_ListAttestations_Pagination_CustomPageParameters(t *testing.T) {
 						Attestations: []*ethpb.Attestation{
 							{
 								Data: &ethpb.AttestationData{
-									CommitteeIndex:  s,
-									Slot:            i,
-									BeaconBlockRoot: make([]byte, 32),
-									Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-									Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+									CommitteeIndex:      s,
+									Slot:                i,
+									BeaconBlockRoot:     make([]byte, 32),
+									Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+									Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
 									ShardTransitionRoot: make([]byte, 32),
-									ShardHeadRoot: make([]byte, 32),
+									ShardHeadRoot:       make([]byte, 32),
 								},
 								AggregationBits: bitfield.Bitlist{0b11},
 								Signature:       make([]byte, 96),
@@ -533,11 +533,11 @@ func TestServer_ListAttestations_Pagination_DefaultPageSize(t *testing.T) {
 					Attestations: []*ethpb.Attestation{
 						{
 							Data: &ethpb.AttestationData{
-								BeaconBlockRoot: bytesutil.PadTo([]byte("root"), 32),
-								Target:          &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
-								Source:          &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
-								Slot:            i,
-								ShardHeadRoot: make([]byte, 32),
+								BeaconBlockRoot:     bytesutil.PadTo([]byte("root"), 32),
+								Target:              &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
+								Source:              &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte("root"), 32)},
+								Slot:                i,
+								ShardHeadRoot:       make([]byte, 32),
 								ShardTransitionRoot: make([]byte, 32),
 							},
 							Signature:       bytesutil.PadTo([]byte("root"), 96),
@@ -681,9 +681,9 @@ func TestServer_ListIndexedAttestations_GenesisEpoch(t *testing.T) {
 								Source: &ethpb.Checkpoint{
 									Root: make([]byte, 32),
 								},
-								Slot:           i,
-								CommitteeIndex: 0,
-								ShardHeadRoot: make([]byte, 32),
+								Slot:                i,
+								CommitteeIndex:      0,
+								ShardHeadRoot:       make([]byte, 32),
 								ShardTransitionRoot: make([]byte, 32),
 							},
 							AggregationBits: bitfield.Bitlist{0b11},

@@ -82,7 +82,7 @@ func BlockBodyRoot(body *ethpb.BeaconBlockBody) ([32]byte, error) {
 			Attestations:      make([]*ethpb.Attestation, 0),
 			Deposits:          make([]*ethpb.Deposit, 0),
 			VoluntaryExits:    make([]*ethpb.SignedVoluntaryExit, 0),
-			ShardTransitions: make([]*ethpb.ShardTransition, 0),
+			ShardTransitions:  make([]*ethpb.ShardTransition, 0),
 		}
 	}
 	hasher := hashutil.CustomSHA256Hasher()
