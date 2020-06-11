@@ -10,6 +10,21 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/roughtime"
 )
 
+// PrevSlot returns previous slot.
+//
+// Spec code:
+// def compute_previous_slot(slot: Slot) -> Slot:
+//    if slot > 0:
+//        return Slot(slot - 1)
+//    else:
+//        return Slot(0)
+func PrevSlot(slot uint64) uint64 {
+	if slot > 0 {
+		return slot - 1
+	}
+	return 0
+}
+
 // SlotToEpoch returns the epoch number of the input slot.
 //
 // Spec pseudocode definition:
