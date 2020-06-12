@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "block.go",
         "block_operations.go",
+        "shard_transition.go",
     ],
     importpath = "github.com/prysmaticlabs/prysm/beacon-chain/core/blocks",
     visibility = [
@@ -14,6 +15,7 @@ go_library(
         "//shared/testutil:__pkg__",
     ],
     deps = [
+        "//beacon-chain/core/epoch:go_default_library",
         "//beacon-chain/core/helpers:go_default_library",
         "//beacon-chain/core/validators:go_default_library",
         "//beacon-chain/state:go_default_library",
