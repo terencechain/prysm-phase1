@@ -36,7 +36,7 @@ func TestComputeDelta_ZeroHash(t *testing.T) {
 		}
 	}
 	for _, vote := range votes {
-		if vote.currentRoot != vote.nextRoot {
+		if vote.currentBeaconRoot != vote.nextBeaconRoot {
 			t.Errorf("The vote should have changed")
 		}
 	}
@@ -78,7 +78,7 @@ func TestComputeDelta_AllVoteTheSame(t *testing.T) {
 	}
 
 	for _, vote := range votes {
-		if vote.currentRoot != vote.nextRoot {
+		if vote.currentBeaconRoot != vote.nextBeaconRoot {
 			t.Errorf("The vote should have changed")
 		}
 	}
@@ -114,7 +114,7 @@ func TestComputeDelta_DifferentVotes(t *testing.T) {
 	}
 
 	for _, vote := range votes {
-		if vote.currentRoot != vote.nextRoot {
+		if vote.currentBeaconRoot != vote.nextBeaconRoot {
 			t.Errorf("The vote should have changed")
 		}
 	}
@@ -161,7 +161,7 @@ func TestComputeDelta_MovingVotes(t *testing.T) {
 	}
 
 	for _, vote := range votes {
-		if vote.currentRoot != vote.nextRoot {
+		if vote.currentBeaconRoot != vote.nextBeaconRoot {
 			t.Errorf("The vote should have changed")
 		}
 	}
@@ -192,7 +192,7 @@ func TestComputeDelta_MoveOutOfTree(t *testing.T) {
 	}
 
 	for _, vote := range votes {
-		if vote.currentRoot != vote.nextRoot {
+		if vote.currentBeaconRoot != vote.nextBeaconRoot {
 			t.Errorf("The vote should have changed")
 		}
 	}
@@ -240,7 +240,7 @@ func TestComputeDelta_ChangingBalances(t *testing.T) {
 	}
 
 	for _, vote := range votes {
-		if vote.currentRoot != vote.nextRoot {
+		if vote.currentBeaconRoot != vote.nextBeaconRoot {
 			t.Errorf("The vote should have changed")
 		}
 	}
@@ -276,7 +276,7 @@ func TestComputeDelta_ValidatorAppear(t *testing.T) {
 	}
 
 	for _, vote := range votes {
-		if vote.currentRoot != vote.nextRoot {
+		if vote.currentBeaconRoot != vote.nextBeaconRoot {
 			t.Errorf("The vote should have changed")
 		}
 	}
@@ -312,7 +312,7 @@ func TestComputeDelta_ValidatorDisappears(t *testing.T) {
 	}
 
 	for _, vote := range votes {
-		if vote.currentRoot != vote.nextRoot {
+		if vote.currentBeaconRoot != vote.nextBeaconRoot {
 			t.Errorf("The vote should have changed")
 		}
 	}

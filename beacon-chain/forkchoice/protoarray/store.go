@@ -18,12 +18,14 @@ var lastHeadRoot [32]byte
 // New initializes a new fork choice store.
 func New(justifiedEpoch uint64, finalizedEpoch uint64, finalizedRoot [32]byte) *ForkChoice {
 	s := &Store{
-		JustifiedEpoch: justifiedEpoch,
-		FinalizedEpoch: finalizedEpoch,
-		finalizedRoot:  finalizedRoot,
-		Nodes:          make([]*Node, 0),
-		NodeIndices:    make(map[[32]byte]uint64),
-		PruneThreshold: defaultPruneThreshold,
+		JustifiedEpoch:   justifiedEpoch,
+		FinalizedEpoch:   finalizedEpoch,
+		finalizedRoot:    finalizedRoot,
+		Nodes:            make([]*Node, 0),
+		NodeIndices:      make(map[[32]byte]uint64),
+		PruneThreshold:   defaultPruneThreshold,
+		shardNodes:       make([][]*ShardNode, params.ShardConfig().MaxShard),
+		shardNodeIndices: make([]map[[32]byte]uint64, params.ShardConfig().MaxShard),
 	}
 
 	b := make([]uint64, 0)
@@ -59,26 +61,61 @@ func (f *ForkChoice) Head(ctx context.Context, justifiedEpoch uint64, justifiedR
 	return f.store.head(ctx, justifiedRoot)
 }
 
+// ShardHead returns the shard head root of a given shard from fork choice store.
+func (f *ForkChoice) ShardHead(ctx context.Context, justifiedEpoch uint64, justifiedRoot [32]byte, justifiedStateBalances []uint64, finalizedEpoch uint64, shard uint64) ([32]byte, error) {
+	ctx, span := trace.StartSpan(ctx, "protoArrayForkChoice.ShardHead")
+	defer span.End()
+	calledHeadCount.Inc()
+
+	newBalances := justifiedStateBalances
+
+	// Using the read lock is ok here, rest of the operations below is read only.
+	// The only time it writes to node indices is inserting and pruning blocks from the store.
+	// TODO(0): Each shard should have its own lock. Not a shared lock.
+	f.store.shardNodeIndicesLock.RLock()
+	defer f.store.shardNodeIndicesLock.RUnlock()
+	deltas, newVotes, err := computeShardDeltas(ctx, f.store.shardNodeIndices[shard], f.shardVotes[shard], f.balances, newBalances, shard)
+	if err != nil {
+		return [32]byte{}, errors.Wrap(err, "Could not compute shard deltas")
+	}
+	f.votes = newVotes
+
+	if err := f.store.applyShardWeightChanges(ctx, deltas, shard); err != nil {
+		return [32]byte{}, errors.Wrap(err, "Could not apply shard score changes")
+	}
+	f.balances = newBalances
+
+	return f.store.head(ctx, justifiedRoot)
+}
+
 // ProcessAttestation processes attestation for vote accounting, it iterates around validator indices
 // and update their votes accordingly.
-func (f *ForkChoice) ProcessAttestation(ctx context.Context, validatorIndices []uint64, blockRoot [32]byte, targetEpoch uint64) {
+func (f *ForkChoice) ProcessAttestation(
+	ctx context.Context,
+	validatorIndices []uint64,
+	blockRoot [32]byte,
+	targetEpoch uint64,
+	shardBlockRoot [32]byte,
+	shard uint64) {
 	ctx, span := trace.StartSpan(ctx, "protoArrayForkChoice.ProcessAttestation")
 	defer span.End()
 
 	for _, index := range validatorIndices {
 		// Validator indices will grow the vote cache.
 		for index >= uint64(len(f.votes)) {
-			f.votes = append(f.votes, Vote{currentRoot: params.BeaconConfig().ZeroHash, nextRoot: params.BeaconConfig().ZeroHash})
+			f.votes = append(f.votes, Vote{currentBeaconRoot: params.BeaconConfig().ZeroHash, nextBeaconRoot: params.BeaconConfig().ZeroHash})
 		}
 
 		// Newly allocated vote if the root fields are untouched.
-		newVote := f.votes[index].nextRoot == params.BeaconConfig().ZeroHash &&
-			f.votes[index].currentRoot == params.BeaconConfig().ZeroHash
+		newVote := f.votes[index].nextBeaconRoot == params.BeaconConfig().ZeroHash &&
+			f.votes[index].currentBeaconRoot == params.BeaconConfig().ZeroHash
 
 		// Vote gets updated if it's newly allocated or high target epoch.
 		if newVote || targetEpoch > f.votes[index].nextEpoch {
 			f.votes[index].nextEpoch = targetEpoch
-			f.votes[index].nextRoot = blockRoot
+			f.votes[index].nextBeaconRoot = blockRoot
+			f.votes[index].shard = shard
+			f.votes[index].nextShardRoot = shardBlockRoot
 		}
 	}
 
@@ -91,6 +128,14 @@ func (f *ForkChoice) ProcessBlock(ctx context.Context, slot uint64, blockRoot [3
 	defer span.End()
 
 	return f.store.insert(ctx, slot, blockRoot, parentRoot, graffiti, justifiedEpoch, finalizedEpoch)
+}
+
+// ProcessShardBlock processes a new shard block by inserting it to the fork choice store.
+func (f *ForkChoice) ProcessShardBlock(ctx context.Context, slot uint64, blockRoot [32]byte, parentRoot [32]byte, shard uint64) error {
+	ctx, span := trace.StartSpan(ctx, "protoArrayForkChoice.ProcessShardBlock")
+	defer span.End()
+
+	return f.store.insertShardNode(ctx, slot, blockRoot, parentRoot, shard)
 }
 
 // Prune prunes the fork choice store with the new finalized root. The store is only pruned if the input

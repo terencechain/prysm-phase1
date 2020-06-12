@@ -27,7 +27,7 @@ type BlockProcessor interface {
 
 // AttestationProcessor processes the attestation that's used for accounting fork choice.
 type AttestationProcessor interface {
-	ProcessAttestation(context.Context, []uint64, [32]byte, uint64)
+	ProcessAttestation(ctx context.Context, validatorIndices []uint64, blockRoot [32]byte, targetEpoch uint64, shardBlockRoot [32]byte, shard uint64)
 }
 
 // Pruner prunes the fork choice upon new finalization. This is used to keep fork choice sane.

@@ -54,6 +54,36 @@ func (s *Store) head(ctx context.Context, justifiedRoot [32]byte) ([32]byte, err
 	return bestNode.Root, nil
 }
 
+// shardHead starts from last crosslinked root and then follows the best descendant links
+// to find the best shard block for head.
+func (s *Store) shardHead(ctx context.Context, lastCrosslinkRoot [32]byte, shard uint64) ([32]byte, error) {
+	ctx, span := trace.StartSpan(ctx, "protoArrayForkChoice.shardHead")
+	defer span.End()
+
+	lastCrosslinkIndex, ok := s.shardNodeIndices[shard][lastCrosslinkRoot]
+	if !ok {
+		return [32]byte{}, errUnknownLassCrosslinkRoot
+	}
+	if lastCrosslinkIndex >= uint64(len(s.Nodes)) {
+		return [32]byte{}, errUnknownLassCrosslinkIndex
+	}
+
+	lastCrosslinkNode := s.Nodes[lastCrosslinkIndex]
+	bestDescendantIndex := lastCrosslinkNode.BestDescendent
+	// If the justified node doesn't have a best descendent,
+	// the best node is itself.
+	if bestDescendantIndex == NonExistentNode {
+		bestDescendantIndex = lastCrosslinkIndex
+	}
+	if bestDescendantIndex >= uint64(len(s.Nodes)) {
+		return [32]byte{}, errInvalidBestDescendantIndex
+	}
+
+	bestNode := s.Nodes[bestDescendantIndex]
+
+	return bestNode.Root, nil
+}
+
 // insert registers a new block node to the fork choice store's node list.
 // It then updates the new node's parent with best child and descendant node.
 func (s *Store) insert(ctx context.Context,
@@ -105,6 +135,47 @@ func (s *Store) insert(ctx context.Context,
 	// Update metrics.
 	processedBlockCount.Inc()
 	nodeCount.Set(float64(len(s.Nodes)))
+
+	return nil
+}
+
+// insert registers a new block node to the fork choice store's node list.
+// It then updates the new node's parent with best child and descendant node.
+func (s *Store) insertShardNode(ctx context.Context,
+	slot uint64,
+	root [32]byte,
+	parent [32]byte,
+	shard uint64) error {
+	ctx, span := trace.StartSpan(ctx, "protoArrayForkChoice.insertShardNode")
+	defer span.End()
+
+	s.shardNodeIndicesLock.Lock()
+	defer s.shardNodeIndicesLock.Unlock()
+
+	// Return if the block has been inserted into Store before.
+	if _, ok := s.shardNodeIndices[shard][root]; ok {
+		return nil
+	}
+
+	index := len(s.shardNodes)
+	parentIndex, ok := s.shardNodeIndices[shard][parent]
+	// Mark genesis block's parent as non existent.
+	if !ok {
+		parentIndex = NonExistentNode
+	}
+
+	n := &ShardNode{
+		Slot:           slot,
+		Shard:          shard,
+		Root:           root,
+		Parent:         parentIndex,
+		BestChild:      NonExistentNode,
+		BestDescendent: NonExistentNode,
+		Weight:         0,
+	}
+
+	s.shardNodeIndices[shard][root] = uint64(index)
+	s.shardNodes[shard] = append(s.shardNodes[shard], n)
 
 	return nil
 }
@@ -169,6 +240,48 @@ func (s *Store) applyWeightChanges(ctx context.Context, justifiedEpoch uint64, f
 		}
 	}
 
+	return nil
+}
+
+func (s *Store) applyShardWeightChanges(ctx context.Context, delta []int, shard uint64) error {
+	ctx, span := trace.StartSpan(ctx, "protoArrayForkChoice.applyShardWeightChanges")
+	defer span.End()
+
+	// The length of the Nodes can not be different than length of the delta.
+	nodes := s.shardNodes[shard]
+	if len(nodes) != len(delta) {
+		return errInvalidDeltaLength
+	}
+
+	// Iterate backwards through all index to node in store.
+	for i := len(nodes) - 1; i >= 0; i-- {
+		n := nodes[i]
+
+		// There is no need to adjust the balances or manage parent of the zero hash, it
+		// is an alias to the genesis block.
+		if n.Root == params.BeaconConfig().ZeroHash {
+			continue
+		}
+
+		nodeDelta := delta[i]
+
+		if nodeDelta < 0 {
+			// A node's weight can not be negative but the delta can be negative.
+			if int(n.Weight)+nodeDelta < 0 {
+				n.Weight = 0
+			} else {
+				// Subtract node's weight.
+				n.Weight -= uint64(math.Abs(float64(nodeDelta)))
+			}
+		} else {
+			// Add node's weight.
+			n.Weight += uint64(nodeDelta)
+		}
+
+		nodes[i] = n
+	}
+
+	s.shardNodes[shard] = nodes
 	return nil
 }
 

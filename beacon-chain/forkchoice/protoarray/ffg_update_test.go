@@ -176,7 +176,7 @@ func TestFFGUpdates_TwoBranches(t *testing.T) {
 	//               7   8
 	//               |   |
 	//               9  10
-	f.ProcessAttestation(context.Background(), []uint64{0}, indexToHash(1), 0)
+	f.ProcessAttestation(context.Background(), []uint64{0}, indexToHash(1), 0, [32]byte{}, 0)
 
 	// With the additional vote to the left branch, the head should be 9:
 	//           0  <-- start
@@ -210,7 +210,7 @@ func TestFFGUpdates_TwoBranches(t *testing.T) {
 	//               7   8
 	//               |   |
 	//               9  10
-	f.ProcessAttestation(context.Background(), []uint64{1}, indexToHash(2), 0)
+	f.ProcessAttestation(context.Background(), []uint64{1}, indexToHash(2), 0, [32]byte{}, 0)
 
 	// With the additional vote to the right branch, the head should be 10:
 	//           0  <-- start

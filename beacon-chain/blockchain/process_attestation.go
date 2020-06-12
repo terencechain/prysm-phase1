@@ -138,8 +138,19 @@ func (s *Service) onAttestation(ctx context.Context, a *ethpb.Attestation) ([]ui
 		return nil, errors.New("nil attesting indices")
 	}
 
+	shard, err := helpers.ShardFromAttestation(baseState, a)
+	if err != nil {
+		return nil, err
+	}
 	// Update forkchoice store with the new attestation for updating weight.
-	s.forkChoiceStore.ProcessAttestation(ctx, indexedAtt.AttestingIndices, bytesutil.ToBytes32(a.Data.BeaconBlockRoot), a.Data.Target.Epoch)
+	s.forkChoiceStore.ProcessAttestation(
+		ctx,
+		indexedAtt.AttestingIndices,
+		bytesutil.ToBytes32(a.Data.BeaconBlockRoot),
+		a.Data.Target.Epoch,
+		bytesutil.ToBytes32(a.Data.ShardHeadRoot),
+		shard,
+	)
 
 	return indexedAtt.AttestingIndices, nil
 }

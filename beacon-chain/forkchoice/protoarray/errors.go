@@ -11,3 +11,5 @@ var errInvalidBestDescendantIndex = errors.New("best descendant index is invalid
 var errInvalidParentDelta = errors.New("parent delta is invalid")
 var errInvalidNodeDelta = errors.New("node delta is invalid")
 var errInvalidDeltaLength = errors.New("delta length is invalid")
+var errUnknownLassCrosslinkRoot = errors.New("unknown last crosslink root")
+var errUnknownLassCrosslinkIndex = errors.New("last crosslink index is invalid")
