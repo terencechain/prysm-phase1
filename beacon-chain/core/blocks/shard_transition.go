@@ -384,7 +384,7 @@ func processCrosslinks(
 	for committeeID := uint64(0); committeeID < committeeCount; committeeID++ {
 		var shardAttestations []*ethpb.Attestation
 		for _, att := range attestations {
-			if isCorrectIndexAttestation(att, committeeID) && isOntimeAttestation(att, currentSlot) {
+			if isCorrectIndexAttestation(att, committeeID) && isOnTimeAttestation(att, currentSlot) {
 				shardAttestations = append(shardAttestations, att)
 			}
 		}
@@ -445,27 +445,12 @@ func isCorrectIndexAttestation(attestation *ethpb.Attestation, committeeIndex ui
 	return attestation.Data.CommitteeIndex == committeeIndex
 }
 
-// isOntimeAttestation returns true if the attestation is ontime
-func isOntimeAttestation(attestation *ethpb.Attestation, currentSlot uint64) bool {
+// isOnTimeAttestation returns true if the attestation is on time.
+func isOnTimeAttestation(attestation *ethpb.Attestation, currentSlot uint64) bool {
 	return attestation.Data.Slot == helpers.PrevSlot(currentSlot)
 }
 
 // isWinningAttestation returns true if the pending attestation has the correct winning root, slot, and the committee index.
-//
-// Spec code (https://github.com/ethereum/eth2.0-specs/blob/6f685a97e2eb8fc32a385133ede811375ea64376/specs/phase1/beacon-chain.md):
-// def is_winning_attestation(state: BeaconState,
-//                           attestation: PendingAttestation,
-//                           committee_index: CommitteeIndex,
-//                           winning_root: Root) -> bool:
-//    """
-//    Check if ``attestation`` helped contribute to the successful crosslink of
-//    ``winning_root`` formed by ``committee_index`` committee at the current slot.
-//    """
-//    return (
-//        attestation.data.slot == state.slot
-//        and attestation.data.index == committee_index
-//        and attestation.data.shard_transition_root == winning_root
-//    )
 func isWinningAttestation(pendingAttestation *pb.PendingAttestation, slot uint64, committeeIndex uint64, winningRoot [32]byte) bool {
 	sameSlot := pendingAttestation.Data.Slot == slot
 	sameCommittee := pendingAttestation.Data.CommitteeIndex == committeeIndex
