@@ -62,12 +62,10 @@ func (f *ForkChoice) Head(ctx context.Context, justifiedEpoch uint64, justifiedR
 }
 
 // ShardHead returns the shard head root of a given shard from fork choice store.
-func (f *ForkChoice) ShardHead(ctx context.Context, justifiedEpoch uint64, justifiedRoot [32]byte, justifiedStateBalances []uint64, finalizedEpoch uint64, shard uint64) ([32]byte, error) {
+func (f *ForkChoice) ShardHead(ctx context.Context, lastCrosslinkRoot [32]byte, newBalances []uint64, shard uint64) ([32]byte, error) {
 	ctx, span := trace.StartSpan(ctx, "protoArrayForkChoice.ShardHead")
 	defer span.End()
 	calledHeadCount.Inc()
-
-	newBalances := justifiedStateBalances
 
 	// Using the read lock is ok here, rest of the operations below is read only.
 	// The only time it writes to node indices is inserting and pruning blocks from the store.
@@ -83,9 +81,8 @@ func (f *ForkChoice) ShardHead(ctx context.Context, justifiedEpoch uint64, justi
 	if err := f.store.applyShardWeightChanges(ctx, deltas, shard); err != nil {
 		return [32]byte{}, errors.Wrap(err, "Could not apply shard score changes")
 	}
-	f.balances = newBalances
 
-	return f.store.head(ctx, justifiedRoot)
+	return f.store.shardHead(ctx, lastCrosslinkRoot, shard)
 }
 
 // ProcessAttestation processes attestation for vote accounting, it iterates around validator indices

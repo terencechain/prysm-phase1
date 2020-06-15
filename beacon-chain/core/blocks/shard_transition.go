@@ -110,47 +110,9 @@ func applyShardTransition(beaconState *stateTrie.BeaconState, transition *ethpb.
 		return nil, err
 	}
 
-	shardState := beaconState.ShardStateAtIndex(shard)
-	prevGasPrice := shardState.GasPrice
-	shardParentRoot := shardState.LatestBlockRoot
-	proposerIndices := make([]uint64, 0, len(offsetSlots))
-	headerRoots := make([][32]byte, 0, len(offsetSlots))
-	for i, slot := range offsetSlots {
-		shardBlockLength := transition.ShardBlockLengths[i]
-		emptyProposal := shardBlockLength == 0
-		shardState := transition.ShardStates[i]
-		if shardState.GasPrice != helpers.UpdatedGasPrice(prevGasPrice, shardBlockLength) {
-			return nil, errors.New("prev gas price != updated gas price")
-		}
-		if shardState.Slot != slot {
-			return nil, errors.New("shard state slot != off set slot")
-		}
-
-		if !emptyProposal {
-			beaconParentRoot, err := helpers.BlockRootAtSlot(beaconState, slot)
-			if err != nil {
-				return nil, err
-			}
-			proposerIndex, err := helpers.ShardProposerIndex(beaconState, slot, shard)
-			if err != nil {
-				return nil, err
-			}
-			shardBlockHeader := &ethpb.ShardBlockHeader{
-				ShardParentRoot:  shardParentRoot,
-				BeaconParentRoot: beaconParentRoot,
-				Shard:            shard,
-				Slot:             slot,
-				ProposerIndex:    proposerIndex,
-				// TODO(0): Confirm this is for head root or data root.
-				BodyRoot: transition.ShardDataRoots[i],
-			}
-			headerRoot, err := ssz.HashTreeRoot(shardBlockHeader)
-			if err != nil {
-				return nil, err
-			}
-			headerRoots = append(headerRoots, headerRoot)
-			proposerIndices = append(proposerIndices, proposerIndex)
-		}
+	_, _, err := shardBlockProposersAndRoots(beaconState, transition, offsetSlots, shard)
+	if err != nil {
+		return nil, err
 	}
 
 	// Verify proposer signatures.
@@ -262,39 +224,21 @@ func processCrosslinkForShard(beaconState *stateTrie.BeaconState, attestations [
 		}
 	}
 
-	onTimeAttestationSlot := helpers.PrevSlot(beaconState.Slot())
+	onTimeAttSlot := helpers.PrevSlot(beaconState.Slot())
 	shard, err := helpers.ShardFromCommitteeIndex(beaconState, beaconState.Slot(), committeeID)
 	if err != nil {
 		return [32]byte{}, err
 	}
-	beaconCommittee, err := helpers.BeaconCommitteeFromState(beaconState, onTimeAttestationSlot, committeeID)
+	beaconCommittee, err := helpers.BeaconCommitteeFromState(beaconState, onTimeAttSlot, committeeID)
 	if err != nil {
 		return [32]byte{}, err
 	}
 	for transitionRoot, atts := range attsByTransitionRoot {
-		voted := make(map[uint64]bool)
-		for _, a := range atts {
-			attestingIndices, err := helpers.AttestingIndices(a.AggregationBits, beaconCommittee)
-			if err != nil {
-				return [32]byte{}, err
-			}
-			for _, attestedIndex := range attestingIndices {
-				voted[attestedIndex] = true
-			}
-		}
-		transitionParticipants := make([]uint64, 0, len(voted))
-		for v := range voted {
-			transitionParticipants = append(transitionParticipants, v)
-		}
-
-		onlineIndices, err := helpers.OnlineValidatorIndices(beaconState)
+		enough, transitionParticipants, err := enoughToCrosslink(beaconState, atts, beaconCommittee)
 		if err != nil {
 			return [32]byte{}, err
 		}
-		onlineCommitteeIndices := sliceutil.IntersectionUint64(onlineIndices, beaconCommittee)
-		onlineVotedIndices := sliceutil.IntersectionUint64(onlineIndices, transitionParticipants)
-		enoughStaked := helpers.TotalBalance(beaconState, onlineVotedIndices)*3 >= helpers.TotalBalance(beaconState, onlineCommitteeIndices)*2
-		if !enoughStaked {
+		if !enough {
 			continue
 		}
 
@@ -305,42 +249,17 @@ func processCrosslinkForShard(beaconState *stateTrie.BeaconState, attestations [
 		if transitionRoot != winningTransitionRoot {
 			return [32]byte{}, errors.New("transition root missmatch")
 		}
-
 		beaconState, err = applyShardTransition(beaconState, transition, shard)
 		if err != nil {
 			return [32]byte{}, err
 		}
-
-		beaconProposerIndex, err := helpers.BeaconProposerIndex(beaconState)
+		beaconState, err = incBeaconProposerBal(beaconState, transitionParticipants)
 		if err != nil {
 			return [32]byte{}, err
 		}
-		attesterReward := uint64(0)
-		for _, index := range transitionParticipants {
-			reward, err := epoch.BaseReward(beaconState, index)
-			if err != nil {
-				return [32]byte{}, err
-			}
-			attesterReward += reward
-		}
-		proposerReward := attesterReward / params.BeaconConfig().ProposerRewardQuotient
-		if err := helpers.IncreaseBalance(beaconState, beaconProposerIndex, proposerReward); err != nil {
+		beaconState, err = decShardProposerBal(beaconState, transition, shard)
+		if err != nil {
 			return [32]byte{}, err
-		}
-
-		offsetSlots := helpers.ShardOffSetSlots(beaconState, shard)
-		if len(offsetSlots) != len(transition.ShardStates) || len(offsetSlots) != len(transition.ShardBlockLengths) {
-			return [32]byte{}, errors.New("len(offsetSlots != len(transition.ShardState != len(transition.ShardBlockLengths")
-		}
-		for i, slot := range offsetSlots {
-			shardProposerIndex, err := helpers.ShardProposerIndex(beaconState, slot, shard)
-			if err != nil {
-				return [32]byte{}, err
-			}
-
-			if err := helpers.DecreaseBalance(beaconState, shardProposerIndex, transition.ShardStates[i].GasPrice*transition.ShardBlockLengths[i]); err != nil {
-				return [32]byte{}, err
-			}
 		}
 		return winningTransitionRoot, nil
 	}
@@ -352,7 +271,7 @@ func processCrosslinkForShard(beaconState *stateTrie.BeaconState, attestations [
 	return [32]byte{}, nil
 }
 
-//
+// processCrosslinks processes crosslinks for beacon block's shard transitions and attestations.
 //
 // Spec code:
 // def process_crosslinks(state: BeaconState,
@@ -438,6 +357,120 @@ func verifyEmptyShardTransition(beaconState *stateTrie.BeaconState, transitions 
 		}
 	}
 	return true
+}
+
+// shardBlockProposersAndRoots returns the shard block header roots and proposer indices given the shard transition object.
+func shardBlockProposersAndRoots(
+	beaconState *stateTrie.BeaconState,
+	transition *ethpb.ShardTransition,
+	offsetSlots []uint64,
+	shard uint64) ([][32]byte, []uint64, error) {
+	shardState := beaconState.ShardStateAtIndex(shard)
+	prevGasPrice := shardState.GasPrice
+	shardParentRoot := shardState.LatestBlockRoot
+	proposerIndices := make([]uint64, 0, len(offsetSlots))
+	headerRoots := make([][32]byte, 0, len(offsetSlots))
+	for i, slot := range offsetSlots {
+		shardBlockLength := transition.ShardBlockLengths[i]
+		shardState := transition.ShardStates[i]
+		if shardState.GasPrice != helpers.UpdatedGasPrice(prevGasPrice, shardBlockLength) {
+			return nil, nil, errors.New("prev gas price != updated gas price")
+		}
+		if shardState.Slot != slot {
+			return nil, nil, errors.New("shard state slot != off set slot")
+		}
+
+		emptyProposal := shardBlockLength == 0
+		if !emptyProposal {
+			beaconParentRoot, err := helpers.BlockRootAtSlot(beaconState, slot)
+			if err != nil {
+				return nil, nil, err
+			}
+			proposerIndex, err := helpers.ShardProposerIndex(beaconState, slot, shard)
+			if err != nil {
+				return nil, nil, err
+			}
+			shardBlockHeader := &ethpb.ShardBlockHeader{
+				ShardParentRoot:  shardParentRoot,
+				BeaconParentRoot: beaconParentRoot,
+				Shard:            shard,
+				Slot:             slot,
+				ProposerIndex:    proposerIndex,
+				BodyRoot:         transition.ShardDataRoots[i], // TODO(0): Confirm this is for head root or data root.
+			}
+			headerRoot, err := ssz.HashTreeRoot(shardBlockHeader)
+			if err != nil {
+				return nil, nil, err
+			}
+			headerRoots = append(headerRoots, headerRoot)
+			proposerIndices = append(proposerIndices, proposerIndex)
+		}
+	}
+	return headerRoots, proposerIndices, nil
+}
+
+func incBeaconProposerBal(beaconState *stateTrie.BeaconState, votedIndices []uint64) (*stateTrie.BeaconState, error) {
+	beaconProposerIndex, err := helpers.BeaconProposerIndex(beaconState)
+	if err != nil {
+		return nil, err
+	}
+	attesterReward := uint64(0)
+	for _, index := range votedIndices {
+		reward, err := epoch.BaseReward(beaconState, index)
+		if err != nil {
+			return nil, err
+		}
+		attesterReward += reward
+	}
+	proposerReward := attesterReward / params.BeaconConfig().ProposerRewardQuotient
+	if err := helpers.IncreaseBalance(beaconState, beaconProposerIndex, proposerReward); err != nil {
+		return nil, err
+	}
+	return beaconState, nil
+}
+
+func decShardProposerBal(beaconState *stateTrie.BeaconState, transition *ethpb.ShardTransition, shard uint64) (*stateTrie.BeaconState, error) {
+	offsetSlots := helpers.ShardOffSetSlots(beaconState, shard)
+	for i, slot := range offsetSlots {
+		shardProposerIndex, err := helpers.ShardProposerIndex(beaconState, slot, shard)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := helpers.DecreaseBalance(beaconState, shardProposerIndex, transition.ShardStates[i].GasPrice*transition.ShardBlockLengths[i]); err != nil {
+			return nil, err
+		}
+	}
+	return beaconState, nil
+}
+
+// enoughToCrosslink returns true if there's enough attestations voted to crosslink shard transition back to the
+// beacon chain. It also returns the transition participants if crosslink was a success.
+func enoughToCrosslink(beaconState *stateTrie.BeaconState, atts []*ethpb.Attestation, committee []uint64) (bool, []uint64, error) {
+	voted := make(map[uint64]bool)
+	for _, a := range atts {
+		attestingIndices, err := helpers.AttestingIndices(a.AggregationBits, committee)
+		if err != nil {
+			return false, []uint64{}, err
+		}
+		for _, attestedIndex := range attestingIndices {
+			voted[attestedIndex] = true
+		}
+	}
+	transitionParticipants := make([]uint64, 0, len(voted))
+	for v := range voted {
+		transitionParticipants = append(transitionParticipants, v)
+	}
+
+	onlineIndices, err := helpers.OnlineValidatorIndices(beaconState)
+	if err != nil {
+		return false, []uint64{}, err
+	}
+
+	onlineCommitteeIndices := sliceutil.IntersectionUint64(onlineIndices, committee)
+	onlineVotedIndices := sliceutil.IntersectionUint64(onlineIndices, transitionParticipants)
+	enoughStaked := helpers.TotalBalance(beaconState, onlineVotedIndices)*3 >= helpers.TotalBalance(beaconState, onlineCommitteeIndices)*2
+	return enoughStaked, transitionParticipants, nil
 }
 
 // isCorrectIndexAttestation returns true if the attestation has the correct index.

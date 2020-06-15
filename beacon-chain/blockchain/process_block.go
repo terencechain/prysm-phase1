@@ -380,7 +380,7 @@ func (s *Service) insertBlockToForkChoiceStore(ctx context.Context, blk *ethpb.B
 			a.Data.Target.Epoch,
 			bytesutil.ToBytes32(a.Data.ShardHeadRoot),
 			shard,
-			)
+		)
 	}
 
 	return nil
