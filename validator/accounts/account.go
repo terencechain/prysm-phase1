@@ -65,6 +65,10 @@ func VerifyAccountNotExists(directory string, password string) error {
 // generates a BLS private and public key, and then logs the serialized deposit input hex string
 // to be used in an ETH1.0 transaction by the validator.
 func NewValidatorAccount(directory string, password string) error {
+	if password == "" {
+		return errors.New("empty passphrase is not allowed")
+	}
+	log.Info(`Thanks, we are generating your keystore now, this could take a while...`)
 	shardWithdrawalKeyFile := directory + params.BeaconConfig().WithdrawalPrivkeyFileName
 	validatorKeyFile := directory + params.BeaconConfig().ValidatorPrivkeyFileName
 	ks := keystore.NewKeystore(directory)
@@ -94,6 +98,7 @@ func NewValidatorAccount(directory string, password string) error {
 		validatorKeyFile,
 	).Info("Keystore generated for validator signatures at path")
 
+	log.Info(`Generating deposit data now, please wait...`)
 	data, depositRoot, err := keystore.DepositInput(validatorKey, shardWithdrawalKey, params.BeaconConfig().MaxEffectiveBalance)
 	if err != nil {
 		return errors.Wrap(err, "unable to generate deposit data")
@@ -208,6 +213,9 @@ func HandleEmptyKeystoreFlags(cliCtx *cli.Context, confirmPassword bool) (string
 			return path, passphrase, errors.Wrap(err, "could not read input path")
 		}
 		if text = strings.Replace(text, "\n", "", -1); text != "" {
+			path = text
+		}
+		if text = strings.Replace(text, "\r", "", -1); text != "" {
 			path = text
 		}
 	}

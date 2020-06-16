@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -250,7 +249,7 @@ func (b *BeaconNode) startForkChoice() {
 
 func (b *BeaconNode) startDB(cliCtx *cli.Context) error {
 	baseDir := cliCtx.String(cmd.DataDirFlag.Name)
-	dbPath := path.Join(baseDir, beaconChainDBName)
+	dbPath := filepath.Join(baseDir, beaconChainDBName)
 	clearDB := cliCtx.Bool(cmd.ClearDB.Name)
 	forceClearDB := cliCtx.Bool(cmd.ForceClearDB.Name)
 
@@ -271,11 +270,11 @@ func (b *BeaconNode) startDB(cliCtx *cli.Context) error {
 	if clearDBConfirmed || forceClearDB {
 		log.Warning("Removing database")
 		if err := d.ClearDB(); err != nil {
-			return err
+			return errors.Wrap(err, "could not clear database")
 		}
 		d, err = db.NewDB(dbPath, b.stateSummaryCache)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "could not create new database")
 		}
 	} else {
 		if !featureconfig.Get().SkipRegenHistoricalStates {
@@ -584,7 +583,7 @@ func (b *BeaconNode) registerPrometheusService() error {
 	additionalHandlers = append(additionalHandlers, prometheus.Handler{Path: "/tree", Handler: c.TreeHandler})
 
 	service := prometheus.NewPrometheusService(
-		fmt.Sprintf(":%d", b.cliCtx.Int64(flags.MonitoringPortFlag.Name)),
+		fmt.Sprintf("%s:%d", b.cliCtx.String(cmd.MonitoringHostFlag.Name), b.cliCtx.Int64(flags.MonitoringPortFlag.Name)),
 		b.services,
 		additionalHandlers...,
 	)
@@ -598,8 +597,10 @@ func (b *BeaconNode) registerGRPCGateway() error {
 		return nil
 	}
 	gatewayPort := b.cliCtx.Int(flags.GRPCGatewayPort.Name)
-	selfAddress := fmt.Sprintf("127.0.0.1:%d", b.cliCtx.Int(flags.RPCPort.Name))
-	gatewayAddress := fmt.Sprintf("127.0.0.1:%d", gatewayPort)
+	gatewayHost := b.cliCtx.String(flags.GRPCGatewayHost.Name)
+	rpcHost := b.cliCtx.String(flags.RPCHost.Name)
+	selfAddress := fmt.Sprintf("%s:%d", rpcHost, b.cliCtx.Int(flags.RPCPort.Name))
+	gatewayAddress := fmt.Sprintf("%s:%d", gatewayHost, gatewayPort)
 	allowedOrigins := strings.Split(b.cliCtx.String(flags.GPRCGatewayCorsDomain.Name), ",")
 	enableDebugRPCEndpoints := b.cliCtx.Bool(flags.EnableDebugRPCEndpoints.Name)
 	return b.services.RegisterService(

@@ -62,6 +62,7 @@ var appFlags = []cli.Flag{
 	flags.KeyManager,
 	flags.KeyManagerOpts,
 	flags.DisableAccountMetricsFlag,
+	cmd.MonitoringHostFlag,
 	flags.MonitoringPortFlag,
 	flags.SlasherRPCProviderFlag,
 	flags.SlasherCertFlag,
@@ -124,9 +125,10 @@ contract in order to activate the validator client`,
 						keystorePath, passphrase, err := accounts.HandleEmptyKeystoreFlags(cliCtx, true /*confirmPassword*/)
 						if err != nil {
 							log.WithError(err).Error("Could not list keys")
+							return nil
 						}
 						if _, _, err := accounts.CreateValidatorAccount(keystorePath, passphrase); err != nil {
-							log.WithError(err).Fatalf("Could not create validator at path: %s", keystorePath)
+							log.WithField("err", err.Error()).Fatalf("Could not create validator at path: %s", keystorePath)
 						}
 						return nil
 					},
@@ -189,7 +191,7 @@ contract in order to activate the validator client`,
 						endpoint := cliCtx.String(flags.BeaconRPCProviderFlag.Name)
 						conn, err := grpc.DialContext(ctx, endpoint, dialOpts...)
 						if err != nil {
-							log.WithError(err).Fatalf("Failed to dial beacon node endpoint at %s", endpoint)
+							log.WithError(err).Errorf("Failed to dial beacon node endpoint at %s", endpoint)
 							return err
 						}
 						err = accounts.RunStatusCommand(pubKeys, ethpb.NewBeaconNodeValidatorClient(conn))
