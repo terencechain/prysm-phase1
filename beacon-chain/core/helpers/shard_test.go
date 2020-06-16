@@ -317,6 +317,7 @@ func TestCommitteeCountDelta(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tt := range tests {
+		ClearCache()
 		count, err := CommitteeCountDelta(beaconState, tt.startSlot, tt.endSlot)
 		if err != nil {
 			t.Fatal(err)
