@@ -18,7 +18,7 @@ func TestComputeDelta_ZeroHash(t *testing.T) {
 
 	for i := uint64(0); i < validatorCount; i++ {
 		indices[indexToHash(i)] = i
-		votes = append(votes, Vote{params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0})
+		votes = append(votes, Vote{params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0, params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0})
 		oldBalances = append(oldBalances, 0)
 		newBalances = append(newBalances, 0)
 	}
@@ -52,7 +52,7 @@ func TestComputeDelta_AllVoteTheSame(t *testing.T) {
 
 	for i := uint64(0); i < validatorCount; i++ {
 		indices[indexToHash(i)] = i
-		votes = append(votes, Vote{params.BeaconConfig().ZeroHash, indexToHash(0), 0})
+		votes = append(votes, Vote{params.BeaconConfig().ZeroHash, indexToHash(0), 0, params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 03})
 		oldBalances = append(oldBalances, balance)
 		newBalances = append(newBalances, balance)
 	}
@@ -94,7 +94,7 @@ func TestComputeDelta_DifferentVotes(t *testing.T) {
 
 	for i := uint64(0); i < validatorCount; i++ {
 		indices[indexToHash(i)] = i
-		votes = append(votes, Vote{params.BeaconConfig().ZeroHash, indexToHash(i), 0})
+		votes = append(votes, Vote{params.BeaconConfig().ZeroHash, indexToHash(i), 0, params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0})
 		oldBalances = append(oldBalances, balance)
 		newBalances = append(newBalances, balance)
 	}
@@ -131,7 +131,7 @@ func TestComputeDelta_MovingVotes(t *testing.T) {
 	lastIndex := uint64(len(indices) - 1)
 	for i := uint64(0); i < validatorCount; i++ {
 		indices[indexToHash(i)] = i
-		votes = append(votes, Vote{indexToHash(0), indexToHash(lastIndex), 0})
+		votes = append(votes, Vote{indexToHash(0), indexToHash(lastIndex), 0, params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0})
 		oldBalances = append(oldBalances, balance)
 		newBalances = append(newBalances, balance)
 	}
@@ -176,8 +176,8 @@ func TestComputeDelta_MoveOutOfTree(t *testing.T) {
 
 	indices[indexToHash(1)] = 0
 
-	votes = append(votes, Vote{indexToHash(1), params.BeaconConfig().ZeroHash, 0})
-	votes = append(votes, Vote{indexToHash(1), [32]byte{'A'}, 0})
+	votes = append(votes, Vote{indexToHash(1), params.BeaconConfig().ZeroHash, 0, params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0})
+	votes = append(votes, Vote{indexToHash(1), [32]byte{'A'}, 0, params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0})
 
 	delta, _, err := computeDeltas(context.Background(), indices, votes, oldBalances, newBalances)
 	if err != nil {
@@ -211,7 +211,7 @@ func TestComputeDelta_ChangingBalances(t *testing.T) {
 
 	for i := uint64(0); i < validatorCount; i++ {
 		indices[indexToHash(i)] = i
-		votes = append(votes, Vote{indexToHash(0), indexToHash(1), 0})
+		votes = append(votes, Vote{indexToHash(0), indexToHash(1), 0, params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0})
 		oldBalances = append(oldBalances, oldBalance)
 		newBalances = append(newBalances, newBalance)
 	}
@@ -256,8 +256,8 @@ func TestComputeDelta_ValidatorAppear(t *testing.T) {
 	indices[indexToHash(1)] = 0
 	indices[indexToHash(2)] = 1
 
-	votes = append(votes, Vote{indexToHash(1), indexToHash(2), 0})
-	votes = append(votes, Vote{indexToHash(1), indexToHash(2), 0})
+	votes = append(votes, Vote{indexToHash(1), indexToHash(2), 0, params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0})
+	votes = append(votes, Vote{indexToHash(1), indexToHash(2), 0, params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0})
 
 	delta, _, err := computeDeltas(context.Background(), indices, votes, oldBalances, newBalances)
 	if err != nil {
@@ -292,8 +292,8 @@ func TestComputeDelta_ValidatorDisappears(t *testing.T) {
 	indices[indexToHash(1)] = 0
 	indices[indexToHash(2)] = 1
 
-	votes = append(votes, Vote{indexToHash(1), indexToHash(2), 0})
-	votes = append(votes, Vote{indexToHash(1), indexToHash(2), 0})
+	votes = append(votes, Vote{indexToHash(1), indexToHash(2), 0, params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0})
+	votes = append(votes, Vote{indexToHash(1), indexToHash(2), 0, params.BeaconConfig().ZeroHash, params.BeaconConfig().ZeroHash, 0})
 
 	delta, _, err := computeDeltas(context.Background(), indices, votes, oldBalances, newBalances)
 	if err != nil {
