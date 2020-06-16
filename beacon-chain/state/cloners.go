@@ -38,10 +38,9 @@ func CopyAttestation(att *ethpb.Attestation) *ethpb.Attestation {
 		return nil
 	}
 	return &ethpb.Attestation{
-		AggregationBits:   bytesutil.SafeCopyBytes(att.AggregationBits),
-		CustodyBitsBlocks: bytesutil.SafeCopyBytes(att.CustodyBitsBlocks),
-		Data:              CopyAttestationData(att.Data),
-		Signature:         bytesutil.SafeCopyBytes(att.Signature),
+		AggregationBits: bytesutil.SafeCopyBytes(att.AggregationBits),
+		Data:            CopyAttestationData(att.Data),
+		Signature:       bytesutil.SafeCopyBytes(att.Signature),
 	}
 }
 
