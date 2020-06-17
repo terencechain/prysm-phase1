@@ -293,9 +293,8 @@ func CopyShardState(val *ethpb.ShardState) *ethpb.ShardState {
 		return nil
 	}
 	return &ethpb.ShardState{
-		Slot:             val.Slot,
-		GasPrice:         val.GasPrice,
-		TransitionDigest: bytesutil.SafeCopyBytes(val.TransitionDigest),
-		LatestBlockRoot:  bytesutil.SafeCopyBytes(val.LatestBlockRoot),
+		Slot:            val.Slot,
+		GasPrice:        val.GasPrice,
+		LatestBlockRoot: bytesutil.SafeCopyBytes(val.LatestBlockRoot),
 	}
 }

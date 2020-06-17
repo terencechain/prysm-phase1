@@ -15,7 +15,7 @@ import (
 // a ShardStateRoot struct according to the eth2
 // Simple Serialize specification.
 func ShardStateRoot(shardState *ethpb.ShardState) ([32]byte, error) {
-	fieldRoots := make([][]byte, 4)
+	fieldRoots := make([][]byte, 3)
 	if shardState != nil {
 		stateSlotBuf := make([]byte, 8)
 		binary.LittleEndian.PutUint64(stateSlotBuf, shardState.Slot)
@@ -25,10 +25,8 @@ func ShardStateRoot(shardState *ethpb.ShardState) ([32]byte, error) {
 		binary.LittleEndian.PutUint64(gasPrice, shardState.GasPrice)
 		gasPriceRoot := bytesutil.ToBytes32(gasPrice)
 		fieldRoots[1] = gasPriceRoot[:]
-		transitionDigest := bytesutil.ToBytes32(shardState.TransitionDigest)
-		fieldRoots[2] = transitionDigest[:]
 		latestBlockRoot := bytesutil.ToBytes32(shardState.LatestBlockRoot)
-		fieldRoots[3] = latestBlockRoot[:]
+		fieldRoots[2] = latestBlockRoot[:]
 	}
 	return bitwiseMerkleize(hashutil.CustomSHA256Hasher(), fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))
 }
@@ -36,7 +34,7 @@ func ShardStateRoot(shardState *ethpb.ShardState) ([32]byte, error) {
 // this returns the shard state root using an input hasher, it's used internally
 // to be flexible and to be efficient.
 func shardStateRoot(hasher HashFn, shardState *ethpb.ShardState) ([32]byte, error) {
-	fieldRoots := make([][32]byte, 4)
+	fieldRoots := make([][32]byte, 3)
 
 	if shardState != nil {
 		slotBuf := make([]byte, 8)
@@ -49,11 +47,8 @@ func shardStateRoot(hasher HashFn, shardState *ethpb.ShardState) ([32]byte, erro
 		gasPriceRoot := bytesutil.ToBytes32(indexBuf)
 		fieldRoots[1] = gasPriceRoot
 
-		transitionDigestRoot := bytesutil.ToBytes32(shardState.TransitionDigest)
-		fieldRoots[2] = transitionDigestRoot
-
 		latestBlockRoot := bytesutil.ToBytes32(shardState.LatestBlockRoot)
-		fieldRoots[3] = latestBlockRoot
+		fieldRoots[2] = latestBlockRoot
 	}
 
 	return bitwiseMerkleizeArrays(hasher, fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))

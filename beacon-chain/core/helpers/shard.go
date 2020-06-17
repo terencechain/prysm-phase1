@@ -5,6 +5,8 @@ import (
 
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/prysm/beacon-chain/state"
+	"github.com/prysmaticlabs/prysm/shared/bytesutil"
+	"github.com/prysmaticlabs/prysm/shared/hashutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 )
 
@@ -83,8 +85,13 @@ func UpdatedGasPrice(prevGasPrice uint64, shardBlockLength uint64) uint64 {
 // ShardProposerIndex returns the shard proposer index of a given slot and shard.
 // Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
 // def get_shard_proposer_index(beacon_state: BeaconState, slot: Slot, shard: Shard) -> ValidatorIndex:
-//    committee = get_shard_committee(beacon_state, compute_epoch_at_slot(slot), shard)
-//    r = bytes_to_int(get_seed(beacon_state, get_current_epoch(beacon_state), DOMAIN_SHARD_COMMITTEE)[:8])
+//    """
+//    Return the proposer's index of shard block at ``slot``.
+//    """
+//    epoch = compute_epoch_at_slot(slot)
+//    committee = get_shard_committee(beacon_state, epoch, shard)
+//    seed = hash(get_seed(beacon_state, epoch, DOMAIN_SHARD_COMMITTEE) + int_to_bytes(slot, length=8))
+//    r = bytes_to_int(seed[:8])
 //    return committee[r % len(committee)]
 func ShardProposerIndex(beaconState *state.BeaconState, slot uint64, shard uint64) (uint64, error) {
 	shardCommittee, err := ShardCommittee(beaconState, SlotToEpoch(slot), shard)
@@ -96,8 +103,9 @@ func ShardProposerIndex(beaconState *state.BeaconState, slot uint64, shard uint6
 	if err != nil {
 		return 0, err
 	}
-
-	r := binary.LittleEndian.Uint64(seed[:8])
+	seedWithSlot := append(seed[:], bytesutil.Bytes8(slot)...)
+	seedWithSlotHash := hashutil.Hash(seedWithSlot)
+	r := binary.LittleEndian.Uint64(seedWithSlotHash[:8])
 	return shardCommittee[int(r)%len(shardCommittee)], nil
 }
 
