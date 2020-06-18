@@ -155,7 +155,7 @@ func blockAttestationRoot(atts []*ethpb.Attestation) ([32]byte, error) {
 }
 
 func attestationDataRoot(hasher htrutils.HashFn, data *ethpb.AttestationData) ([32]byte, error) {
-	fieldRoots := make([][]byte, 7)
+	fieldRoots := make([][]byte, 8)
 
 	if data != nil {
 		// Slot.
@@ -188,13 +188,19 @@ func attestationDataRoot(hasher htrutils.HashFn, data *ethpb.AttestationData) ([
 		}
 		fieldRoots[4] = targetRoot[:]
 
+		// Shard number.
+		shardBuf := make([]byte, 8)
+		binary.LittleEndian.PutUint64(shardBuf, data.Shard)
+		shardRoot := bytesutil.ToBytes32(shardBuf)
+		fieldRoots[5] = shardRoot[:]
+
 		// Shard head root.
 		shardHeadRoot := bytesutil.ToBytes32(data.ShardHeadRoot)
-		fieldRoots[5] = shardHeadRoot[:]
+		fieldRoots[6] = shardHeadRoot[:]
 
 		// Shard transition root.
 		shardTransitionRoot := bytesutil.ToBytes32(data.ShardTransitionRoot)
-		fieldRoots[6] = shardTransitionRoot[:]
+		fieldRoots[7] = shardTransitionRoot[:]
 	}
 
 	return htrutils.BitwiseMerkleize(hasher, fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))
@@ -206,6 +212,7 @@ func (h *stateRootHasher) pendingAttestationRoot(hasher htrutils.HashFn, att *pb
 	fieldRoots := make([][]byte, 4)
 
 	if att != nil {
+		// TODO(0): Update with the new struct.
 		copy(enc[0:2048], att.AggregationBits)
 
 		inclusionBuf := make([]byte, 8)

@@ -55,6 +55,7 @@ func CopyAttestationData(attData *ethpb.AttestationData) *ethpb.AttestationData 
 		BeaconBlockRoot:     bytesutil.SafeCopyBytes(attData.BeaconBlockRoot),
 		Source:              CopyCheckpoint(attData.Source),
 		Target:              CopyCheckpoint(attData.Target),
+		Shard:               attData.Shard,
 		ShardTransitionRoot: attData.ShardTransitionRoot,
 		ShardHeadRoot:       attData.ShardHeadRoot,
 	}

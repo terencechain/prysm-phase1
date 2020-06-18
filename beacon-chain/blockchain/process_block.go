@@ -363,17 +363,13 @@ func (s *Service) insertBlockToForkChoiceStore(ctx context.Context, blk *ethpb.B
 			return err
 		}
 		indices := attestationutil.AttestingIndices(a.AggregationBits, committee)
-		shard, err := helpers.ShardFromAttestation(state, a)
-		if err != nil {
-			return err
-		}
 		s.forkChoiceStore.ProcessAttestation(
 			ctx,
 			indices,
 			bytesutil.ToBytes32(a.Data.BeaconBlockRoot),
 			a.Data.Target.Epoch,
 			bytesutil.ToBytes32(a.Data.ShardHeadRoot),
-			shard,
+			a.Data.Shard,
 		)
 	}
 
