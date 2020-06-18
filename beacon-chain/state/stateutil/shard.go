@@ -8,6 +8,7 @@ import (
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/hashutil"
+	"github.com/prysmaticlabs/prysm/shared/htrutils"
 	"github.com/prysmaticlabs/prysm/shared/params"
 )
 
@@ -28,12 +29,12 @@ func ShardStateRoot(shardState *ethpb.ShardState) ([32]byte, error) {
 		latestBlockRoot := bytesutil.ToBytes32(shardState.LatestBlockRoot)
 		fieldRoots[2] = latestBlockRoot[:]
 	}
-	return bitwiseMerkleize(hashutil.CustomSHA256Hasher(), fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))
+	return htrutils.BitwiseMerkleize(hashutil.CustomSHA256Hasher(), fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))
 }
 
 // this returns the shard state root using an input hasher, it's used internally
 // to be flexible and to be efficient.
-func shardStateRoot(hasher HashFn, shardState *ethpb.ShardState) ([32]byte, error) {
+func shardStateRoot(hasher htrutils.HashFn, shardState *ethpb.ShardState) ([32]byte, error) {
 	fieldRoots := make([][32]byte, 3)
 
 	if shardState != nil {
@@ -51,7 +52,7 @@ func shardStateRoot(hasher HashFn, shardState *ethpb.ShardState) ([32]byte, erro
 		fieldRoots[2] = latestBlockRoot
 	}
 
-	return bitwiseMerkleizeArrays(hasher, fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))
+	return htrutils.BitwiseMerkleizeArrays(hasher, fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))
 }
 
 // this returns the shard states root using the `shardStateRoot` input helper.
@@ -66,7 +67,7 @@ func shardStatesRoot(shardStates []*ethpb.ShardState) ([32]byte, error) {
 		roots[i] = shardStateRoot[:]
 	}
 
-	shardStatesRoot, err := bitwiseMerkleize(
+	shardStatesRoot, err := htrutils.BitwiseMerkleize(
 		hasher,
 		roots,
 		uint64(len(roots)),
@@ -82,6 +83,6 @@ func shardStatesRoot(shardStates []*ethpb.ShardState) ([32]byte, error) {
 	// We need to mix in the length of the slice.
 	statesLenRoot := make([]byte, 32)
 	copy(statesLenRoot, shardsBuf.Bytes())
-	res := mixInLength(shardStatesRoot, statesLenRoot)
+	res := htrutils.MixInLength(shardStatesRoot, statesLenRoot)
 	return res, nil
 }
