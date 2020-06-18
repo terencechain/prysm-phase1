@@ -268,3 +268,8 @@ func CommitteeCountDelta(beaconState *state.BeaconState, startSlot uint64, endSl
 	}
 	return sum, nil
 }
+
+// IsOnTimeAtt returns true if the attestation is on time.
+func IsOnTimeAtt(attestation *ethpb.Attestation, currentSlot uint64) bool {
+	return attestation.Data.Slot == PrevSlot(currentSlot)
+}

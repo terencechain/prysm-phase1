@@ -224,17 +224,17 @@ func processCrosslinkForShard(beaconState *stateTrie.BeaconState, attestations [
 		}
 	}
 
-	onTimeAttSlot := helpers.PrevSlot(beaconState.Slot())
+	onTimeSlot := helpers.PrevSlot(beaconState.Slot())
 	shard, err := helpers.ShardFromCommitteeIndex(beaconState, beaconState.Slot(), committeeID)
 	if err != nil {
 		return [32]byte{}, err
 	}
-	beaconCommittee, err := helpers.BeaconCommitteeFromState(beaconState, onTimeAttSlot, committeeID)
+	beaconCommittee, err := helpers.BeaconCommitteeFromState(beaconState, onTimeSlot, committeeID)
 	if err != nil {
 		return [32]byte{}, err
 	}
 	for transitionRoot, atts := range attsByTransitionRoot {
-		enough, transitionParticipants, err := enoughToCrosslink(beaconState, atts, beaconCommittee)
+		enough, transitionParticipants, err := EnoughToCrosslink(beaconState, atts, beaconCommittee)
 		if err != nil {
 			return [32]byte{}, err
 		}
@@ -297,23 +297,25 @@ func processCrosslinks(
 	shardTransitions []*ethpb.ShardTransition,
 	attestations []*ethpb.Attestation) (
 	*stateTrie.BeaconState, error) {
-	currentSlot := beaconState.Slot()
+	onTimeSlot := helpers.PrevSlot(beaconState.Slot())
+	// TODO(0): This needs to be ontime (slot - 1), not current (slot).
 	validatorCount := len(beaconState.Validators())
 	committeeCount := helpers.SlotCommitteeCount(uint64(validatorCount))
-	for committeeID := uint64(0); committeeID < committeeCount; committeeID++ {
-		var shardAttestations []*ethpb.Attestation
-		for _, att := range attestations {
-			if isCorrectIndexAttestation(att, committeeID) && isOnTimeAttestation(att, currentSlot) {
-				shardAttestations = append(shardAttestations, att)
-			}
-		}
 
-		shard, err := helpers.ShardFromCommitteeIndex(beaconState, currentSlot, committeeID)
+	// Filter shard attestations by on time and committee index
+	attsByCommitteeId := make([][]*ethpb.Attestation, params.BeaconConfig().MaxCommitteesPerSlot)
+	for _, att := range attestations {
+		if helpers.IsOnTimeAtt(att, beaconState.Slot()) {
+			attsByCommitteeId[att.Data.CommitteeIndex] = append(attsByCommitteeId[att.Data.CommitteeIndex], att)
+		}
+	}
+	for committeeID := uint64(0); committeeID < committeeCount; committeeID++ {
+		shard, err := helpers.ShardFromCommitteeIndex(beaconState, onTimeSlot, committeeID)
 		if err != nil {
 			return nil, err
 		}
 		shardTransition := shardTransitions[shard]
-		winningRoot, err := processCrosslinkForShard(beaconState, attestations, shardTransition, committeeID)
+		winningRoot, err := processCrosslinkForShard(beaconState, attsByCommitteeId[committeeID], shardTransition, committeeID)
 		if err != nil {
 			return nil, err
 		}
@@ -444,9 +446,9 @@ func decShardProposerBal(beaconState *stateTrie.BeaconState, transition *ethpb.S
 	return beaconState, nil
 }
 
-// enoughToCrosslink returns true if there's enough attestations voted to crosslink shard transition back to the
+// EnoughToCrosslink returns true if there's enough attestations voted to crosslink shard transition back to the
 // beacon chain. It also returns the transition participants if crosslink was a success.
-func enoughToCrosslink(beaconState *stateTrie.BeaconState, atts []*ethpb.Attestation, committee []uint64) (bool, []uint64, error) {
+func EnoughToCrosslink(beaconState *stateTrie.BeaconState, atts []*ethpb.Attestation, committee []uint64) (bool, []uint64, error) {
 	voted := make(map[uint64]bool)
 	for _, a := range atts {
 		attestingIndices, err := helpers.AttestingIndices(a.AggregationBits, committee)
@@ -476,11 +478,6 @@ func enoughToCrosslink(beaconState *stateTrie.BeaconState, atts []*ethpb.Attesta
 // isCorrectIndexAttestation returns true if the attestation has the correct index.
 func isCorrectIndexAttestation(attestation *ethpb.Attestation, committeeIndex uint64) bool {
 	return attestation.Data.CommitteeIndex == committeeIndex
-}
-
-// isOnTimeAttestation returns true if the attestation is on time.
-func isOnTimeAttestation(attestation *ethpb.Attestation, currentSlot uint64) bool {
-	return attestation.Data.Slot == helpers.PrevSlot(currentSlot)
 }
 
 // isWinningAttestation returns true if the pending attestation has the correct winning root, slot, and the committee index.

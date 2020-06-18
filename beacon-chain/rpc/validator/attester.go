@@ -2,9 +2,12 @@ package validator
 
 import (
 	"context"
+	"errors"
 
+	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
+	"github.com/prysmaticlabs/go-ssz"
 	"github.com/prysmaticlabs/prysm/beacon-chain/cache"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/feed"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/feed/operation"
@@ -242,4 +245,185 @@ func (vs *Server) SubscribeCommitteeSubnets(ctx context.Context, req *ethpb.Comm
 	}
 
 	return &ptypes.Empty{}, nil
+}
+
+// This computes and returns the shard transition object given the list of shard blocks and the shard number.
+//
+// Spec code:
+// def get_shard_transition(beacon_state: BeaconState,
+//                         shard: Shard,
+//                         shard_blocks: Sequence[SignedShardBlock]) -> ShardTransition:
+//    offset_slots = compute_offset_slots(
+//        get_latest_slot_for_shard(beacon_state, shard),
+//        Slot(beacon_state.slot + 1),
+//    )
+//    shard_block_lengths, shard_data_roots, shard_states = (
+//        get_shard_transition_fields(beacon_state, shard, shard_blocks)
+//    )
+//
+//    if len(shard_blocks) > 0:
+//        proposer_signatures = [shard_block.signature for shard_block in shard_blocks]
+//        proposer_signature_aggregate = bls.Aggregate(proposer_signatures)
+//    else:
+//        proposer_signature_aggregate = NO_SIGNATURE
+//
+//    return ShardTransition(
+//        start_slot=offset_slots[0],
+//        shard_block_lengths=shard_block_lengths,
+//        shard_data_roots=shard_data_roots,
+//        shard_states=shard_states,
+//        proposer_signature_aggregate=proposer_signature_aggregate,
+//    )
+func shardTransition(beaconState *stateTrie.BeaconState, shardBlocks []*ethpb.SignedShardBlock, shard uint64) (*ethpb.ShardTransition, error) {
+	shardSlot := beaconState.ShardStateAtIndex(shard).Slot
+	offsetSlots := helpers.ComputeOffsetSlots(shardSlot, beaconState.Slot()+1)
+
+	shardBlockLengths, shardDataRoots, shardStates, err := shardTransitionFields(beaconState, shardBlocks, shard)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregatedSignature := bytesutil.PadTo([]byte{}, params.BeaconConfig().BLSSignatureLength)
+	if len(shardBlocks) > 0 {
+		var sigs []*bls.Signature
+		for _, b := range shardBlocks {
+			s, err := bls.SignatureFromBytes(b.Signature)
+			if err != nil {
+				return nil, err
+			}
+			sigs = append(sigs, s)
+		}
+		a := bls.AggregateSignatures(sigs)
+		aggregatedSignature = a.Marshal()
+	}
+
+	startSlot := offsetSlots[0]
+	return &ethpb.ShardTransition{
+		StartSlot:                  startSlot,
+		ShardBlockLengths:          shardBlockLengths,
+		ShardDataRoots:             shardDataRoots,
+		ShardStates:                shardStates,
+		ProposerSignatureAggregate: aggregatedSignature,
+	}, nil
+}
+
+// shardTransitionFields returns the fields for shard transitions given shard blocks and shard.
+//
+// Spec code:
+// def get_shard_transition_fields(
+//    beacon_state: BeaconState,
+//    shard: Shard,
+//    shard_blocks: Sequence[SignedShardBlock],
+//    validate_signature: bool=True,
+//) -> Tuple[Sequence[uint64], Sequence[Root], Sequence[ShardState]]:
+//    shard_states = []
+//    shard_data_roots = []
+//    shard_block_lengths = []
+//
+//    shard_state = beacon_state.shard_states[shard]
+//    shard_block_slots = [shard_block.message.slot for shard_block in shard_blocks]
+//    offset_slots = compute_offset_slots(
+//        get_latest_slot_for_shard(beacon_state, shard),
+//        Slot(beacon_state.slot + 1),
+//    )
+//    for slot in offset_slots:
+//        if slot in shard_block_slots:
+//            shard_block = shard_blocks[shard_block_slots.index(slot)]
+//            shard_data_roots.append(hash_tree_root(shard_block.message.body))
+//        else:
+//            shard_block = SignedShardBlock(message=ShardBlock(slot=slot, shard=shard))
+//            shard_data_roots.append(Root())
+//        shard_state = get_post_shard_state(shard_state, shard_block.message)
+//        shard_states.append(shard_state)
+//        shard_block_lengths.append(len(shard_block.message.body))
+//
+//    return shard_block_lengths, shard_data_roots, shard_states
+func shardTransitionFields(beaconState *stateTrie.BeaconState, shardBlocks []*ethpb.SignedShardBlock, shard uint64) ([]uint64, [][]byte, []*ethpb.ShardState, error) {
+	shardBlockLength := make([]uint64, 0)
+	shardStates := make([]*ethpb.ShardState, 0)
+	shardDataRoots := make([][]byte, 0)
+
+	// Note: Use proper getter
+	shardState := beaconState.ShardStateAtIndex(shard)
+	slotsToProcess := helpers.ShardOffSetSlots(beaconState, shard)
+	shardBlockSlot := make(map[uint64]bool)
+	for _, block := range shardBlocks {
+		shardBlockSlot[block.Message.Slot] = true
+	}
+
+	for _, slot := range slotsToProcess {
+		shardBlock := &ethpb.SignedShardBlock{Message: &ethpb.ShardBlock{Slot: slot, Shard: shard}}
+		if shardBlockSlot[slot] {
+			// TODO(0): Verify this works in skip slot situation.
+			shardBlock = shardBlocks[slot]
+			r, err := ssz.HashTreeRoot(shardBlock.Message.Body)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			shardDataRoots = append(shardDataRoots, r[:])
+		} else {
+			shardDataRoots = append(shardDataRoots, bytesutil.PadTo([]byte{}, 32))
+		}
+
+		shardState, err := postShardState(shardState, shardBlock.Message)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		shardStates = append(shardStates, shardState)
+		// TODO(0): Is shard block length even necessary.
+		shardBlockLength = append(shardBlockLength, uint64(len(shardBlock.Message.Body)))
+	}
+
+	return shardBlockLength, shardDataRoots, shardStates, nil
+}
+
+// This processes shard state transition and returns the post state without mutating the input state.
+//
+// Spec code:
+// def get_post_shard_state(shard_state: ShardState,
+//                         block: ShardBlock) -> ShardState:
+//    """
+//    A pure function that returns a new post ShardState instead of modifying the given `shard_state`.
+//    """
+//    post_state = shard_state.copy()
+//    shard_state_transition(post_state, block)
+//    return post_state
+func postShardState(shardState *ethpb.ShardState, shardBlock *ethpb.ShardBlock) (*ethpb.ShardState, error) {
+	// TODO(0): Use a more efficient copy.
+	copied, ok := proto.Clone(shardState).(*ethpb.ShardState)
+	if !ok {
+		return nil, errors.New("incorrect shard state type")
+	}
+	return shardStateTransition(copied, shardBlock)
+}
+
+// This processes shard state transition and returns the mutated post state.
+//
+// Spec code:
+// def shard_state_transition(shard_state: ShardState,
+//                           block: ShardBlock) -> None:
+//    """
+//    Update ``shard_state`` with shard ``block``.
+//    """
+//    shard_state.slot = block.slot
+//    prev_gasprice = shard_state.gasprice
+//    shard_state.gasprice = compute_updated_gasprice(prev_gasprice, len(block.body))
+//    if len(block.body) == 0:
+//        latest_block_root = shard_state.latest_block_root
+//    else:
+//        latest_block_root = hash_tree_root(block)
+//    shard_state.latest_block_root = latest_block_root
+func shardStateTransition(shardState *ethpb.ShardState, shardBlock *ethpb.ShardBlock) (*ethpb.ShardState, error) {
+	shardState.GasPrice = helpers.UpdatedGasPrice(shardState.GasPrice, uint64(len(shardBlock.Body)))
+	shardState.Slot = shardBlock.Slot
+
+	if len(shardBlock.Body) != 0 {
+		root, err := ssz.HashTreeRoot(shardBlock)
+		if err != nil {
+			return nil, err
+		}
+		shardState.LatestBlockRoot = root[:]
+	}
+
+	return shardState, nil
 }

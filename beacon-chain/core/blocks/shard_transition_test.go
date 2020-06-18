@@ -83,24 +83,6 @@ func TestIsCommitteeAttestation(t *testing.T) {
 	}
 }
 
-func TestIsOntimeAttestation(t *testing.T) {
-	tests := []struct {
-		att    *ethpb.Attestation
-		slot   uint64
-		wanted bool
-	}{
-		{&ethpb.Attestation{Data: &ethpb.AttestationData{Slot: 2}}, 2, false},
-		{&ethpb.Attestation{Data: &ethpb.AttestationData{Slot: 1}}, 2, true},
-		{&ethpb.Attestation{Data: &ethpb.AttestationData{}}, 1, true},
-		{&ethpb.Attestation{Data: &ethpb.AttestationData{}}, 0, true},
-	}
-	for _, tt := range tests {
-		if isOnTimeAttestation(tt.att, tt.slot) != tt.wanted {
-			t.Errorf("isOnTimeAttestation verification fails: %v", isOnTimeAttestation(tt.att, tt.slot))
-		}
-	}
-}
-
 func TestIsWinningAttestation(t *testing.T) {
 	tests := []struct {
 		att            *pb.PendingAttestation

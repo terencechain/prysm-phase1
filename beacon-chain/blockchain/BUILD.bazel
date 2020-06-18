@@ -17,6 +17,7 @@ go_library(
         "receive_attestation.go",
         "receive_block.go",
         "service.go",
+        "shard_blocks.go",
     ],
     importpath = "github.com/prysmaticlabs/prysm/beacon-chain/blockchain",
     visibility = ["//beacon-chain:__subpackages__"],

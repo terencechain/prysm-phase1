@@ -479,3 +479,94 @@ func (vs *Server) packAttestations(ctx context.Context, latestState *stateTrie.B
 	}
 	return atts, nil
 }
+
+// This returns the crosslinked shard transition roots in a slice indexed via shard.
+// Spec code:
+// def get_shard_winning_roots(state: BeaconState,
+//                            attestations: Sequence[Attestation]) -> Tuple[Sequence[Shard], Sequence[Root]]:
+//    shards = []
+//    winning_roots = []
+//    online_indices = get_online_validator_indices(state)
+//    committee_count = get_committee_count_at_slot(state, state.slot)
+//    for committee_index in map(CommitteeIndex, range(committee_count)):
+//        shard = compute_shard_from_committee_index(state, committee_index, state.slot)
+//        # All attestations in the block for this committee/shard and are "on time"
+//        shard_attestations = [
+//            attestation for attestation in attestations
+//            if is_on_time_attestation(state, attestation) and attestation.data.index == committee_index
+//        ]
+//        committee = get_beacon_committee(state, state.slot, committee_index)
+//
+//        # Loop over all shard transition roots, looking for a winning root
+//        shard_transition_roots = set([a.data.shard_transition_root for a in shard_attestations])
+//        for shard_transition_root in sorted(shard_transition_roots):
+//            transition_attestations = [
+//                a for a in shard_attestations
+//                if a.data.shard_transition_root == shard_transition_root
+//            ]
+//            transition_participants: Set[ValidatorIndex] = set()
+//            for attestation in transition_attestations:
+//                participants = get_attesting_indices(state, attestation.data, attestation.aggregation_bits)
+//                transition_participants = transition_participants.union(participants)
+//
+//            enough_online_stake = (
+//                get_total_balance(state, online_indices.intersection(transition_participants)) * 3 >=
+//                get_total_balance(state, online_indices.intersection(committee)) * 2
+//            )
+//            if enough_online_stake:
+//                shards.append(shard)
+//                winning_roots.append(shard_transition_root)
+//                break
+//
+//    return shards, winning_roots
+func (vs *Server) shardTransitionRoots(ctx context.Context,
+	beaconState *stateTrie.BeaconState,
+	atts []*ethpb.Attestation) ([][32]byte, error) {
+	ctx, span := trace.StartSpan(ctx, "ProposerServer.shardTransitionRoots")
+	defer span.End()
+
+	// TODO(0): This needs to be ontime (slot - 1), not current (slot).
+
+	onTimeSlot := helpers.PrevSlot(beaconState.Slot())
+	winningRoots := make([][32]byte, params.ShardConfig().MaxShard)
+	attsByCommitteeId := make([][]*ethpb.Attestation, params.BeaconConfig().MaxCommitteesPerSlot)
+	for _, att := range atts {
+		if helpers.IsOnTimeAtt(att, beaconState.Slot()) {
+			attsByCommitteeId[att.Data.CommitteeIndex] = append(attsByCommitteeId[att.Data.CommitteeIndex], att)
+		}
+	}
+
+	validatorCount := len(beaconState.Validators())
+	committeeCount := helpers.SlotCommitteeCount(uint64(validatorCount))
+	for committeeID := uint64(0); committeeID < committeeCount; committeeID++ {
+		attsByTransitionRoot := make(map[[32]byte][]*ethpb.Attestation)
+		for _, a := range attsByCommitteeId[committeeID] {
+			transitionRoot := bytesutil.ToBytes32(a.Data.ShardTransitionRoot)
+			atts, ok := attsByTransitionRoot[transitionRoot]
+			if ok {
+				attsByTransitionRoot[transitionRoot] = []*ethpb.Attestation{a}
+			} else {
+				attsByTransitionRoot[transitionRoot] = append(atts, a)
+			}
+		}
+		shard, err := helpers.ShardFromCommitteeIndex(beaconState, onTimeSlot, committeeID)
+		if err != nil {
+			return nil, err
+		}
+		beaconCommittee, err := helpers.BeaconCommitteeFromState(beaconState, onTimeSlot, committeeID)
+		if err != nil {
+			return nil, err
+		}
+		for transitionRoot, atts := range attsByTransitionRoot {
+			enough, _, err := blocks.EnoughToCrosslink(beaconState, atts, beaconCommittee)
+			if err != nil {
+				return nil, err
+			}
+			if enough {
+				winningRoots[shard] = transitionRoot
+			}
+		}
+	}
+
+	return winningRoots, nil
+}

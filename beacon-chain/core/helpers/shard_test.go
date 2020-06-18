@@ -340,3 +340,21 @@ func TestActiveShardCount(t *testing.T) {
 		t.Fatal("Did not get correct active shard count")
 	}
 }
+
+func TestIsOntimeAttestation(t *testing.T) {
+	tests := []struct {
+		att    *ethpb.Attestation
+		slot   uint64
+		wanted bool
+	}{
+		{&ethpb.Attestation{Data: &ethpb.AttestationData{Slot: 2}}, 2, false},
+		{&ethpb.Attestation{Data: &ethpb.AttestationData{Slot: 1}}, 2, true},
+		{&ethpb.Attestation{Data: &ethpb.AttestationData{}}, 1, true},
+		{&ethpb.Attestation{Data: &ethpb.AttestationData{}}, 0, true},
+	}
+	for _, tt := range tests {
+		if IsOnTimeAtt(tt.att, tt.slot) != tt.wanted {
+			t.Errorf("isOnTimeAttestation verification fails: %v", IsOnTimeAtt(tt.att, tt.slot))
+		}
+	}
+}
