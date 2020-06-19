@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 
+	"github.com/gogo/protobuf/proto"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/go-ssz"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/epoch"
@@ -14,6 +15,58 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/sliceutil"
 )
+
+// PostShardState processes shard state transition and returns the post state without mutating the input state.
+//
+// Spec code:
+// def get_post_shard_state(shard_state: ShardState,
+//                         block: ShardBlock) -> ShardState:
+//    """
+//    A pure function that returns a new post ShardState instead of modifying the given `shard_state`.
+//    """
+//    post_state = shard_state.copy()
+//    shard_state_transition(post_state, block)
+//    return post_state
+// TODO(0): Find a better home.
+func PostShardState(shardState *ethpb.ShardState, shardBlock *ethpb.ShardBlock) (*ethpb.ShardState, error) {
+	// TODO(0): Use a more efficient copy.
+	copied, ok := proto.Clone(shardState).(*ethpb.ShardState)
+	if !ok {
+		return nil, errors.New("incorrect shard state type")
+	}
+	return shardStateTransition(copied, shardBlock)
+}
+
+// This processes shard state transition and returns the mutated post state.
+//
+// Spec code:
+// def shard_state_transition(shard_state: ShardState,
+//                           block: ShardBlock) -> None:
+//    """
+//    Update ``shard_state`` with shard ``block``.
+//    """
+//    shard_state.slot = block.slot
+//    prev_gasprice = shard_state.gasprice
+//    shard_state.gasprice = compute_updated_gasprice(prev_gasprice, len(block.body))
+//    if len(block.body) == 0:
+//        latest_block_root = shard_state.latest_block_root
+//    else:
+//        latest_block_root = hash_tree_root(block)
+//    shard_state.latest_block_root = latest_block_root
+func shardStateTransition(shardState *ethpb.ShardState, shardBlock *ethpb.ShardBlock) (*ethpb.ShardState, error) {
+	shardState.GasPrice = helpers.UpdatedGasPrice(shardState.GasPrice, uint64(len(shardBlock.Body)))
+	shardState.Slot = shardBlock.Slot
+
+	if len(shardBlock.Body) != 0 {
+		root, err := ssz.HashTreeRoot(shardBlock)
+		if err != nil {
+			return nil, err
+		}
+		shardState.LatestBlockRoot = root[:]
+	}
+
+	return shardState, nil
+}
 
 // ProcessShardTransitions processes shard transitions of the beacon block,
 // the attestations are used to determine shard transition validity.

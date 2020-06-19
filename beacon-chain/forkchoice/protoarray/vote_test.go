@@ -190,7 +190,7 @@ func TestVotes_CanFindHead(t *testing.T) {
 	if err := f.ProcessBlock(context.Background(), 0, indexToHash(6), indexToHash(4), [32]byte{}, 1, 1); err != nil {
 		t.Fatal(err)
 	}
-	f.ProcessAttestation(context.Background(), []uint64{0, 1}, indexToHash(5), 4,[32]byte{}, 00)
+	f.ProcessAttestation(context.Background(), []uint64{0, 1}, indexToHash(5), 4, [32]byte{}, 00)
 
 	// Inset blocks 7, 8 and 9:
 	// 6 should still be the head, even though 5 has all the votes.
@@ -268,7 +268,7 @@ func TestVotes_CanFindHead(t *testing.T) {
 	//            8
 	//           / \
 	// 2 votes->9  10
-	f.ProcessAttestation(context.Background(), []uint64{0, 1}, indexToHash(9), 5,[32]byte{}, 0)
+	f.ProcessAttestation(context.Background(), []uint64{0, 1}, indexToHash(9), 5, [32]byte{}, 0)
 	if err := f.ProcessBlock(context.Background(), 0, indexToHash(10), indexToHash(8), [32]byte{}, 2, 2); err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +283,7 @@ func TestVotes_CanFindHead(t *testing.T) {
 	// Add 3 more validators to the system.
 	balances = []uint64{1, 1, 1, 1, 1}
 	// The new validators voted for 10.
-	f.ProcessAttestation(context.Background(), []uint64{2, 3, 4}, indexToHash(10), 5,[32]byte{}, 0)
+	f.ProcessAttestation(context.Background(), []uint64{2, 3, 4}, indexToHash(10), 5, [32]byte{}, 0)
 	// The new head should be 10.
 	r, err = f.Head(context.Background(), 2, indexToHash(5), balances, 2)
 	if err != nil {

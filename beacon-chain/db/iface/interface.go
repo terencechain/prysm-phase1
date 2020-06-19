@@ -40,6 +40,8 @@ type ReadOnlyDatabase interface {
 	HasStateSummary(ctx context.Context, blockRoot [32]byte) bool
 	HighestSlotStates(ctx context.Context) ([]*state.BeaconState, error)
 	HighestSlotStatesBelow(ctx context.Context, slot uint64) ([]*state.BeaconState, error)
+	ShardState(ctx context.Context, blockRoot [32]byte) (*ethpb.ShardState, error)
+	HasShardState(ctx context.Context, blockRoot [32]byte) bool
 	// Slashing operations.
 	ProposerSlashing(ctx context.Context, slashingRoot [32]byte) (*eth.ProposerSlashing, error)
 	AttesterSlashing(ctx context.Context, slashingRoot [32]byte) (*eth.AttesterSlashing, error)
@@ -110,6 +112,9 @@ type NoHeadAccessDatabase interface {
 	SaveDepositContractAddress(ctx context.Context, addr common.Address) error
 	// Powchain operations.
 	SavePowchainData(ctx context.Context, data *db.ETH1ChainData) error
+	// Shard operations.
+	SaveShardState(ctx context.Context, state *ethpb.ShardState, blockRoot [32]byte) error
+	SaveShardBlock(ctx context.Context, signed *ethpb.SignedShardBlock) error
 }
 
 // HeadAccessDatabase -- See github.com/prysmaticlabs/prysm/beacon-chain/db.HeadAccessDatabase

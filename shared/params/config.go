@@ -232,7 +232,7 @@ var defaultBeaconConfig = &BeaconChainConfig{
 }
 
 var defaultShardChainConfig = &ShardChainConfig{
-	MaxShard: 64,
+	MaxShard:                      64,
 	MaxShardBlockSize:             1 << 20,
 	TargetShardBlockSize:          1 << 18,
 	DomainShardProposal:           bytesutil.ToBytes4(bytesutil.Bytes4(128)),

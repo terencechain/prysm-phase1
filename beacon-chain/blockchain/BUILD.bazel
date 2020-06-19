@@ -16,6 +16,7 @@ go_library(
         "process_block_helpers.go",
         "receive_attestation.go",
         "receive_block.go",
+        "receive_shard_block.go",
         "service.go",
         "shard_blocks.go",
     ],

@@ -11,6 +11,7 @@ var (
 	blocksBucket                         = []byte("blocks")
 	shardBlocksBucket                    = []byte("shard-blocks")
 	stateBucket                          = []byte("state")
+	shardStateBucket                     = []byte("shard-state")
 	stateSummaryBucket                   = []byte("state-summary")
 	proposerSlashingsBucket              = []byte("proposer-slashings")
 	attesterSlashingsBucket              = []byte("attester-slashings")
