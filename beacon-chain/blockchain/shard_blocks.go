@@ -35,8 +35,7 @@ func (s *Service) PendingShardBlocks(ctx context.Context, shard uint64) ([]*ethp
 	beaconHeadState := s.headState()
 
 	latestShardBlockRoot := bytesutil.ToBytes32(beaconHeadState.ShardStateAtIndex(shard).LatestBlockRoot)
-	// TODO(0): Use real justified state balance
-	root, err := s.forkChoiceStore.ShardHead(ctx, beaconHeadRoot, []uint64{}, shard)
+	root, err := s.forkChoiceStore.ShardHead(ctx, beaconHeadRoot, s.justifiedBalances, shard)
 	if err != nil {
 		return nil, err
 	}

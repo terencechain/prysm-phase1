@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/gogo/protobuf/proto"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/go-ssz"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/epoch"
@@ -27,13 +26,8 @@ import (
 //    post_state = shard_state.copy()
 //    shard_state_transition(post_state, block)
 //    return post_state
-// TODO(0): Find a better home.
 func PostShardState(shardState *ethpb.ShardState, shardBlock *ethpb.ShardBlock) (*ethpb.ShardState, error) {
-	// TODO(0): Use a more efficient copy.
-	copied, ok := proto.Clone(shardState).(*ethpb.ShardState)
-	if !ok {
-		return nil, errors.New("incorrect shard state type")
-	}
+	copied := stateTrie.CopyShardState(shardState)
 	return shardStateTransition(copied, shardBlock)
 }
 
@@ -169,7 +163,6 @@ func applyShardTransition(beaconState *stateTrie.BeaconState, transition *ethpb.
 	}
 
 	// Verify proposer signatures.
-	// TODO(0): Verify proposer signatures
 
 	// Save shard state in beacon state and handle shard skip slot scenario.
 	currentShardState := transition.ShardStates[len(transition.ShardStates)-1]
@@ -351,9 +344,11 @@ func processCrosslinks(
 	attestations []*ethpb.Attestation) (
 	*stateTrie.BeaconState, error) {
 	onTimeSlot := helpers.PrevSlot(beaconState.Slot())
-	// TODO(0): This needs to be ontime (slot - 1), not current (slot).
-	validatorCount := len(beaconState.Validators())
-	committeeCount := helpers.SlotCommitteeCount(uint64(validatorCount))
+	vCount, err := helpers.ActiveValidatorCount(beaconState, helpers.SlotToEpoch(onTimeSlot))
+	if err != nil {
+		return nil, err
+	}
+	cCount := helpers.SlotCommitteeCount(vCount)
 
 	// Filter shard attestations by on time and committee index
 	attsByCommitteeId := make([][]*ethpb.Attestation, params.BeaconConfig().MaxCommitteesPerSlot)
@@ -362,21 +357,21 @@ func processCrosslinks(
 			attsByCommitteeId[att.Data.CommitteeIndex] = append(attsByCommitteeId[att.Data.CommitteeIndex], att)
 		}
 	}
-	for committeeID := uint64(0); committeeID < committeeCount; committeeID++ {
-		shard, err := helpers.ShardFromCommitteeIndex(beaconState, onTimeSlot, committeeID)
+	for cID := uint64(0); cID < cCount; cID++ {
+		shard, err := helpers.ShardFromCommitteeIndex(beaconState, onTimeSlot, cID)
 		if err != nil {
 			return nil, err
 		}
 		shardTransition := shardTransitions[shard]
-		winningRoot, err := processCrosslinkForShard(beaconState, attsByCommitteeId[committeeID], shardTransition, committeeID)
+		wRoot, err := processCrosslinkForShard(beaconState, attsByCommitteeId[cID], shardTransition, cID)
 		if err != nil {
 			return nil, err
 		}
 
-		if winningRoot != [32]byte{} {
+		if wRoot != [32]byte{} {
 			pendingAtts := beaconState.CurrentEpochAttestations()
 			for _, pendingAtt := range pendingAtts {
-				if isWinningAttestation(pendingAtt, beaconState.Slot(), committeeID, winningRoot) {
+				if isWinningAttestation(pendingAtt, beaconState.Slot(), cID, wRoot) {
 					pendingAtt.CrosslinkSuccess = true
 				}
 			}

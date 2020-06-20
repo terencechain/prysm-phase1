@@ -525,9 +525,6 @@ func (vs *Server) shardTransitionRoots(ctx context.Context,
 	ctx, span := trace.StartSpan(ctx, "ProposerServer.shardTransitionRoots")
 	defer span.End()
 
-	// TODO(0): This needs to be ontime (slot - 1), not current (slot).
-
-	onTimeSlot := helpers.PrevSlot(beaconState.Slot())
 	winningRoots := make([][32]byte, params.ShardConfig().MaxShard)
 	attsByCommitteeId := make([][]*ethpb.Attestation, params.BeaconConfig().MaxCommitteesPerSlot)
 	for _, att := range atts {
@@ -535,9 +532,12 @@ func (vs *Server) shardTransitionRoots(ctx context.Context,
 			attsByCommitteeId[att.Data.CommitteeIndex] = append(attsByCommitteeId[att.Data.CommitteeIndex], att)
 		}
 	}
-
-	validatorCount := len(beaconState.Validators())
-	committeeCount := helpers.SlotCommitteeCount(uint64(validatorCount))
+	onTimeSlot := helpers.PrevSlot(beaconState.Slot())
+	vCount, err := helpers.ActiveValidatorCount(beaconState, helpers.SlotToEpoch(onTimeSlot))
+	if err != nil {
+		return nil, err
+	}
+	committeeCount := helpers.SlotCommitteeCount(vCount)
 	for committeeID := uint64(0); committeeID < committeeCount; committeeID++ {
 		attsByTransitionRoot := make(map[[32]byte][]*ethpb.Attestation)
 		for _, a := range attsByCommitteeId[committeeID] {
@@ -567,6 +567,5 @@ func (vs *Server) shardTransitionRoots(ctx context.Context,
 			}
 		}
 	}
-
 	return winningRoots, nil
 }
