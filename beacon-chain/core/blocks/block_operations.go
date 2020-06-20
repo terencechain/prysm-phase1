@@ -1261,11 +1261,11 @@ func VerifyAttestationForShard(
 			return err
 		}
 		if shard != att.Data.Shard {
-
+			return errors.New("att.Data.Shard != shard")
 		}
 		blockRootAtSlot, err := helpers.BlockRootAtSlot(beaconState, helpers.PrevSlot(beaconState.Slot()))
 		if err != nil {
-			return errors.New("att.Data.Shard != shard")
+			return err
 		}
 		if !bytes.Equal(att.Data.BeaconBlockRoot, blockRootAtSlot) {
 			return errors.New("att.Data.BeaconBlockRoot != beaconBlockRootAtSlot")

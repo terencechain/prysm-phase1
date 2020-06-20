@@ -125,6 +125,9 @@ func (b *BeaconState) CloneInnerState() *pbp2p.BeaconState {
 		PreviousJustifiedCheckpoint: b.PreviousJustifiedCheckpoint(),
 		CurrentJustifiedCheckpoint:  b.CurrentJustifiedCheckpoint(),
 		FinalizedCheckpoint:         b.FinalizedCheckpoint(),
+		CurrentEpochStartShard:      b.CurrentEpochStartShard(),
+		ShardStates:                 b.ShardStates(),
+		OnlineCountdown:             b.OnlineCountdowns(),
 	}
 }
 

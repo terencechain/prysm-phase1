@@ -2222,3 +2222,89 @@ func TestVerifyAttestations_HandlesPlannedFork(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestVerifyAttestationForShard(t *testing.T) {
+	type args struct {
+		bs  *pb.BeaconState
+		att *ethpb.Attestation
+	}
+	tests := []struct {
+		name    string
+		args    args
+		error   bool
+		wantErr string
+	}{
+		{
+			name: "On time attestation is correct",
+			args: args{
+				bs: &pb.BeaconState{Slot: 1, BlockRoots: [][]byte{bytesutil.PadTo([]byte{'a'}, 32)}},
+				att: &ethpb.Attestation{Data: &ethpb.AttestationData{
+					BeaconBlockRoot: bytesutil.PadTo([]byte{'a'}, 32),
+				}},
+			},
+		},
+		{
+			name: "On time attestation with incorrect shard",
+			args: args{
+				bs: &pb.BeaconState{Slot: 1, BlockRoots: [][]byte{bytesutil.PadTo([]byte{'a'}, 32)}},
+				att: &ethpb.Attestation{Data: &ethpb.AttestationData{
+					BeaconBlockRoot: bytesutil.PadTo([]byte{'a'}, 32),
+					Shard:           1,
+				}},
+			},
+			error:   true,
+			wantErr: "att.Data.Shard != shard",
+		},
+		{
+			name: "On time attestation with incorrect shard block root",
+			args: args{
+				bs: &pb.BeaconState{Slot: 1, BlockRoots: [][]byte{bytesutil.PadTo([]byte{'a'}, 32)}},
+				att: &ethpb.Attestation{Data: &ethpb.AttestationData{
+					BeaconBlockRoot: bytesutil.PadTo([]byte{'b'}, 32),
+				}},
+			},
+			error:   true,
+			wantErr: "att.Data.BeaconBlockRoot != beaconBlockRootAtSlot",
+		},
+		{
+			name: "Delay attestation with incorrect slot",
+			args: args{
+				bs: &pb.BeaconState{Slot: 1},
+				att: &ethpb.Attestation{Data: &ethpb.AttestationData{
+					Slot: 1,
+				}},
+			},
+			error:   true,
+			wantErr: "attSlot >= stateSlot",
+		},
+		{
+			name: "Delay attestation with incorrect shard transition root",
+			args: args{
+				bs:  &pb.BeaconState{Slot: 2},
+				att: &ethpb.Attestation{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{'a'}}},
+			},
+			error:   true,
+			wantErr: "ShardTransitionRoot transition root is not empty",
+		},
+	}
+	testutil.ResetCache()
+	s, _ := testutil.DeterministicGenesisState(t, 100)
+	for _, tt := range tests {
+		if err := s.SetSlot(tt.args.bs.Slot); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.SetBlockRoots(tt.args.bs.BlockRoots); err != nil {
+			t.Fatal(err)
+		}
+		err := blocks.VerifyAttestationForShard(context.Background(), s, tt.args.att)
+		if tt.error {
+			if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+				t.Error("Did not get wanted error")
+			}
+		} else {
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+}
