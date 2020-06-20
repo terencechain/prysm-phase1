@@ -10,6 +10,7 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
+	"github.com/prysmaticlabs/prysm/shared/bls"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/sliceutil"
@@ -157,12 +158,40 @@ func applyShardTransition(beaconState *stateTrie.BeaconState, transition *ethpb.
 		return nil, err
 	}
 
-	_, _, err := shardBlockProposersAndRoots(beaconState, transition, offsetSlots, shard)
+	headers, pIndices, err := shardBlockProposersAndHeaders(beaconState, transition, offsetSlots, shard)
 	if err != nil {
 		return nil, err
 	}
 
 	// Verify proposer signatures.
+	pks := make([]*bls.PublicKey, len(pIndices))
+	for i, index := range pIndices {
+		pkAtIndex := beaconState.PubkeyAtIndex(index)
+		p, err := bls.PublicKeyFromBytes(pkAtIndex[:])
+		if err != nil {
+			return nil, err
+		}
+		pks[i] = p
+	}
+	msgs := make([][32]byte, len(pIndices))
+	for i, header := range headers {
+		d, err := helpers.Domain(beaconState.Fork(), helpers.SlotToEpoch(header.Slot), params.ShardConfig().DomainShardProposal, beaconState.GenesisValidatorRoot())
+		if err != nil {
+			return nil, err
+		}
+		r, err := helpers.ComputeSigningRoot(header, d)
+		if err != nil {
+			return nil, err
+		}
+		msgs[i] = r
+	}
+	sig, err := bls.SignatureFromBytes(transition.ProposerSignatureAggregate)
+	if err != nil {
+		return nil, err
+	}
+	if !sig.AggregateVerify(pks, msgs) {
+		return nil, errors.New("could not verify aggregated proposer signature")
+	}
 
 	// Save shard state in beacon state and handle shard skip slot scenario.
 	currentShardState := transition.ShardStates[len(transition.ShardStates)-1]
@@ -409,17 +438,17 @@ func verifyEmptyShardTransition(beaconState *stateTrie.BeaconState, transitions 
 	return true
 }
 
-// shardBlockProposersAndRoots returns the shard block header roots and proposer indices given the shard transition object.
-func shardBlockProposersAndRoots(
+// shardBlockProposersAndHeaders returns the shard block header and proposer indices given the shard transition object.
+func shardBlockProposersAndHeaders(
 	beaconState *stateTrie.BeaconState,
 	transition *ethpb.ShardTransition,
 	offsetSlots []uint64,
-	shard uint64) ([][32]byte, []uint64, error) {
+	shard uint64) ([]*ethpb.ShardBlockHeader, []uint64, error) {
 	shardState := beaconState.ShardStateAtIndex(shard)
 	prevGasPrice := shardState.GasPrice
 	shardParentRoot := shardState.LatestBlockRoot
 	proposerIndices := make([]uint64, 0, len(offsetSlots))
-	headerRoots := make([][32]byte, 0, len(offsetSlots))
+	headers := make([]*ethpb.ShardBlockHeader, 0, len(offsetSlots))
 	for i, slot := range offsetSlots {
 		shardBlockLength := transition.ShardBlockLengths[i]
 		shardState := transition.ShardStates[i]
@@ -446,17 +475,13 @@ func shardBlockProposersAndRoots(
 				Shard:            shard,
 				Slot:             slot,
 				ProposerIndex:    proposerIndex,
-				BodyRoot:         transition.ShardDataRoots[i], // TODO(0): Confirm this is for head root or data root.
+				BodyRoot:         transition.ShardDataRoots[i],
 			}
-			headerRoot, err := ssz.HashTreeRoot(shardBlockHeader)
-			if err != nil {
-				return nil, nil, err
-			}
-			headerRoots = append(headerRoots, headerRoot)
+			headers = append(headers, shardBlockHeader)
 			proposerIndices = append(proposerIndices, proposerIndex)
 		}
 	}
-	return headerRoots, proposerIndices, nil
+	return headers, proposerIndices, nil
 }
 
 func incBeaconProposerBal(beaconState *stateTrie.BeaconState, votedIndices []uint64) (*stateTrie.BeaconState, error) {

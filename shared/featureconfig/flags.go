@@ -173,6 +173,10 @@ var (
 		Name:  "disable-grpc-connection-logging",
 		Usage: "Disables displaying logs for newly connected grpc clients",
 	}
+	phase1 = &cli.BoolFlag{
+		Name:  "phase1",
+		Usage: "Start beacon node in phase 1 mode",
+	}
 )
 
 // devModeFlags holds list of flags that are set when development mode is on.
@@ -544,6 +548,7 @@ var BeaconChainFlags = append(deprecatedFlags, []cli.Flag{
 	enableKadDht,
 	disableReduceAttesterStateCopy,
 	disableGRPCConnectionLogging,
+	phase1,
 }...)
 
 // E2EBeaconChainFlags contains a list of the beacon chain feature flags to be tested in E2E.

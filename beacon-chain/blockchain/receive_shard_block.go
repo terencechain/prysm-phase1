@@ -172,8 +172,8 @@ func verifyShardBlockMessage(ctx context.Context, beaconParentState *state.Beaco
 	if !bytes.Equal(bhr[:], shardBlock.BeaconParentRoot) {
 		return false, nil
 	}
-
-	offsetSlots := helpers.ComputeOffsetSlots(beaconParentState.Slot(), shardBlock.Slot+1)
+	nextShardSlot := shardBlock.Slot + 1
+	offsetSlots := helpers.ComputeOffsetSlots(beaconParentState.Slot(), nextShardSlot)
 	valid := false
 	for _, s := range offsetSlots {
 		if shardBlock.Slot == s {

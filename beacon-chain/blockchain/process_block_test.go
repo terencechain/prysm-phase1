@@ -936,3 +936,121 @@ func TestFinalizedImpliesNewJustified(t *testing.T) {
 		}
 	}
 }
+
+func TestVerifyShardBlockMessage(t *testing.T) {
+	// TODO(0): Find a better home
+	shardBlock := &ethpb.ShardBlock{
+		Slot:            1,
+		Shard:           1,
+		ShardParentRoot: bytesutil.PadTo([]byte{'a'}, 32),
+	}
+	validators := make([]*ethpb.Validator, 2048)
+	for i := 0; i < len(validators); i++ {
+		validators[i] = &ethpb.Validator{
+			ExitEpoch: params.BeaconConfig().FarFutureEpoch,
+		}
+	}
+	bh := &ethpb.BeaconBlockHeader{StateRoot: bytesutil.PadTo([]byte{'a'}, 32)}
+	hr, err := stateutil.BlockHeaderRoot(bh)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beaconState, err := stateTrie.InitializeFromProto(&pb.BeaconState{
+		Slot:              0,
+		Validators:        validators,
+		RandaoMixes:       make([][]byte, params.BeaconConfig().EpochsPerHistoricalVector),
+		ShardStates:       make([]*ethpb.ShardState, 64),
+		LatestBlockHeader: bh,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name             string
+		slot             uint64
+		shard            uint64
+		proposerIndex    uint64
+		latestBlockRoot  []byte
+		beaconParentRoot []byte
+		shardBodyLength  []byte
+		body             [][]byte
+		want             bool
+	}{
+		{
+			name:             "All pass",
+			slot:             1,
+			proposerIndex:    38,
+			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
+			beaconParentRoot: hr[:],
+			body:             make([][]byte, 1),
+			want:             true,
+		},
+		{
+			name:             "Incorrect slot",
+			slot:             100,
+			shard:            1,
+			proposerIndex:    38,
+			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
+			beaconParentRoot: hr[:],
+			body:             make([][]byte, 1),
+			want:             false,
+		},
+		{
+			name:             "Incorrect proposer index",
+			slot:             1,
+			proposerIndex:    39,
+			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
+			beaconParentRoot: hr[:],
+			body:             make([][]byte, 1),
+			want:             false,
+		},
+		{
+			name:             "Incorrect shard parent root",
+			slot:             1,
+			proposerIndex:    38,
+			latestBlockRoot:  bytesutil.PadTo([]byte{'b'}, 32),
+			beaconParentRoot: hr[:],
+			body:             make([][]byte, 1),
+			want:             false,
+		},
+		{
+			name:             "Incorrect body length",
+			slot:             1,
+			proposerIndex:    38,
+			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
+			beaconParentRoot: hr[:],
+			body:             make([][]byte, params.ShardConfig().MaxShardBlockSize+1),
+			want:             false,
+		},
+		{
+			name:             "Incorrect beacon parent root length",
+			slot:             1,
+			proposerIndex:    38,
+			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
+			beaconParentRoot: bytesutil.PadTo([]byte{'b'}, 32),
+			body:             make([][]byte, params.ShardConfig().MaxShardBlockSize+1),
+			want:             false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			helpers.ClearCache()
+			shardBlock.Slot = tt.slot
+			shardBlock.ProposerIndex = tt.proposerIndex
+			shardBlock.Body = tt.body
+			shardBlock.BeaconParentRoot = tt.beaconParentRoot
+			shardState := &ethpb.ShardState{
+				LatestBlockRoot: tt.latestBlockRoot,
+			}
+			verified, err := verifyShardBlockMessage(context.Background(), beaconState, shardState, shardBlock)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if verified != tt.want {
+				t.Errorf("Wanted verified %v, got %v", tt.want, verified)
+			}
+		})
+	}
+}

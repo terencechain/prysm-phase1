@@ -400,3 +400,45 @@ func BaseReward(state *stateTrie.BeaconState, index uint64) (uint64, error) {
 		mathutil.IntegerSquareRoot(totalBalance) / params.BeaconConfig().BaseRewardsPerEpoch
 	return baseReward, nil
 }
+
+// ProcessOnlineTracking processes online tracking field for the beacon state.
+// Spec code:
+// def process_online_tracking(state: BeaconState) -> None:
+//    # Slowly remove validators from the "online" set if they do not show up
+//    for index in range(len(state.validators)):
+//        if state.online_countdown[index] != 0:
+//            state.online_countdown[index] = state.online_countdown[index] - 1
+//
+//    # Process pending attestations
+//    for pending_attestation in state.current_epoch_attestations + state.previous_epoch_attestations:
+//        for index in get_attesting_indices(state, pending_attestation.data, pending_attestation.aggregation_bits):
+//            state.online_countdown[index] = ONLINE_PERIOD
+func ProcessOnlineTracking(beaconState *stateTrie.BeaconState) (*stateTrie.BeaconState, error) {
+	onlineCountdowns := beaconState.OnlineCountdowns()
+	for i, countdown := range onlineCountdowns {
+		if countdown > 0 {
+			onlineCountdowns[i]--
+		}
+	}
+
+	pendingAttestations := append(beaconState.CurrentEpochAttestations(), beaconState.PreviousEpochAttestations()...)
+	for _, attestation := range pendingAttestations {
+		committee, err := helpers.BeaconCommitteeFromState(beaconState, attestation.Data.Slot, attestation.Data.CommitteeIndex)
+		if err != nil {
+			return nil, err
+		}
+		indices, err := helpers.AttestingIndices(attestation.AggregationBits, committee)
+		if err != nil {
+			return nil, err
+		}
+		for _, index := range indices {
+			onlineCountdowns[index] = params.ShardConfig().OnlineCountDown
+		}
+	}
+
+	if err := beaconState.SetOnlineCountdowns(onlineCountdowns); err != nil {
+		return nil, err
+	}
+
+	return beaconState, nil
+}

@@ -19,6 +19,7 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/attestationutil"
 	"github.com/prysmaticlabs/prysm/shared/bls"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
+	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/shared/hashutil"
 	"github.com/prysmaticlabs/prysm/shared/mathutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
@@ -733,6 +734,12 @@ func ProcessAttestationNoVerify(
 		return nil, fmt.Errorf("expected target epoch %d, received %d", ffgTargetEpoch, data.Target.Epoch)
 	}
 
+	if featureconfig.Get().Phase1 {
+		if err := VerifyAttestationForShard(ctx, beaconState, att); err != nil {
+			return nil, err
+		}
+	}
+
 	return beaconState, nil
 }
 
@@ -1221,6 +1228,55 @@ func VerifyExit(validator *stateTrie.ReadOnlyValidator, currentSlot uint64, fork
 	valPubKey := validator.PublicKey()
 	if err := helpers.VerifySigningRoot(exit, valPubKey[:], signed.Signature, domain); err != nil {
 		return helpers.ErrSigFailedToVerify
+	}
+	return nil
+}
+
+// VerifyAttestationForShard verifies the shard aspect of attestation whether it is on time, has correct
+// custody bits or vice versa.
+// # Type 1: on-time attestations
+//    if is_on_time_attestation(state, attestation):
+//        # Correct parent block root
+//        assert data.beacon_block_root == get_block_root_at_slot(state, compute_previous_slot(state.slot))
+//        # Correct shard number
+//        shard = compute_shard_from_committee_index(state, attestation.data.index, attestation.data.slot)
+//        assert attestation.data.shard == shard
+//  # Type 2: no shard transition
+//    else:
+//        # Ensure delayed attestation
+//        assert data.slot < compute_previous_slot(state.slot)
+//        # Late attestations cannot have a shard transition root
+//        assert data.shard_transition_root == Root()
+func VerifyAttestationForShard(
+	ctx context.Context,
+	beaconState *stateTrie.BeaconState,
+	att *ethpb.Attestation,
+) error {
+	ctx, span := trace.StartSpan(ctx, "core.VerifyAttestationForShard")
+	defer span.End()
+
+	if helpers.IsOnTimeAtt(att, beaconState.Slot()) {
+		shard, err := helpers.ShardFromAttestation(beaconState, att)
+		if err != nil {
+			return err
+		}
+		if shard != att.Data.Shard {
+
+		}
+		blockRootAtSlot, err := helpers.BlockRootAtSlot(beaconState, helpers.PrevSlot(beaconState.Slot()))
+		if err != nil {
+			return errors.New("att.Data.Shard != shard")
+		}
+		if !bytes.Equal(att.Data.BeaconBlockRoot, blockRootAtSlot) {
+			return errors.New("att.Data.BeaconBlockRoot != beaconBlockRootAtSlot")
+		}
+	} else {
+		if att.Data.Slot >= helpers.PrevSlot(beaconState.Slot()) {
+			return errors.New("attSlot >= stateSlot")
+		}
+		if !bytes.Equal(att.Data.ShardTransitionRoot, params.BeaconConfig().ZeroHash[:]) {
+			return errors.New("ShardTransitionRoot transition root is not empty")
+		}
 	}
 	return nil
 }

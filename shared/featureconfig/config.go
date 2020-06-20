@@ -62,6 +62,8 @@ type Flags struct {
 	EnableInitSyncWeightedRoundRobin           bool // EnableInitSyncWeightedRoundRobin enables weighted round robin fetching optimization in initial syncing.
 	ReduceAttesterStateCopy                    bool // ReduceAttesterStateCopy reduces head state copies for attester rpc.
 	EnableKadDHT                               bool // EnableKadDHT stops libp2p's kademlia based discovery from running.
+	Phase1                                     bool // Phase1 starts beacon node in phase 1 mode.
+
 	// DisableForkChoice disables using LMD-GHOST fork choice to update
 	// the head of the chain based on attestations and instead accepts any valid received block
 	// as the chain head. UNSAFE, use with caution.
@@ -246,6 +248,10 @@ func ConfigureBeaconChain(ctx *cli.Context) {
 	}
 	if ctx.IsSet(disableGRPCConnectionLogging.Name) {
 		cfg.DisableGRPCConnectionLogs = true
+	}
+	if ctx.Bool(phase1.Name) {
+		log.Warn("Enabling running beacon node for phase 1 configuration")
+		cfg.Phase1 = true
 	}
 	Init(cfg)
 }

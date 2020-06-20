@@ -18,6 +18,7 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/state/interop"
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/beacon-chain/state/stateutil"
+	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/shared/mathutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/traceutil"
@@ -644,6 +645,14 @@ func ProcessEpochPrecompute(ctx context.Context, state *stateTrie.BeaconState) (
 	if err != nil {
 		return nil, errors.Wrap(err, "could not process final updates")
 	}
+
+	if featureconfig.Get().Phase1 {
+		state, err = e.ProcessOnlineTracking(state)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not process online tracking")
+		}
+	}
+
 	return state, nil
 }
 
