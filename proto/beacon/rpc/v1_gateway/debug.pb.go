@@ -8,6 +8,8 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
+	v1alpha1 "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
+	v1 "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -417,6 +419,219 @@ func (m *ProtoArrayNode) GetBestDescendant() uint64 {
 	return 0
 }
 
+type DebugPeerResponses struct {
+	Responses            []*DebugPeerResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *DebugPeerResponses) Reset()         { *m = DebugPeerResponses{} }
+func (m *DebugPeerResponses) String() string { return proto.CompactTextString(m) }
+func (*DebugPeerResponses) ProtoMessage()    {}
+func (*DebugPeerResponses) Descriptor() ([]byte, []int) {
+	return fileDescriptor_851e5cb2de3d61dd, []int{6}
+}
+
+func (m *DebugPeerResponses) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DebugPeerResponses.Unmarshal(m, b)
+}
+func (m *DebugPeerResponses) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DebugPeerResponses.Marshal(b, m, deterministic)
+}
+func (m *DebugPeerResponses) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DebugPeerResponses.Merge(m, src)
+}
+func (m *DebugPeerResponses) XXX_Size() int {
+	return xxx_messageInfo_DebugPeerResponses.Size(m)
+}
+func (m *DebugPeerResponses) XXX_DiscardUnknown() {
+	xxx_messageInfo_DebugPeerResponses.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DebugPeerResponses proto.InternalMessageInfo
+
+func (m *DebugPeerResponses) GetResponses() []*DebugPeerResponse {
+	if m != nil {
+		return m.Responses
+	}
+	return nil
+}
+
+type DebugPeerResponse struct {
+	ListeningAddresses   []string                    `protobuf:"bytes,1,rep,name=listening_addresses,json=listeningAddresses,proto3" json:"listening_addresses,omitempty"`
+	Direction            v1alpha1.PeerDirection      `protobuf:"varint,2,opt,name=direction,proto3,enum=ethereum.eth.v1alpha1.PeerDirection" json:"direction,omitempty"`
+	ConnectionState      v1alpha1.ConnectionState    `protobuf:"varint,3,opt,name=connection_state,json=connectionState,proto3,enum=ethereum.eth.v1alpha1.ConnectionState" json:"connection_state,omitempty"`
+	PeerId               string                      `protobuf:"bytes,4,opt,name=peer_id,json=peerId,proto3" json:"peer_id,omitempty"`
+	Enr                  string                      `protobuf:"bytes,5,opt,name=enr,proto3" json:"enr,omitempty"`
+	PeerInfo             *DebugPeerResponse_PeerInfo `protobuf:"bytes,6,opt,name=peer_info,json=peerInfo,proto3" json:"peer_info,omitempty"`
+	PeerStatus           *v1.Status                  `protobuf:"bytes,7,opt,name=peer_status,json=peerStatus,proto3" json:"peer_status,omitempty"`
+	LastUpdated          uint64                      `protobuf:"varint,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *DebugPeerResponse) Reset()         { *m = DebugPeerResponse{} }
+func (m *DebugPeerResponse) String() string { return proto.CompactTextString(m) }
+func (*DebugPeerResponse) ProtoMessage()    {}
+func (*DebugPeerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_851e5cb2de3d61dd, []int{7}
+}
+
+func (m *DebugPeerResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DebugPeerResponse.Unmarshal(m, b)
+}
+func (m *DebugPeerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DebugPeerResponse.Marshal(b, m, deterministic)
+}
+func (m *DebugPeerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DebugPeerResponse.Merge(m, src)
+}
+func (m *DebugPeerResponse) XXX_Size() int {
+	return xxx_messageInfo_DebugPeerResponse.Size(m)
+}
+func (m *DebugPeerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DebugPeerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DebugPeerResponse proto.InternalMessageInfo
+
+func (m *DebugPeerResponse) GetListeningAddresses() []string {
+	if m != nil {
+		return m.ListeningAddresses
+	}
+	return nil
+}
+
+func (m *DebugPeerResponse) GetDirection() v1alpha1.PeerDirection {
+	if m != nil {
+		return m.Direction
+	}
+	return v1alpha1.PeerDirection_UNKNOWN
+}
+
+func (m *DebugPeerResponse) GetConnectionState() v1alpha1.ConnectionState {
+	if m != nil {
+		return m.ConnectionState
+	}
+	return v1alpha1.ConnectionState_DISCONNECTED
+}
+
+func (m *DebugPeerResponse) GetPeerId() string {
+	if m != nil {
+		return m.PeerId
+	}
+	return ""
+}
+
+func (m *DebugPeerResponse) GetEnr() string {
+	if m != nil {
+		return m.Enr
+	}
+	return ""
+}
+
+func (m *DebugPeerResponse) GetPeerInfo() *DebugPeerResponse_PeerInfo {
+	if m != nil {
+		return m.PeerInfo
+	}
+	return nil
+}
+
+func (m *DebugPeerResponse) GetPeerStatus() *v1.Status {
+	if m != nil {
+		return m.PeerStatus
+	}
+	return nil
+}
+
+func (m *DebugPeerResponse) GetLastUpdated() uint64 {
+	if m != nil {
+		return m.LastUpdated
+	}
+	return 0
+}
+
+type DebugPeerResponse_PeerInfo struct {
+	Metadata             *v1.MetaData `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Protocols            []string     `protobuf:"bytes,2,rep,name=protocols,proto3" json:"protocols,omitempty"`
+	FaultCount           uint64       `protobuf:"varint,3,opt,name=fault_count,json=faultCount,proto3" json:"fault_count,omitempty"`
+	ProtocolVersion      string       `protobuf:"bytes,4,opt,name=protocol_version,json=protocolVersion,proto3" json:"protocol_version,omitempty"`
+	AgentVersion         string       `protobuf:"bytes,5,opt,name=agent_version,json=agentVersion,proto3" json:"agent_version,omitempty"`
+	PeerLatency          uint64       `protobuf:"varint,6,opt,name=peer_latency,json=peerLatency,proto3" json:"peer_latency,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
+}
+
+func (m *DebugPeerResponse_PeerInfo) Reset()         { *m = DebugPeerResponse_PeerInfo{} }
+func (m *DebugPeerResponse_PeerInfo) String() string { return proto.CompactTextString(m) }
+func (*DebugPeerResponse_PeerInfo) ProtoMessage()    {}
+func (*DebugPeerResponse_PeerInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_851e5cb2de3d61dd, []int{7, 0}
+}
+
+func (m *DebugPeerResponse_PeerInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DebugPeerResponse_PeerInfo.Unmarshal(m, b)
+}
+func (m *DebugPeerResponse_PeerInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DebugPeerResponse_PeerInfo.Marshal(b, m, deterministic)
+}
+func (m *DebugPeerResponse_PeerInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DebugPeerResponse_PeerInfo.Merge(m, src)
+}
+func (m *DebugPeerResponse_PeerInfo) XXX_Size() int {
+	return xxx_messageInfo_DebugPeerResponse_PeerInfo.Size(m)
+}
+func (m *DebugPeerResponse_PeerInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_DebugPeerResponse_PeerInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DebugPeerResponse_PeerInfo proto.InternalMessageInfo
+
+func (m *DebugPeerResponse_PeerInfo) GetMetadata() *v1.MetaData {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+func (m *DebugPeerResponse_PeerInfo) GetProtocols() []string {
+	if m != nil {
+		return m.Protocols
+	}
+	return nil
+}
+
+func (m *DebugPeerResponse_PeerInfo) GetFaultCount() uint64 {
+	if m != nil {
+		return m.FaultCount
+	}
+	return 0
+}
+
+func (m *DebugPeerResponse_PeerInfo) GetProtocolVersion() string {
+	if m != nil {
+		return m.ProtocolVersion
+	}
+	return ""
+}
+
+func (m *DebugPeerResponse_PeerInfo) GetAgentVersion() string {
+	if m != nil {
+		return m.AgentVersion
+	}
+	return ""
+}
+
+func (m *DebugPeerResponse_PeerInfo) GetPeerLatency() uint64 {
+	if m != nil {
+		return m.PeerLatency
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterEnum("ethereum.beacon.rpc.v1.LoggingLevelRequest_Level", LoggingLevelRequest_Level_name, LoggingLevelRequest_Level_value)
 	proto.RegisterType((*BeaconStateRequest)(nil), "ethereum.beacon.rpc.v1.BeaconStateRequest")
@@ -426,6 +641,9 @@ func init() {
 	proto.RegisterType((*ProtoArrayForkChoiceResponse)(nil), "ethereum.beacon.rpc.v1.ProtoArrayForkChoiceResponse")
 	proto.RegisterMapType((map[string]uint64)(nil), "ethereum.beacon.rpc.v1.ProtoArrayForkChoiceResponse.IndicesEntry")
 	proto.RegisterType((*ProtoArrayNode)(nil), "ethereum.beacon.rpc.v1.ProtoArrayNode")
+	proto.RegisterType((*DebugPeerResponses)(nil), "ethereum.beacon.rpc.v1.DebugPeerResponses")
+	proto.RegisterType((*DebugPeerResponse)(nil), "ethereum.beacon.rpc.v1.DebugPeerResponse")
+	proto.RegisterType((*DebugPeerResponse_PeerInfo)(nil), "ethereum.beacon.rpc.v1.DebugPeerResponse.PeerInfo")
 }
 
 func init() { proto.RegisterFile("proto/beacon/rpc/v1/debug.proto", fileDescriptor_851e5cb2de3d61dd) }
@@ -496,6 +714,8 @@ type DebugClient interface {
 	GetBlock(ctx context.Context, in *BlockRequest, opts ...grpc.CallOption) (*SSZResponse, error)
 	SetLoggingLevel(ctx context.Context, in *LoggingLevelRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	GetProtoArrayForkChoice(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ProtoArrayForkChoiceResponse, error)
+	ListPeers(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*DebugPeerResponses, error)
+	GetPeer(ctx context.Context, in *v1alpha1.PeerRequest, opts ...grpc.CallOption) (*DebugPeerResponse, error)
 }
 
 type debugClient struct {
@@ -542,12 +762,32 @@ func (c *debugClient) GetProtoArrayForkChoice(ctx context.Context, in *empty.Emp
 	return out, nil
 }
 
+func (c *debugClient) ListPeers(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*DebugPeerResponses, error) {
+	out := new(DebugPeerResponses)
+	err := c.cc.Invoke(ctx, "/ethereum.beacon.rpc.v1.Debug/ListPeers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *debugClient) GetPeer(ctx context.Context, in *v1alpha1.PeerRequest, opts ...grpc.CallOption) (*DebugPeerResponse, error) {
+	out := new(DebugPeerResponse)
+	err := c.cc.Invoke(ctx, "/ethereum.beacon.rpc.v1.Debug/GetPeer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DebugServer is the server API for Debug service.
 type DebugServer interface {
 	GetBeaconState(context.Context, *BeaconStateRequest) (*SSZResponse, error)
 	GetBlock(context.Context, *BlockRequest) (*SSZResponse, error)
 	SetLoggingLevel(context.Context, *LoggingLevelRequest) (*empty.Empty, error)
 	GetProtoArrayForkChoice(context.Context, *empty.Empty) (*ProtoArrayForkChoiceResponse, error)
+	ListPeers(context.Context, *empty.Empty) (*DebugPeerResponses, error)
+	GetPeer(context.Context, *v1alpha1.PeerRequest) (*DebugPeerResponse, error)
 }
 
 // UnimplementedDebugServer can be embedded to have forward compatible implementations.
@@ -565,6 +805,12 @@ func (*UnimplementedDebugServer) SetLoggingLevel(ctx context.Context, req *Loggi
 }
 func (*UnimplementedDebugServer) GetProtoArrayForkChoice(ctx context.Context, req *empty.Empty) (*ProtoArrayForkChoiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProtoArrayForkChoice not implemented")
+}
+func (*UnimplementedDebugServer) ListPeers(ctx context.Context, req *empty.Empty) (*DebugPeerResponses, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPeers not implemented")
+}
+func (*UnimplementedDebugServer) GetPeer(ctx context.Context, req *v1alpha1.PeerRequest) (*DebugPeerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPeer not implemented")
 }
 
 func RegisterDebugServer(s *grpc.Server, srv DebugServer) {
@@ -643,6 +889,42 @@ func _Debug_GetProtoArrayForkChoice_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Debug_ListPeers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DebugServer).ListPeers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ethereum.beacon.rpc.v1.Debug/ListPeers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DebugServer).ListPeers(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Debug_GetPeer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1alpha1.PeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DebugServer).GetPeer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ethereum.beacon.rpc.v1.Debug/GetPeer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DebugServer).GetPeer(ctx, req.(*v1alpha1.PeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Debug_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ethereum.beacon.rpc.v1.Debug",
 	HandlerType: (*DebugServer)(nil),
@@ -662,6 +944,14 @@ var _Debug_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProtoArrayForkChoice",
 			Handler:    _Debug_GetProtoArrayForkChoice_Handler,
+		},
+		{
+			MethodName: "ListPeers",
+			Handler:    _Debug_ListPeers_Handler,
+		},
+		{
+			MethodName: "GetPeer",
+			Handler:    _Debug_GetPeer_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
