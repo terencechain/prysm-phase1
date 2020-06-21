@@ -4,10 +4,11 @@ import (
 	"encoding/binary"
 
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
-	"github.com/prysmaticlabs/prysm/beacon-chain/state"
+	s "github.com/prysmaticlabs/prysm/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/hashutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
+	"github.com/prysmaticlabs/prysm/shared/sliceutil"
 )
 
 // OnlineValidatorIndices returns the online validator indices.
@@ -15,7 +16,7 @@ import (
 // def get_online_validator_indices(state: BeaconState) -> Set[ValidatorIndex]:
 //    active_validators = get_active_validator_indices(state, get_current_epoch(state))
 //    return set([i for i in active_validators if state.online_countdown[i] != 0])
-func OnlineValidatorIndices(beaconState *state.BeaconState) ([]uint64, error) {
+func OnlineValidatorIndices(beaconState *s.BeaconState) ([]uint64, error) {
 	activeValidators, err := ActiveValidatorIndices(beaconState, CurrentEpoch(beaconState))
 	if err != nil {
 		return nil, err
@@ -40,7 +41,7 @@ func OnlineValidatorIndices(beaconState *state.BeaconState) ([]uint64, error) {
 // def compute_shard_from_committee_index(state: BeaconState, index: CommitteeIndex, slot: Slot) -> Shard:
 //    active_shards = get_active_shard_count(state)
 //    return Shard((index + get_start_shard(state, slot)) % active_shards)
-func ShardFromCommitteeIndex(beaconState *state.BeaconState, slot uint64, committeeID uint64) (uint64, error) {
+func ShardFromCommitteeIndex(beaconState *s.BeaconState, slot uint64, committeeID uint64) (uint64, error) {
 	activeShards := ActiveShardCount(beaconState)
 	startShard, err := StartShard(beaconState, slot)
 	if err != nil {
@@ -93,7 +94,7 @@ func UpdatedGasPrice(prevGasPrice uint64, shardBlockLength uint64) uint64 {
 //    seed = hash(get_seed(beacon_state, epoch, DOMAIN_SHARD_COMMITTEE) + int_to_bytes(slot, length=8))
 //    r = bytes_to_int(seed[:8])
 //    return committee[r % len(committee)]
-func ShardProposerIndex(beaconState *state.BeaconState, slot uint64, shard uint64) (uint64, error) {
+func ShardProposerIndex(beaconState *s.BeaconState, slot uint64, shard uint64) (uint64, error) {
 	shardCommittee, err := ShardCommittee(beaconState, SlotToEpoch(slot), shard)
 	if err != nil {
 		return 0, err
@@ -124,7 +125,7 @@ func ShardProposerIndex(beaconState *state.BeaconState, slot uint64, shard uint6
 //        index=shard,
 //        count=active_shard_count,
 //    )
-func ShardCommittee(beaconState *state.BeaconState, epoch uint64, shard uint64) ([]uint64, error) {
+func ShardCommittee(beaconState *s.BeaconState, epoch uint64, shard uint64) ([]uint64, error) {
 	sourceEpoch := epoch - epoch%params.ShardConfig().ShardCommitteePeriod
 	if sourceEpoch >= params.ShardConfig().ShardCommitteePeriod {
 		sourceEpoch -= params.ShardConfig().ShardCommitteePeriod
@@ -148,7 +149,7 @@ func ShardCommittee(beaconState *state.BeaconState, epoch uint64, shard uint64) 
 // def compute_shard_from_committee_index(state: BeaconState, index: CommitteeIndex, slot: Slot) -> Shard:
 //    active_shards = get_active_shard_count(state)
 //    return Shard((index + get_start_shard(state, slot)) % active_shards)
-func ShardFromAttestation(beaconState *state.BeaconState, attestation *ethpb.Attestation) (uint64, error) {
+func ShardFromAttestation(beaconState *s.BeaconState, attestation *ethpb.Attestation) (uint64, error) {
 	activeShards := ActiveShardCount(beaconState)
 	startShard, err := StartShard(beaconState, attestation.Data.Slot)
 	if err != nil {
@@ -161,7 +162,7 @@ func ShardFromAttestation(beaconState *state.BeaconState, attestation *ethpb.Att
 // Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
 // def get_offset_slots(state: BeaconState, shard: Shard) -> Sequence[Slot]:
 //    return compute_offset_slots(state.shard_states[shard].slot, state.slot)
-func ShardOffSetSlots(beaconState *state.BeaconState, shard uint64) []uint64 {
+func ShardOffSetSlots(beaconState *s.BeaconState, shard uint64) []uint64 {
 	currentShardSlot := beaconState.ShardStateAtIndex(shard).Slot
 	return ComputeOffsetSlots(currentShardSlot, beaconState.Slot())
 }
@@ -197,7 +198,7 @@ func IsEmptyShardTransition(transition *ethpb.ShardTransition) bool {
 }
 
 // ActiveShardCount returns the active shard count.
-func ActiveShardCount(beaconState *state.BeaconState) uint64 {
+func ActiveShardCount(beaconState *s.BeaconState) uint64 {
 	return beaconState.ShardStateLength()
 }
 
@@ -224,7 +225,7 @@ func ActiveShardCount(beaconState *state.BeaconState) uint64 {
 //            (state.current_epoch_start_shard + max_committees_per_epoch * active_shard_count - shard_delta)
 //            % active_shard_count
 //        )
-func StartShard(beaconState *state.BeaconState, slot uint64) (uint64, error) {
+func StartShard(beaconState *s.BeaconState, slot uint64) (uint64, error) {
 	currentEpoch := CurrentEpoch(beaconState)
 	currentEpochStartSlot := StartSlot(currentEpoch)
 	activeShardCount := ActiveShardCount(beaconState)
@@ -257,7 +258,7 @@ func StartShard(beaconState *state.BeaconState, slot uint64) (uint64, error) {
 //        count = get_committee_count_at_slot(state, Slot(slot))
 //        committee_sum += count
 //    return committee_sum
-func CommitteeCountDelta(beaconState *state.BeaconState, startSlot uint64, endSlot uint64) (uint64, error) {
+func CommitteeCountDelta(beaconState *s.BeaconState, startSlot uint64, endSlot uint64) (uint64, error) {
 	sum := uint64(0)
 	for i := startSlot; i < endSlot; i++ {
 		activeValidatorCount, err := ActiveValidatorCount(beaconState, SlotToEpoch(i))
@@ -272,4 +273,56 @@ func CommitteeCountDelta(beaconState *state.BeaconState, startSlot uint64, endSl
 // IsOnTimeAtt returns true if the attestation is on time.
 func IsOnTimeAtt(attestation *ethpb.Attestation, currentSlot uint64) bool {
 	return attestation.Data.Slot == PrevSlot(currentSlot)
+}
+
+// OnTimeAttsByCommitteeID returns lists of filtered on time attestations that are indexed by committee IDs.
+// The length of lists is defaulted at config MaxCommitteesPerSlot. The list will be empty if there's no committee
+// or no attestation for that ID.
+func OnTimeAttsByCommitteeID(atts []*ethpb.Attestation, currentSlot uint64) [][]*ethpb.Attestation {
+	attsByCid := make([][]*ethpb.Attestation, params.BeaconConfig().MaxCommitteesPerSlot)
+	for _, a := range atts {
+		if IsOnTimeAtt(a, currentSlot) {
+			attsByCid[a.Data.CommitteeIndex] = append(attsByCid[a.Data.CommitteeIndex], a)
+		}
+	}
+	return attsByCid
+}
+
+// AttsByTransitionRoot returns a mapping of attestation list that's grouped and keyed by shard transition root.
+func AttsByTransitionRoot(atts []*ethpb.Attestation) map[[32]byte][]*ethpb.Attestation {
+	attsByTRoot := make(map[[32]byte][]*ethpb.Attestation)
+	for _, a := range atts {
+		tRoot := bytesutil.ToBytes32(a.Data.ShardTransitionRoot)
+		atts, ok := attsByTRoot[tRoot]
+		if ok {
+			attsByTRoot[tRoot] = []*ethpb.Attestation{a}
+		} else {
+			attsByTRoot[tRoot] = append(atts, a)
+		}
+	}
+	return attsByTRoot
+}
+
+// CanCrosslink returns true if more than 2/3 participants voted on input attestations. The voted
+// indices are compared against the input committee indices to see if it reaches 2/3 balance threshold.
+// The voted indices are also returned in the end.
+func CanCrosslink(beaconState *s.BeaconState, atts []*ethpb.Attestation, committee []uint64) (bool, []uint64, error) {
+	votedIndices := make([]uint64, 0, params.BeaconConfig().MaxValidatorsPerCommittee)
+	for _, a := range atts {
+		indices, err := AttestingIndices(a.AggregationBits, committee)
+		if err != nil {
+			return false, []uint64{}, err
+		}
+		votedIndices = append(votedIndices, indices...)
+	}
+	onlineIndices, err := OnlineValidatorIndices(beaconState)
+	if err != nil {
+		return false, []uint64{}, err
+	}
+
+	onlineCommitteeIndices := sliceutil.IntersectionUint64(onlineIndices, committee)
+	onlineVotedIndices := sliceutil.IntersectionUint64(onlineIndices, votedIndices)
+	enoughStaked := TotalBalance(beaconState, onlineVotedIndices)*3 >= TotalBalance(beaconState, onlineCommitteeIndices)*2
+
+	return enoughStaked, votedIndices, nil
 }

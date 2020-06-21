@@ -481,6 +481,8 @@ func (vs *Server) packAttestations(ctx context.Context, latestState *stateTrie.B
 }
 
 // This returns the crosslinked shard transition roots in a slice indexed via shard.
+// It diverts from naive spec implementaiton where a slice of shards is also returned.
+//
 // Spec code:
 // def get_shard_winning_roots(state: BeaconState,
 //                            attestations: Sequence[Attestation]) -> Tuple[Sequence[Shard], Sequence[Root]]:
@@ -520,45 +522,31 @@ func (vs *Server) packAttestations(ctx context.Context, latestState *stateTrie.B
 //
 //    return shards, winning_roots
 func (vs *Server) shardTransitionRoots(ctx context.Context,
-	beaconState *stateTrie.BeaconState,
+	bs *stateTrie.BeaconState,
 	atts []*ethpb.Attestation) ([][32]byte, error) {
 	ctx, span := trace.StartSpan(ctx, "ProposerServer.shardTransitionRoots")
 	defer span.End()
-
-	winningRoots := make([][32]byte, params.ShardConfig().MaxShard)
-	attsByCommitteeId := make([][]*ethpb.Attestation, params.BeaconConfig().MaxCommitteesPerSlot)
-	for _, att := range atts {
-		if helpers.IsOnTimeAtt(att, beaconState.Slot()) {
-			attsByCommitteeId[att.Data.CommitteeIndex] = append(attsByCommitteeId[att.Data.CommitteeIndex], att)
-		}
-	}
-	onTimeSlot := helpers.PrevSlot(beaconState.Slot())
-	vCount, err := helpers.ActiveValidatorCount(beaconState, helpers.SlotToEpoch(onTimeSlot))
+	onTimeSlot := helpers.PrevSlot(bs.Slot())
+	vCount, err := helpers.ActiveValidatorCount(bs, helpers.SlotToEpoch(onTimeSlot))
 	if err != nil {
 		return nil, err
 	}
-	committeeCount := helpers.SlotCommitteeCount(vCount)
-	for committeeID := uint64(0); committeeID < committeeCount; committeeID++ {
-		attsByTransitionRoot := make(map[[32]byte][]*ethpb.Attestation)
-		for _, a := range attsByCommitteeId[committeeID] {
-			transitionRoot := bytesutil.ToBytes32(a.Data.ShardTransitionRoot)
-			atts, ok := attsByTransitionRoot[transitionRoot]
-			if ok {
-				attsByTransitionRoot[transitionRoot] = []*ethpb.Attestation{a}
-			} else {
-				attsByTransitionRoot[transitionRoot] = append(atts, a)
-			}
-		}
-		shard, err := helpers.ShardFromCommitteeIndex(beaconState, onTimeSlot, committeeID)
+	cCount := helpers.SlotCommitteeCount(vCount)
+	attsByCommitteeId := helpers.OnTimeAttsByCommitteeID(atts, bs.Slot())
+	winningRoots := make([][32]byte, params.ShardConfig().MaxShard)
+
+	for cID := uint64(0); cID < cCount; cID++ {
+		attsByTRoot := helpers.AttsByTransitionRoot(attsByCommitteeId[cID])
+		shard, err := helpers.ShardFromCommitteeIndex(bs, onTimeSlot, cID)
 		if err != nil {
 			return nil, err
 		}
-		beaconCommittee, err := helpers.BeaconCommitteeFromState(beaconState, onTimeSlot, committeeID)
+		beaconCommittee, err := helpers.BeaconCommitteeFromState(bs, onTimeSlot, cID)
 		if err != nil {
 			return nil, err
 		}
-		for transitionRoot, atts := range attsByTransitionRoot {
-			enough, _, err := blocks.EnoughToCrosslink(beaconState, atts, beaconCommittee)
+		for transitionRoot, atts := range attsByTRoot {
+			enough, _, err := helpers.CanCrosslink(bs, atts, beaconCommittee)
 			if err != nil {
 				return nil, err
 			}
