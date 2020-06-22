@@ -210,7 +210,6 @@ func OptimizedGenesisBeaconState(genesisTime uint64, preState *stateTrie.BeaconS
 		}
 	}
 	state.ShardStates = shardStates
-	state.OnlineCountdown = []uint64{}
 
 	return stateTrie.InitializeFromProto(state)
 }
