@@ -353,6 +353,16 @@ func E2ETestConfig() *BeaconChainConfig {
 	return e2eConfig
 }
 
+// AltonaConfig defines the config for the
+// altona testnet.
+func AltonaConfig() *BeaconChainConfig {
+	altCfg := MainnetConfig()
+	altCfg.MinGenesisActiveValidatorCount = 640
+	altCfg.MinGenesisTime = 1593086400
+	altCfg.GenesisForkVersion = []byte{0x00, 0x00, 0x01, 0x21}
+	return altCfg
+}
+
 // UseMinimalConfig for beacon chain services.
 func UseMinimalConfig() {
 	beaconConfig = MinimalSpecConfig()
@@ -361,6 +371,12 @@ func UseMinimalConfig() {
 // UseE2EConfig for beacon chain services.
 func UseE2EConfig() {
 	beaconConfig = E2ETestConfig()
+}
+
+// UseAltonaConfig sets the main beacon chain
+// config for altona.
+func UseAltonaConfig() {
+	beaconConfig = AltonaConfig()
 }
 
 // UseMainnetConfig for beacon chain services.
@@ -381,9 +397,11 @@ func OverrideBeaconConfig(c *BeaconChainConfig) {
 func SetupTestConfigCleanup(t *testing.T) {
 	prevDefaultBeaconConfig := defaultBeaconConfig.Copy()
 	prevBeaconConfig := beaconConfig.Copy()
+	prevNetworkCfg := defaultNetworkConfig.Copy()
 	t.Cleanup(func() {
 		defaultBeaconConfig = prevDefaultBeaconConfig
 		beaconConfig = prevBeaconConfig
+		defaultNetworkConfig = prevNetworkCfg
 	})
 }
 
