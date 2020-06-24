@@ -562,8 +562,7 @@ func slashableAttesterIndices(slashing *ethpb.AttesterSlashing) []uint64 {
 }
 
 // ProcessAttestations applies processing operations to a block's inner attestation
-// records. This function returns a list of pending attestations which can then be
-// appended to the BeaconState's latest attestations.
+// records.
 func ProcessAttestations(
 	ctx context.Context,
 	beaconState *stateTrie.BeaconState,
@@ -981,7 +980,7 @@ func ProcessPreGenesisDeposit(
 //    assert is_valid_merkle_branch(
 //        leaf=hash_tree_root(deposit.data),
 //        branch=deposit.proof,
-//        depth=DEPOSIT_CONTRACT_TREE_DEPTH + 1,  # Add 1 for the `List` length mix-in
+//        depth=DEPOSIT_CONTRACT_TREE_DEPTH + 1,  # Add 1 for the List length mix-in
 //        index=state.eth1_deposit_index,
 //        root=state.eth1_data.deposit_root,
 //    )
@@ -993,23 +992,19 @@ func ProcessPreGenesisDeposit(
 //    amount = deposit.data.amount
 //    validator_pubkeys = [v.pubkey for v in state.validators]
 //    if pubkey not in validator_pubkeys:
-//        # Verify the deposit signature (proof of possession) for new validators.
-//        # Note: The deposit contract does not check signatures.
-//        # Note: Deposits are valid across forks, thus the deposit domain is retrieved directly from `compute_domain`.
-//        domain = compute_domain(DOMAIN_DEPOSIT)
-//        if not bls_verify(pubkey, signing_root(deposit.data), deposit.data.signature, domain):
+//        # Verify the deposit signature (proof of possession) which is not checked by the deposit contract
+//        deposit_message = DepositMessage(
+//            pubkey=deposit.data.pubkey,
+//            withdrawal_credentials=deposit.data.withdrawal_credentials,
+//            amount=deposit.data.amount,
+//        )
+//        domain = compute_domain(DOMAIN_DEPOSIT)  # Fork-agnostic domain since deposits are valid across forks
+//        signing_root = compute_signing_root(deposit_message, domain)
+//        if not bls.Verify(pubkey, signing_root, deposit.data.signature):
 //            return
 //
 //        # Add validator and balance entries
-//        state.validators.append(Validator(
-//            pubkey=pubkey,
-//            withdrawal_credentials=deposit.data.withdrawal_credentials,
-//            activation_eligibility_epoch=FAR_FUTURE_EPOCH,
-//            activation_epoch=FAR_FUTURE_EPOCH,
-//            exit_epoch=FAR_FUTURE_EPOCH,
-//            withdrawable_epoch=FAR_FUTURE_EPOCH,
-//            effective_balance=min(amount - amount % EFFECTIVE_BALANCE_INCREMENT, MAX_EFFECTIVE_BALANCE),
-//        ))
+//        state.validators.append(get_validator_from_deposit(state, deposit))
 //        state.balances.append(amount)
 //    else:
 //        # Increase balance by deposit amount
@@ -1255,7 +1250,7 @@ func VerifyAttestationForShard(
 	ctx, span := trace.StartSpan(ctx, "core.VerifyAttestationForShard")
 	defer span.End()
 
-	if helpers.IsOnTimeAtt(att, beaconState.Slot()) {
+	if helpers.IsOnTimeAttData(att.Data, beaconState.Slot()) {
 		shard, err := helpers.ShardFromAttestation(beaconState, att)
 		if err != nil {
 			return err
@@ -1269,6 +1264,11 @@ func VerifyAttestationForShard(
 		}
 		if !bytes.Equal(att.Data.BeaconBlockRoot, blockRootAtSlot) {
 			return errors.New("att.Data.BeaconBlockRoot != beaconBlockRootAtSlot")
+		}
+		// TODO(0): Use a config value.
+		emptySTRoot, err := ssz.HashTreeRoot(&ethpb.ShardTransition{})
+		if bytes.Equal(att.Data.ShardTransitionRoot, emptySTRoot[:]) {
+			return errors.New("att.Data.ShardTransitionRoot == hash_tree_root(ShardTransition())")
 		}
 	} else {
 		if att.Data.Slot >= helpers.PrevSlot(beaconState.Slot()) {

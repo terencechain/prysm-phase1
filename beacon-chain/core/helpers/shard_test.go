@@ -8,6 +8,7 @@ import (
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
+	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 )
 
@@ -353,8 +354,103 @@ func TestIsOntimeAttestation(t *testing.T) {
 		{&ethpb.Attestation{Data: &ethpb.AttestationData{}}, 0, true},
 	}
 	for _, tt := range tests {
-		if IsOnTimeAtt(tt.att, tt.slot) != tt.wanted {
-			t.Errorf("isOnTimeAttestation verification fails: %v", IsOnTimeAtt(tt.att, tt.slot))
+		if IsOnTimeAttData(tt.att.Data, tt.slot) != tt.wanted {
+			t.Errorf("isOnTimeAttestation verification fails: %v", IsOnTimeAttData(tt.att.Data, tt.slot))
+		}
+	}
+}
+
+func TestOnTimeAttsByCommitteeID(t *testing.T) {
+	tests := []struct {
+		inputAtts []*ethpb.Attestation
+		goodAtts  []*ethpb.Attestation
+	}{
+		{
+			inputAtts: []*ethpb.Attestation{
+				{Data: &ethpb.AttestationData{CommitteeIndex: 1}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 2}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 3, BeaconBlockRoot: []byte{'a'}}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 3, BeaconBlockRoot: []byte{'b'}}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 3, Slot: 2}}, // Not on time.
+			},
+			goodAtts: []*ethpb.Attestation{
+				{Data: &ethpb.AttestationData{CommitteeIndex: 1}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 2}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 3, BeaconBlockRoot: []byte{'a'}}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 3, BeaconBlockRoot: []byte{'b'}}}},
+		},
+		{
+			inputAtts: []*ethpb.Attestation{
+				{Data: &ethpb.AttestationData{CommitteeIndex: 60}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 60, Slot: 1}}, // Not on time.
+				{Data: &ethpb.AttestationData{CommitteeIndex: 61}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 61, BeaconBlockRoot: []byte{'a'}}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 61, BeaconBlockRoot: []byte{'a'}}},
+			},
+			goodAtts: []*ethpb.Attestation{
+				{Data: &ethpb.AttestationData{CommitteeIndex: 60}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 61}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 61, BeaconBlockRoot: []byte{'a'}}},
+				{Data: &ethpb.AttestationData{CommitteeIndex: 61, BeaconBlockRoot: []byte{'a'}}},
+			},
+		},
+	}
+	for _, tt := range tests {
+		wanted := make([][]*ethpb.Attestation, params.BeaconConfig().MaxCommitteesPerSlot)
+		for _, a := range tt.goodAtts {
+			wanted[a.Data.CommitteeIndex] = append(wanted[a.Data.CommitteeIndex], a)
+		}
+		received := OnTimeAttsByCommitteeID(tt.inputAtts, 1)
+		if !reflect.DeepEqual(received, wanted) {
+			t.Error("Did not receive wanted atts")
+		}
+	}
+}
+
+func TestAttsByTransitionRoot(t *testing.T) {
+	tests := []struct {
+		inputAtts []*ethpb.Attestation
+	}{
+		{
+			inputAtts: []*ethpb.Attestation{
+				{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{'a'}}},
+				{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{'a'}}},
+				{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{'a'}}},
+				{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{'b'}}},
+				{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{'b'}}},
+				{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{'c'}}},
+			},
+		},
+		{
+			inputAtts: []*ethpb.Attestation{
+				{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{'z'}}},
+				{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{'x'}}},
+				{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{'y'}}},
+			},
+		},
+		{
+			inputAtts: []*ethpb.Attestation{
+				{Data: &ethpb.AttestationData{}},
+				{Data: &ethpb.AttestationData{}},
+				{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{}}},
+				{Data: &ethpb.AttestationData{ShardTransitionRoot: []byte{}}},
+			},
+		},
+	}
+	for _, tt := range tests {
+		wanted := make(map[[32]byte][]*ethpb.Attestation)
+		for _, a := range tt.inputAtts {
+			r := bytesutil.ToBytes32(a.Data.ShardTransitionRoot)
+			atts, ok := wanted[r]
+			if ok {
+				wanted[r] = []*ethpb.Attestation{a}
+			} else {
+				wanted[r] = append(atts, a)
+			}
+		}
+		received := AttsByTransitionRoot(tt.inputAtts)
+		if !reflect.DeepEqual(received, wanted) {
+			t.Error("Did not receive wanted atts")
 		}
 	}
 }

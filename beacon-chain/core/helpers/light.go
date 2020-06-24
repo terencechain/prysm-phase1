@@ -9,7 +9,7 @@ import (
 // PackCompactValidator packs validator index, slashed status and compressed balance into a single uint value.
 //
 // Spec pseudocode definition:
-// Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
+// Spec code:
 // def pack_compact_validator(index: ValidatorIndex, slashed: bool, balance_in_increments: uint64) -> uint64:
 //    """
 //    Create a compact validator object representing index, slashed status, and compressed balance.
@@ -26,7 +26,7 @@ func PackCompactValidator(index uint64, slashed bool, balanceIncrements uint64) 
 
 // UnpackCompactValidator unpacks the compact validator object into index, slashed and balance forms.
 //
-// Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
+// Spec code:
 //   def unpack_compact_validator(compact_validator: CompactValidator) -> Tuple[ValidatorIndex, bool, uint64]:
 //    """
 //    Return the index, slashed, effective_balance // EFFECTIVE_BALANCE_INCREMENT of ``compact_validator``.
@@ -46,7 +46,7 @@ func UnpackCompactValidator(compactValidator uint64) (uint64, bool, uint64) {
 
 // CommitteeToCompactCommittee converts a committee object to compact committee object.
 //
-// Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
+// Spec code:
 //   def committee_to_compact_committee(state: BeaconState, committee: Sequence[ValidatorIndex]) -> CompactCommittee:
 //    """
 //    Given a state and a list of validator indices, outputs the CompactCommittee representing them.
@@ -72,4 +72,24 @@ func CommitteeToCompactCommittee(state *state.BeaconState, committee []uint64) (
 	}
 
 	return &ethpb.CompactCommittee{CompactValidators: compactValidators, PubKeys: pubKeys}, nil
+}
+
+// LightClientCommittee returns the light client committee of a given epoch.
+//
+// Spec code:
+//   def get_light_client_committee(beacon_state: BeaconState, epoch: Epoch) -> Sequence[ValidatorIndex]:
+//    """
+//    Return the light client committee of no more than ``TARGET_COMMITTEE_SIZE`` validators.
+//    """
+//    source_epoch = compute_committee_source_epoch(epoch, LIGHT_CLIENT_COMMITTEE_PERIOD)
+//    active_validator_indices = get_active_validator_indices(beacon_state, source_epoch)
+//    seed = get_seed(beacon_state, source_epoch, DOMAIN_LIGHT_CLIENT)
+//    return compute_committee(
+//        indices=active_validator_indices,
+//        seed=seed,
+//        index=0,
+//        count=get_active_shard_count(beacon_state),
+//    )[:TARGET_COMMITTEE_SIZE]
+func LightClientCommittee(state *state.BeaconState, epoch uint64) ([]uint64, error) {
+	return nil, nil
 }

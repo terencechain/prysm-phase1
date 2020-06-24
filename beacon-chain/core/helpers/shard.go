@@ -270,9 +270,9 @@ func CommitteeCountDelta(beaconState *s.BeaconState, startSlot uint64, endSlot u
 	return sum, nil
 }
 
-// IsOnTimeAtt returns true if the attestation is on time.
-func IsOnTimeAtt(attestation *ethpb.Attestation, currentSlot uint64) bool {
-	return attestation.Data.Slot == PrevSlot(currentSlot)
+// IsOnTimeAttData returns true if the attestation data's is on time.
+func IsOnTimeAttData(data *ethpb.AttestationData, currentSlot uint64) bool {
+	return data.Slot == PrevSlot(currentSlot)
 }
 
 // OnTimeAttsByCommitteeID returns lists of filtered on time attestations that are indexed by committee IDs.
@@ -281,7 +281,7 @@ func IsOnTimeAtt(attestation *ethpb.Attestation, currentSlot uint64) bool {
 func OnTimeAttsByCommitteeID(atts []*ethpb.Attestation, currentSlot uint64) [][]*ethpb.Attestation {
 	attsByCid := make([][]*ethpb.Attestation, params.BeaconConfig().MaxCommitteesPerSlot)
 	for _, a := range atts {
-		if IsOnTimeAtt(a, currentSlot) {
+		if IsOnTimeAttData(a.Data, currentSlot) {
 			attsByCid[a.Data.CommitteeIndex] = append(attsByCid[a.Data.CommitteeIndex], a)
 		}
 	}
