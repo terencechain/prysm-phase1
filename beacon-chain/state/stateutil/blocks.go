@@ -69,25 +69,26 @@ func BlockBodyRoot(body *ethpb.BeaconBlockBody) ([32]byte, error) {
 		// Treat nil body to be the same as empty. This is mostly for test setup purposes and would
 		// be very unlikely to happen in production workflow.
 		emptyRoot := make([]byte, 32)
-		emptyRandao := make([]byte, 96)
+		emptySig := make([]byte, 96)
 		body = &ethpb.BeaconBlockBody{
-			RandaoReveal: emptyRandao,
+			RandaoReveal: emptySig,
 			Eth1Data: &ethpb.Eth1Data{
 				DepositRoot:  emptyRoot,
 				DepositCount: 0,
 				BlockHash:    emptyRoot,
 			},
-			Graffiti:          emptyRoot,
-			ProposerSlashings: make([]*ethpb.ProposerSlashing, 0),
-			AttesterSlashings: make([]*ethpb.AttesterSlashing, 0),
-			Attestations:      make([]*ethpb.Attestation, 0),
-			Deposits:          make([]*ethpb.Deposit, 0),
-			VoluntaryExits:    make([]*ethpb.SignedVoluntaryExit, 0),
-			ShardTransitions:  make([]*ethpb.ShardTransition, 0),
+			Graffiti:             emptyRoot,
+			ProposerSlashings:    make([]*ethpb.ProposerSlashing, 0),
+			AttesterSlashings:    make([]*ethpb.AttesterSlashing, 0),
+			Attestations:         make([]*ethpb.Attestation, 0),
+			Deposits:             make([]*ethpb.Deposit, 0),
+			VoluntaryExits:       make([]*ethpb.SignedVoluntaryExit, 0),
+			ShardTransitions:     make([]*ethpb.ShardTransition, 0),
+			LightClientSignature: emptySig,
 		}
 	}
 	hasher := hashutil.CustomSHA256Hasher()
-	fieldRoots := make([][32]byte, 9)
+	fieldRoots := make([][32]byte, 11)
 	rawRandao := bytesutil.ToBytes96(body.RandaoReveal)
 	packedRandao, err := htrutils.Pack([][]byte{rawRandao[:]})
 	if err != nil {
@@ -141,6 +142,23 @@ func BlockBodyRoot(body *ethpb.BeaconBlockBody) ([32]byte, error) {
 		return [32]byte{}, err
 	}
 	fieldRoots[8] = shardTransitionRoot
+
+	lightBitsRoot, err := htrutils.BitlistRoot(hasher, body.LightClientBits, params.ShardConfig().LightClientCommitteeSize)
+	if err != nil {
+		return [32]byte{}, err
+	}
+	fieldRoots[9] = lightBitsRoot
+
+	lightSig := bytesutil.ToBytes96(body.LightClientSignature)
+	packedLightSig, err := htrutils.Pack([][]byte{lightSig[:]})
+	if err != nil {
+		return [32]byte{}, err
+	}
+	lightSigRoot, err := htrutils.BitwiseMerkleize(hasher, packedLightSig, uint64(len(packedLightSig)), uint64(len(packedLightSig)))
+	if err != nil {
+		return [32]byte{}, err
+	}
+	fieldRoots[10] = lightSigRoot
 	return htrutils.BitwiseMerkleizeArrays(hasher, fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))
 }
 

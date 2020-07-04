@@ -131,6 +131,8 @@ func (b *BeaconState) CloneInnerState() *pbp2p.BeaconState {
 		CurrentEpochStartShard:      b.CurrentEpochStartShard(),
 		ShardStates:                 b.ShardStates(),
 		OnlineCountdown:             b.OnlineCountdowns(),
+		CurrentLightCommittee:       b.CurrentLightCommittee(),
+		NextLightCommittee:          b.NextLightCommittee(),
 	}
 }
 
@@ -879,4 +881,36 @@ func (b *BeaconState) CurrentEpochStartShard() uint64 {
 	defer b.lock.RUnlock()
 
 	return b.state.CurrentEpochStartShard
+}
+
+// CurrentLightCommittee of the current light committee in beacon chain state.
+func (b *BeaconState) CurrentLightCommittee() *ethpb.CompactCommittee {
+	if !b.HasInnerState() {
+		return nil
+	}
+
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+
+	if b.state.CurrentLightCommittee == nil {
+		return nil
+	}
+
+	return CopyLightCommittee(b.state.CurrentLightCommittee)
+}
+
+// NextLightCommittee of the next light committee in beacon chain state.
+func (b *BeaconState) NextLightCommittee() *ethpb.CompactCommittee {
+	if !b.HasInnerState() {
+		return nil
+	}
+
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+
+	if b.state.NextLightCommittee == nil {
+		return nil
+	}
+
+	return CopyLightCommittee(b.state.NextLightCommittee)
 }

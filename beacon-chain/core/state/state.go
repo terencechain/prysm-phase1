@@ -14,6 +14,7 @@ import (
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/beacon-chain/state/stateutil"
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
+	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/trieutil"
 )
@@ -210,6 +211,18 @@ func OptimizedGenesisBeaconState(genesisTime uint64, preState *stateTrie.BeaconS
 		}
 	}
 	state.ShardStates = shardStates
+	var pubKeys [][]byte
+	for i := uint64(0); i < params.BeaconConfig().MaxValidatorsPerCommittee; i++ {
+		pubKeys = append(pubKeys, bytesutil.PadTo([]byte{}, params.BeaconConfig().BLSPubkeyLength))
+	}
+	state.CurrentLightCommittee = &ethpb.CompactCommittee{
+		PubKeys:           pubKeys,
+		CompactValidators: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee),
+	}
+	state.NextLightCommittee = &ethpb.CompactCommittee{
+		PubKeys:           bytesutil.Copy2dBytes(pubKeys),
+		CompactValidators: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee),
+	}
 
 	return stateTrie.InitializeFromProto(state)
 }

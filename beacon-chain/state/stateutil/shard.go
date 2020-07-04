@@ -6,11 +6,20 @@ import (
 
 	"github.com/pkg/errors"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
+	"github.com/prysmaticlabs/go-ssz"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/hashutil"
 	"github.com/prysmaticlabs/prysm/shared/htrutils"
 	"github.com/prysmaticlabs/prysm/shared/params"
 )
+
+// LightCommitteeRoot computes the HashTreeRoot Merkleization of
+// a LightCommitteeRoot struct according to the eth2
+// Simple Serialize specification.
+func LightCommitteeRoot(committee *ethpb.CompactCommittee) ([32]byte, error) {
+	// TODO(0): Implement light client root
+	return ssz.HashTreeRoot(committee)
+}
 
 // ShardStateRoot computes the HashTreeRoot Merkleization of
 // a ShardStateRoot struct according to the eth2
@@ -36,7 +45,6 @@ func ShardStateRoot(shardState *ethpb.ShardState) ([32]byte, error) {
 // to be flexible and to be efficient.
 func shardStateRoot(hasher htrutils.HashFn, shardState *ethpb.ShardState) ([32]byte, error) {
 	fieldRoots := make([][32]byte, 3)
-
 	if shardState != nil {
 		slotBuf := make([]byte, 8)
 		binary.LittleEndian.PutUint64(slotBuf, shardState.Slot)

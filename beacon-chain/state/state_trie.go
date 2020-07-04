@@ -33,15 +33,15 @@ func InitializeFromProtoUnsafe(st *pbp2p.BeaconState) (*BeaconState, error) {
 
 	b := &BeaconState{
 		state:                 st,
-		dirtyFields:           make(map[fieldIndex]interface{}, 24),
-		dirtyIndices:          make(map[fieldIndex][]uint64, 24),
-		stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, 24),
+		dirtyFields:           make(map[fieldIndex]interface{}, 26),
+		dirtyIndices:          make(map[fieldIndex][]uint64, 26),
+		stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, 26),
 		sharedFieldReferences: make(map[fieldIndex]*reference, 12),
-		rebuildTrie:           make(map[fieldIndex]bool, 24),
+		rebuildTrie:           make(map[fieldIndex]bool, 26),
 		valIdxMap:             coreutils.ValidatorIndexMap(st.Validators),
 	}
 
-	for i := 0; i < 24; i++ {
+	for i := 0; i < 26; i++ {
 		b.dirtyFields[fieldIndex(i)] = true
 		b.rebuildTrie[fieldIndex(i)] = true
 		b.dirtyIndices[fieldIndex(i)] = []uint64{}
@@ -109,12 +109,14 @@ func (b *BeaconState) Copy() *BeaconState {
 			CurrentJustifiedCheckpoint:  b.CurrentJustifiedCheckpoint(),
 			FinalizedCheckpoint:         b.FinalizedCheckpoint(),
 			GenesisValidatorsRoot:       b.GenesisValidatorRoot(),
+			CurrentLightCommittee:       b.CurrentLightCommittee(),
+			NextLightCommittee:          b.NextLightCommittee(),
 		},
-		dirtyFields:           make(map[fieldIndex]interface{}, 24),
-		dirtyIndices:          make(map[fieldIndex][]uint64, 24),
-		rebuildTrie:           make(map[fieldIndex]bool, 24),
+		dirtyFields:           make(map[fieldIndex]interface{}, 26),
+		dirtyIndices:          make(map[fieldIndex][]uint64, 26),
+		rebuildTrie:           make(map[fieldIndex]bool, 26),
 		sharedFieldReferences: make(map[fieldIndex]*reference, 12),
-		stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, 24),
+		stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, 26),
 
 		// Copy on write validator index map.
 		valIdxMap: b.valIdxMap,
@@ -188,7 +190,7 @@ func (b *BeaconState) HashTreeRoot(ctx context.Context) ([32]byte, error) {
 		}
 		layers := merkleize(fieldRoots)
 		b.merkleLayers = layers
-		b.dirtyFields = make(map[fieldIndex]interface{}, 24)
+		b.dirtyFields = make(map[fieldIndex]interface{}, 26)
 	}
 
 	for field := range b.dirtyFields {
@@ -348,6 +350,10 @@ func (b *BeaconState) rootSelector(field fieldIndex) ([32]byte, error) {
 		return b.recomputeFieldTrie(field, b.state.ShardStates)
 	case onlineCountDown:
 		return stateutil.OnlineCountDownRoot(b.state.OnlineCountdown)
+	case currentLightCommittee:
+		return stateutil.LightCommitteeRoot(b.state.CurrentLightCommittee)
+	case nextLightCommittee:
+		return stateutil.LightCommitteeRoot(b.state.NextLightCommittee)
 	}
 	return [32]byte{}, errors.New("invalid field index provided")
 }

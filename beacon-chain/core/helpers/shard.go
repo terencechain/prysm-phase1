@@ -112,10 +112,11 @@ func ShardProposerIndex(beaconState *s.BeaconState, slot uint64, shard uint64) (
 
 // ShardCommittee returns the shard committee of a given slot and shard.
 // Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
-// def def get_shard_committee(beacon_state: BeaconState, epoch: Epoch, shard: Shard) -> Sequence[ValidatorIndex]:
-//    source_epoch = epoch - epoch % SHARD_COMMITTEE_PERIOD
-//    if source_epoch > 0:
-//        source_epoch -= SHARD_COMMITTEE_PERIOD
+// def get_shard_committee(beacon_state: BeaconState, epoch: Epoch, shard: Shard) -> Sequence[ValidatorIndex]:
+//    """
+//    Return the shard committee of the given ``epoch`` of the given ``shard``.
+//    """
+//    source_epoch = compute_committee_source_epoch(epoch, SHARD_COMMITTEE_PERIOD)
 //    active_validator_indices = get_active_validator_indices(beacon_state, source_epoch)
 //    seed = get_seed(beacon_state, source_epoch, DOMAIN_SHARD_COMMITTEE)
 //    active_shard_count = get_active_shard_count(beacon_state)
@@ -126,21 +127,16 @@ func ShardProposerIndex(beaconState *s.BeaconState, slot uint64, shard uint64) (
 //        count=active_shard_count,
 //    )
 func ShardCommittee(beaconState *s.BeaconState, epoch uint64, shard uint64) ([]uint64, error) {
-	sourceEpoch := epoch - epoch%params.ShardConfig().ShardCommitteePeriod
-	if sourceEpoch >= params.ShardConfig().ShardCommitteePeriod {
-		sourceEpoch -= params.ShardConfig().ShardCommitteePeriod
-	}
-
-	activeValidatorIndices, err := ActiveValidatorIndices(beaconState, sourceEpoch)
+	se := SourceEpoch(epoch, params.ShardConfig().ShardCommitteePeriod)
+	activeValidatorIndices, err := ActiveValidatorIndices(beaconState, se)
 	if err != nil {
 		return nil, err
 	}
-	seed, err := Seed(beaconState, sourceEpoch, params.ShardConfig().DomainShardCommittee)
+	seed, err := Seed(beaconState, se, params.ShardConfig().DomainShardCommittee)
 	if err != nil {
 		return nil, err
 	}
 	activeShardCount := ActiveShardCount(beaconState)
-
 	return ComputeCommittee(activeValidatorIndices, seed, shard, activeShardCount)
 }
 

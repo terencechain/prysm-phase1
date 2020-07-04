@@ -103,14 +103,16 @@ func CopyBeaconBlockBody(body *ethpb.BeaconBlockBody) *ethpb.BeaconBlockBody {
 		return nil
 	}
 	return &ethpb.BeaconBlockBody{
-		RandaoReveal:      bytesutil.SafeCopyBytes(body.RandaoReveal),
-		Eth1Data:          CopyETH1Data(body.Eth1Data),
-		Graffiti:          bytesutil.SafeCopyBytes(body.Graffiti),
-		ProposerSlashings: CopyProposerSlashings(body.ProposerSlashings),
-		AttesterSlashings: CopyAttesterSlashings(body.AttesterSlashings),
-		Attestations:      CopyAttestations(body.Attestations),
-		Deposits:          CopyDeposits(body.Deposits),
-		VoluntaryExits:    CopySignedVoluntaryExits(body.VoluntaryExits),
+		RandaoReveal:         bytesutil.SafeCopyBytes(body.RandaoReveal),
+		Eth1Data:             CopyETH1Data(body.Eth1Data),
+		Graffiti:             bytesutil.SafeCopyBytes(body.Graffiti),
+		ProposerSlashings:    CopyProposerSlashings(body.ProposerSlashings),
+		AttesterSlashings:    CopyAttesterSlashings(body.AttesterSlashings),
+		Attestations:         CopyAttestations(body.Attestations),
+		Deposits:             CopyDeposits(body.Deposits),
+		VoluntaryExits:       CopySignedVoluntaryExits(body.VoluntaryExits),
+		LightClientBits:      bytesutil.SafeCopyBytes(body.LightClientBits),
+		LightClientSignature: bytesutil.SafeCopyBytes(body.LightClientSignature),
 	}
 }
 
@@ -297,5 +299,19 @@ func CopyShardState(val *ethpb.ShardState) *ethpb.ShardState {
 		Slot:            val.Slot,
 		GasPrice:        val.GasPrice,
 		LatestBlockRoot: bytesutil.SafeCopyBytes(val.LatestBlockRoot),
+	}
+}
+
+// CopyLightCommittee copies the provided compact committee object.
+func CopyLightCommittee(data *ethpb.CompactCommittee) *ethpb.CompactCommittee {
+	if data == nil {
+		return nil
+	}
+
+	cv := make([]uint64, len(data.CompactValidators))
+	copy(cv, data.CompactValidators)
+	return &ethpb.CompactCommittee{
+		PubKeys:           bytesutil.Copy2dBytes(data.PubKeys),
+		CompactValidators: cv,
 	}
 }

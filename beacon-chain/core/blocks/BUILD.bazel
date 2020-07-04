@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "block.go",
         "block_operations.go",
+        "light_aggregate.go",
         "shard_transition.go",
     ],
     importpath = "github.com/prysmaticlabs/prysm/beacon-chain/core/blocks",

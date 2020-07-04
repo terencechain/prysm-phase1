@@ -403,6 +403,7 @@ func BaseReward(state *stateTrie.BeaconState, index uint64) (uint64, error) {
 }
 
 // ProcessOnlineTracking processes online tracking field for the beacon state.
+//
 // Spec code:
 // def process_online_tracking(state: BeaconState) -> None:
 //    # Slowly remove validators from the "online" set if they do not show up
@@ -441,5 +442,36 @@ func ProcessOnlineTracking(beaconState *stateTrie.BeaconState) (*stateTrie.Beaco
 		return nil, err
 	}
 
+	return beaconState, nil
+}
+
+// ProcessLightClientCommitteeUpdates processes light client committee updates for the beacon state.
+//
+// Spec code:
+// def process_light_client_committee_updates(state: BeaconState) -> None:
+//    """
+//    Update light client committees.
+//    """
+//    if get_current_epoch(state) % LIGHT_CLIENT_COMMITTEE_PERIOD == 0:
+//        state.current_light_committee = state.next_light_committee
+//        new_committee = get_light_client_committee(state, get_current_epoch(state) + LIGHT_CLIENT_COMMITTEE_PERIOD)
+//        state.next_light_committee = committee_to_compact_committee(state, new_committee)
+func ProcessLightClientCommitteeUpdates(beaconState *stateTrie.BeaconState) (*stateTrie.BeaconState, error) {
+	if helpers.CurrentEpoch(beaconState)%params.ShardConfig().LightClientCommitteePeriod == 0 {
+		if err := beaconState.SetCurrentLightCommittee(beaconState.NextLightCommittee()); err != nil {
+			return nil, err
+		}
+		indices, err := helpers.LightClientCommittee(beaconState, helpers.CurrentEpoch(beaconState)+params.ShardConfig().LightClientCommitteePeriod)
+		if err != nil {
+			return nil, err
+		}
+		committee, err := helpers.CommitteeToCompactCommittee(beaconState, indices)
+		if err != nil {
+			return nil, err
+		}
+		if err := beaconState.SetNextLightCommittee(committee); err != nil {
+			return nil, err
+		}
+	}
 	return beaconState, nil
 }

@@ -50,6 +50,8 @@ message BeaconState {
   uint64 current_epoch_start_shard = 9001;
   repeated ethereum.eth.v1alpha1.ShardState shard_states = 9002 [(gogoproto.moretags) = "ssz-max:\"64\""];
   repeated uint64 online_countdown = 9003 [(gogoproto.moretags) = "ssz-max:\"1099511627776\""];
+  ethereum.eth.v1alpha1.CompactCommittee current_light_committee = 9004;
+  ethereum.eth.v1alpha1.CompactCommittee next_light_committee = 9005;
 }
 
 message Fork {

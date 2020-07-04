@@ -79,7 +79,7 @@ func CommitteeToCompactCommittee(state *state.BeaconState, committee []uint64) (
 // Spec code:
 //   def get_light_client_committee(beacon_state: BeaconState, epoch: Epoch) -> Sequence[ValidatorIndex]:
 //    """
-//    Return the light client committee of no more than ``TARGET_COMMITTEE_SIZE`` validators.
+//    Return the light client committee of no more than ``LIGHT_CLIENT_COMMITTEE_SIZE`` validators.
 //    """
 //    source_epoch = compute_committee_source_epoch(epoch, LIGHT_CLIENT_COMMITTEE_PERIOD)
 //    active_validator_indices = get_active_validator_indices(beacon_state, source_epoch)
@@ -89,7 +89,21 @@ func CommitteeToCompactCommittee(state *state.BeaconState, committee []uint64) (
 //        seed=seed,
 //        index=0,
 //        count=get_active_shard_count(beacon_state),
-//    )[:TARGET_COMMITTEE_SIZE]
+//    )[:LIGHT_CLIENT_COMMITTEE_SIZE]
 func LightClientCommittee(state *state.BeaconState, epoch uint64) ([]uint64, error) {
-	return nil, nil
+	se := SourceEpoch(epoch, params.ShardConfig().LightClientCommitteePeriod)
+	activeValidatorIndices, err := ActiveValidatorIndices(state, se)
+	if err != nil {
+		return nil, err
+	}
+	seed, err := Seed(state, se, params.ShardConfig().DomainLightClient)
+	if err != nil {
+		return nil, err
+	}
+	activeShardCount := ActiveShardCount(state)
+	lightClientCommittee, err := ComputeCommittee(activeValidatorIndices, seed, 0, activeShardCount)
+	if err != nil {
+		return nil, err
+	}
+	return lightClientCommittee[:params.ShardConfig().LightClientCommitteeSize], nil
 }

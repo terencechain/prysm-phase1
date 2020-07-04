@@ -655,6 +655,10 @@ func ProcessEpochPrecompute(ctx context.Context, state *stateTrie.BeaconState) (
 		if err != nil {
 			return nil, errors.Wrap(err, "could not process online tracking")
 		}
+		state, err = e.ProcessLightClientCommitteeUpdates(state)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not process light client update")
+		}
 	}
 
 	return state, nil

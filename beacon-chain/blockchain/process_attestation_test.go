@@ -187,6 +187,14 @@ func TestStore_SaveCheckpointState(t *testing.T) {
 		FinalizedCheckpoint: &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte{'A'}, 32)},
 		Validators:          []*ethpb.Validator{{PublicKey: bytesutil.PadTo([]byte("foo"), 48)}},
 		Balances:            []uint64{0},
+		CurrentLightCommittee: &ethpb.CompactCommittee{
+			PubKeys:           filledByteSlice2D(params.BeaconConfig().MaxValidatorsPerCommittee, uint64(params.BeaconConfig().BLSPubkeyLength)),
+			CompactValidators: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee),
+		},
+		NextLightCommittee: &ethpb.CompactCommittee{
+			PubKeys:           filledByteSlice2D(params.BeaconConfig().MaxValidatorsPerCommittee, uint64(params.BeaconConfig().BLSPubkeyLength)),
+			CompactValidators: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee),
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -531,4 +539,12 @@ func TestVerifyLMDFFGConsistent_OK(t *testing.T) {
 	if err := service.verifyLMDFFGConsistent(context.Background(), 1, r32[:], r33[:]); err != nil {
 		t.Errorf("Could not verify LMD and FFG votes to be consistent: %v", err)
 	}
+}
+
+func filledByteSlice2D(len, innerLen uint64) [][]byte {
+	b := make([][]byte, len)
+	for i := uint64(0); i < len; i++ {
+		b[i] = make([]byte, innerLen)
+	}
+	return b
 }

@@ -841,6 +841,32 @@ func (b *BeaconState) SetFinalizedCheckpoint(val *ethpb.Checkpoint) error {
 	return nil
 }
 
+// SetCurrentLightCommittee for the beacon state.
+func (b *BeaconState) SetCurrentLightCommittee(val *ethpb.CompactCommittee) error {
+	if !b.HasInnerState() {
+		return ErrNilInnerState
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.state.CurrentLightCommittee = val
+	b.markFieldAsDirty(currentLightCommittee)
+	return nil
+}
+
+// SetNextLightCommittee for the beacon state.
+func (b *BeaconState) SetNextLightCommittee(val *ethpb.CompactCommittee) error {
+	if !b.HasInnerState() {
+		return ErrNilInnerState
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.state.NextLightCommittee = val
+	b.markFieldAsDirty(nextLightCommittee)
+	return nil
+}
+
 // Recomputes the branch up the index in the Merkle trie representation
 // of the beacon state. This method performs map reads and the caller MUST
 // hold the lock before calling this method.

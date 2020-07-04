@@ -82,8 +82,8 @@ func (h *stateRootHasher) computeFieldRoots(state *pb.BeaconState) ([][]byte, er
 		return nil, errors.New("nil state")
 	}
 	hasher := hashutil.CustomSHA256Hasher()
-	// There are 24 fields in the beacon state.
-	fieldRoots := make([][]byte, 24)
+	// There are 26 fields in the beacon state.
+	fieldRoots := make([][]byte, 26)
 
 	// Genesis time root.
 	genesisRoot := htrutils.Uint64Root(state.GenesisTime)
@@ -238,5 +238,16 @@ func (h *stateRootHasher) computeFieldRoots(state *pb.BeaconState) ([][]byte, er
 	}
 	fieldRoots[23] = onlineCountDownRoot[:]
 
+	currentLightRoot, err := LightCommitteeRoot(state.CurrentLightCommittee)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not compute light committee merkleization")
+	}
+	fieldRoots[24] = currentLightRoot[:]
+
+	nextLightRoot, err := LightCommitteeRoot(state.NextLightCommittee)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not compute light committee merkleization")
+	}
+	fieldRoots[25] = nextLightRoot[:]
 	return fieldRoots, nil
 }

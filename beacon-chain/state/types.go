@@ -62,6 +62,8 @@ const (
 	currentEpochStartShard
 	shardStates
 	onlineCountDown
+	currentLightCommittee
+	nextLightCommittee
 )
 
 // List of current data types the state supports.
