@@ -476,7 +476,7 @@ func ProcessOperations(
 	if err := b.VerifyAttestations(ctx, state, body.Attestations); err != nil {
 		return nil, errors.Wrap(err, "could not verify attestations")
 	}
-	state, err = b.ProcessDeposits(ctx, state, body)
+	state, err = b.ProcessDeposits(ctx, state, body.Deposits)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not process block validator deposits")
 	}
@@ -536,7 +536,7 @@ func ProcessOperationsNoVerify(
 	if err != nil {
 		return nil, errors.Wrap(err, "could not process block attestations")
 	}
-	state, err = b.ProcessDeposits(ctx, state, body)
+	state, err = b.ProcessDeposits(ctx, state, body.Deposits)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not process block validator deposits")
 	}
@@ -589,7 +589,7 @@ func verifyOperationLengths(state *stateTrie.BeaconState, body *ethpb.BeaconBloc
 	}
 	maxDeposits := mathutil.Min(params.BeaconConfig().MaxDeposits, eth1Data.DepositCount-state.Eth1DepositIndex())
 	// Verify outstanding deposits are processed up to max number of deposits
-	if len(body.Deposits) != int(maxDeposits) {
+	if uint64(len(body.Deposits)) != maxDeposits {
 		return fmt.Errorf("incorrect outstanding deposits in block body, wanted: %d, got: %d",
 			maxDeposits, len(body.Deposits))
 	}

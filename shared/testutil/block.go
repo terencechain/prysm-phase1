@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"math/rand"
 
 	"github.com/pkg/errors"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
@@ -17,6 +16,7 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/bls"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
+	"github.com/prysmaticlabs/prysm/shared/rand"
 )
 
 // BlockGenConfig is used to define the requested conditions
@@ -65,7 +65,7 @@ func NewBeaconBlock() *ethpb.SignedBeaconBlock {
 // Use BlockGenConfig to declare the conditions you would like the block generated under.
 func GenerateFullBlock(
 	bState *stateTrie.BeaconState,
-	privs []*bls.SecretKey,
+	privs []bls.SecretKey,
 	conf *BlockGenConfig,
 	slot uint64,
 ) (*ethpb.SignedBeaconBlock, error) {
@@ -186,7 +186,7 @@ func GenerateFullBlock(
 // GenerateProposerSlashingForValidator for a specific validator index.
 func GenerateProposerSlashingForValidator(
 	bState *stateTrie.BeaconState,
-	priv *bls.SecretKey,
+	priv bls.SecretKey,
 	idx uint64,
 ) (*ethpb.ProposerSlashing, error) {
 	header1 := &ethpb.SignedBeaconBlockHeader{
@@ -232,7 +232,7 @@ func GenerateProposerSlashingForValidator(
 
 func generateProposerSlashings(
 	bState *stateTrie.BeaconState,
-	privs []*bls.SecretKey,
+	privs []bls.SecretKey,
 	numSlashings uint64,
 ) ([]*ethpb.ProposerSlashing, error) {
 	proposerSlashings := make([]*ethpb.ProposerSlashing, numSlashings)
@@ -253,7 +253,7 @@ func generateProposerSlashings(
 // GenerateAttesterSlashingForValidator for a specific validator index.
 func GenerateAttesterSlashingForValidator(
 	bState *stateTrie.BeaconState,
-	priv *bls.SecretKey,
+	priv bls.SecretKey,
 	idx uint64,
 ) (*ethpb.AttesterSlashing, error) {
 	currentEpoch := helpers.CurrentEpoch(bState)
@@ -282,7 +282,7 @@ func GenerateAttesterSlashingForValidator(
 		return nil, err
 	}
 	sig := priv.Sign(dataRoot[:])
-	att1.Signature = bls.AggregateSignatures([]*bls.Signature{sig}).Marshal()
+	att1.Signature = bls.AggregateSignatures([]bls.Signature{sig}).Marshal()
 
 	att2 := &ethpb.IndexedAttestation{
 		Data: &ethpb.AttestationData{
@@ -304,7 +304,7 @@ func GenerateAttesterSlashingForValidator(
 		return nil, err
 	}
 	sig = priv.Sign(dataRoot[:])
-	att2.Signature = bls.AggregateSignatures([]*bls.Signature{sig}).Marshal()
+	att2.Signature = bls.AggregateSignatures([]bls.Signature{sig}).Marshal()
 
 	return &ethpb.AttesterSlashing{
 		Attestation_1: att1,
@@ -314,17 +314,18 @@ func GenerateAttesterSlashingForValidator(
 
 func generateAttesterSlashings(
 	bState *stateTrie.BeaconState,
-	privs []*bls.SecretKey,
+	privs []bls.SecretKey,
 	numSlashings uint64,
 ) ([]*ethpb.AttesterSlashing, error) {
 	attesterSlashings := make([]*ethpb.AttesterSlashing, numSlashings)
+	randGen := rand.NewDeterministicGenerator()
 	for i := uint64(0); i < numSlashings; i++ {
-		committeeIndex := rand.Uint64() % params.BeaconConfig().MaxCommitteesPerSlot
+		committeeIndex := randGen.Uint64() % params.BeaconConfig().MaxCommitteesPerSlot
 		committee, err := helpers.BeaconCommitteeFromState(bState, bState.Slot(), committeeIndex)
 		if err != nil {
 			return nil, err
 		}
-		randIndex := rand.Uint64() % uint64(len(committee))
+		randIndex := randGen.Uint64() % uint64(len(committee))
 		valIndex := committee[randIndex]
 		slashing, err := GenerateAttesterSlashingForValidator(bState, privs[valIndex], valIndex)
 		if err != nil {
@@ -342,7 +343,7 @@ func generateAttesterSlashings(
 // for the same data with their aggregation bits split uniformly.
 //
 // If you request 4 attestations, but there are 8 committees, you will get 4 fully aggregated attestations.
-func GenerateAttestations(bState *stateTrie.BeaconState, privs []*bls.SecretKey, numToGen uint64, slot uint64, randomRoot bool) ([]*ethpb.Attestation, error) {
+func GenerateAttestations(bState *stateTrie.BeaconState, privs []bls.SecretKey, numToGen uint64, slot uint64, randomRoot bool) ([]*ethpb.Attestation, error) {
 	currentEpoch := helpers.SlotToEpoch(slot)
 	attestations := []*ethpb.Attestation{}
 	generateHeadState := false
@@ -381,8 +382,9 @@ func GenerateAttestations(bState *stateTrie.BeaconState, privs []*bls.SecretKey,
 		}
 	}
 	if randomRoot {
+		randGen := rand.NewDeterministicGenerator()
 		b := make([]byte, 32)
-		_, err := rand.Read(b)
+		_, err := randGen.Read(b)
 		if err != nil {
 			return nil, err
 		}
@@ -451,7 +453,7 @@ func GenerateAttestations(bState *stateTrie.BeaconState, privs []*bls.SecretKey,
 		bitsPerAtt := committeeSize / uint64(attsPerCommittee)
 		for i := uint64(0); i < committeeSize; i += bitsPerAtt {
 			aggregationBits := bitfield.NewBitlist(committeeSize)
-			sigs := []*bls.Signature{}
+			sigs := []bls.Signature{}
 			for b := i; b < i+bitsPerAtt; b++ {
 				aggregationBits.SetBitAt(b, true)
 				sigs = append(sigs, privs[committee[b]].Sign(dataRoot[:]))
@@ -495,7 +497,7 @@ func generateDepositsAndEth1Data(
 
 func generateVoluntaryExits(
 	bState *stateTrie.BeaconState,
-	privs []*bls.SecretKey,
+	privs []bls.SecretKey,
 	numExits uint64,
 ) ([]*ethpb.SignedVoluntaryExit, error) {
 	currentEpoch := helpers.CurrentEpoch(bState)
@@ -531,5 +533,5 @@ func randValIndex(bState *stateTrie.BeaconState) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return rand.Uint64() % activeCount, nil
+	return rand.NewGenerator().Uint64() % activeCount, nil
 }

@@ -32,7 +32,7 @@ import (
 //    return shard_blocks
 func (s *Service) PendingShardBlocks(ctx context.Context, shard uint64) ([]*ethpb.SignedShardBlock, error) {
 	beaconHeadRoot := s.headRoot()
-	beaconHeadState := s.headState()
+	beaconHeadState := s.headState(ctx)
 
 	latestShardBlockRoot := bytesutil.ToBytes32(beaconHeadState.ShardStateAtIndex(shard).LatestBlockRoot)
 	root, err := s.forkChoiceStore.ShardHead(ctx, beaconHeadRoot, s.justifiedBalances, shard)

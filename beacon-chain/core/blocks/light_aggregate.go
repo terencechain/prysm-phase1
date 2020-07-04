@@ -39,7 +39,7 @@ func ProcessLightClientAggregate(state *state.BeaconState, body *ethpb.BeaconBlo
 	}
 
 	totalRewards := uint64(0)
-	pubKeys := make([]*bls.PublicKey, 0, len(lcc))
+	pubKeys := make([]bls.PublicKey, 0, len(lcc))
 	for i, index := range lcc {
 		if body.LightClientBits.BitAt(uint64(i)) {
 			v, err := state.ValidatorAtIndex(index)

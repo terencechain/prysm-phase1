@@ -183,7 +183,7 @@ func applyShardTransition(beaconState *stateTrie.BeaconState, transition *ethpb.
 	}
 
 	// Verify proposer signatures.
-	pks := make([]*bls.PublicKey, len(pIndices))
+	pks := make([]bls.PublicKey, len(pIndices))
 	for i, index := range pIndices {
 		pkAtIndex := beaconState.PubkeyAtIndex(index)
 		p, err := bls.PublicKeyFromBytes(pkAtIndex[:])

@@ -61,15 +61,11 @@ var (
 		Usage: "Cache filtered block tree by maintaining it rather than continually recalculating on the fly, " +
 			"this is used for fork choice.",
 	}
-	enableProtectProposerFlag = &cli.BoolFlag{
-		Name: "enable-protect-proposer",
+
+	enableLocalProtectionFlag = &cli.BoolFlag{
+		Name: "enable-local-protection",
 		Usage: "Enables functionality to prevent the validator client from signing and " +
-			"broadcasting 2 different block proposals in the same epoch. Protects from slashing.",
-	}
-	enableProtectAttesterFlag = &cli.BoolFlag{
-		Name: "enable-protect-attester",
-		Usage: "Enables functionality to prevent the validator client from signing and " +
-			"broadcasting 2 any slashable attestations.",
+			"broadcasting any messages that could be considered slashable according to its own history.",
 	}
 	enableExternalSlasherProtectionFlag = &cli.BoolFlag{
 		Name: "enable-external-slasher-protection",
@@ -98,9 +94,9 @@ var (
 		Name:  "check-head-state",
 		Usage: "Enables the checking of head state in chainservice first before retrieving the desired state from the db.",
 	}
-	enableNoiseHandshake = &cli.BoolFlag{
-		Name: "enable-noise",
-		Usage: "This enables the beacon node to use NOISE instead of SECIO for performing handshakes between peers and " +
+	disableNoiseHandshake = &cli.BoolFlag{
+		Name: "disable-noise",
+		Usage: "This disables the beacon node from using NOISE and instead uses SECIO instead for performing handshakes between peers and " +
 			"securing transports between peers",
 	}
 	dontPruneStateStartUp = &cli.BoolFlag{
@@ -110,10 +106,6 @@ var (
 	disableNewStateMgmt = &cli.BoolFlag{
 		Name:  "disable-new-state-mgmt",
 		Usage: "This disables the usage of state mgmt service across Prysm",
-	}
-	disableInitSyncBatchSaveBlocks = &cli.BoolFlag{
-		Name:  "disable-init-sync-batch-save-blocks",
-		Usage: "Instead of saving batch blocks to the DB during initial syncing, this disables batch saving of blocks",
 	}
 	waitForSyncedFlag = &cli.BoolFlag{
 		Name:  "wait-for-synced",
@@ -134,14 +126,6 @@ var (
 	disableReduceAttesterStateCopy = &cli.BoolFlag{
 		Name:  "disable-reduce-attester-state-copy",
 		Usage: "Disables the feature to reduce the amount of state copies for attester rpc",
-	}
-	enableStreamDuties = &cli.BoolFlag{
-		Name:  "enable-stream-duties",
-		Usage: "Enables validator duties streaming in the validator client",
-	}
-	disableInitSyncWeightedRoundRobin = &cli.BoolFlag{
-		Name:  "disable-init-sync-wrr",
-		Usage: "Disables weighted round robin fetching optimization",
 	}
 	disableGRPCConnectionLogging = &cli.BoolFlag{
 		Name:  "disable-grpc-connection-logging",
@@ -176,6 +160,16 @@ var devModeFlags = []cli.Flag{
 const deprecatedUsage = "DEPRECATED. DO NOT USE."
 
 var (
+	deprecatedP2PEncoding = &cli.StringFlag{
+		Name:   "p2p-encoding",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
+	deprecatedP2PPubsub = &cli.StringFlag{
+		Name:   "p2p-pubsub",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
 	deprecatedEnableKadDht = &cli.BoolFlag{
 		Name:   "enable-kad-dht",
 		Usage:  deprecatedUsage,
@@ -422,11 +416,6 @@ var (
 		Usage:  deprecatedUsage,
 		Hidden: true,
 	}
-	deprecatedEnableInitSyncWeightedRoundRobin = &cli.BoolFlag{
-		Name:   "enable-init-sync-wrr",
-		Usage:  deprecatedUsage,
-		Hidden: true,
-	}
 	deprecatedDisableStateRefCopy = &cli.BoolFlag{
 		Name:   "disable-state-ref-copy",
 		Usage:  deprecatedUsage,
@@ -437,9 +426,56 @@ var (
 		Usage:  deprecatedUsage,
 		Hidden: true,
 	}
+	deprecateddisableInitSyncBatchSaveBlocks = &cli.BoolFlag{
+		Name:   "disable-init-sync-batch-save-blocks",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
+	deprecatedDisableInitSyncWeightedRoundRobin = &cli.BoolFlag{
+		Name:   "disable-init-sync-wrr",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
+	deprecatedEnableNoise = &cli.BoolFlag{
+		Name:   "enable-noise",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
+	deprecatedArchival = &cli.BoolFlag{
+		Name:   "archive",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
+	deprecatedArchiveValiatorSetChanges = &cli.BoolFlag{
+		Name:   "archive-validator-set-changes",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
+	deprecatedArchiveBlocks = &cli.BoolFlag{
+		Name:   "archive-blocks",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
+	deprecatedArchiveAttestation = &cli.BoolFlag{
+		Name:   "archive-attestations",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
+	deprecatedEnableProtectProposerFlag = &cli.BoolFlag{
+		Name:   "enable-protect-proposer",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
+	deprecatedEnableProtectAttesterFlag = &cli.BoolFlag{
+		Name:   "enable-protect-attester",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
 )
 
 var deprecatedFlags = []cli.Flag{
+	deprecatedP2PEncoding,
+	deprecatedP2PPubsub,
 	deprecatedEnableKadDht,
 	deprecatedWeb3ProviderFlag,
 	deprecatedEnableDynamicCommitteeSubnets,
@@ -489,16 +525,22 @@ var deprecatedFlags = []cli.Flag{
 	deprecatedP2PBlacklist,
 	deprecatedSchlesiTestnetFlag,
 	deprecateReduceAttesterStateCopies,
-	deprecatedEnableInitSyncWeightedRoundRobin,
+	deprecatedDisableInitSyncWeightedRoundRobin,
 	deprecatedDisableStateRefCopy,
 	deprecatedDisableFieldTrie,
+	deprecateddisableInitSyncBatchSaveBlocks,
+	deprecatedEnableNoise,
+	deprecatedArchival,
+	deprecatedArchiveBlocks,
+	deprecatedArchiveValiatorSetChanges,
+	deprecatedArchiveAttestation,
+	deprecatedEnableProtectProposerFlag,
+	deprecatedEnableProtectAttesterFlag,
 }
 
 // ValidatorFlags contains a list of all the feature flags that apply to the validator client.
 var ValidatorFlags = append(deprecatedFlags, []cli.Flag{
-	enableProtectAttesterFlag,
-	enableProtectProposerFlag,
-	enableStreamDuties,
+	enableLocalProtectionFlag,
 	enableExternalSlasherProtectionFlag,
 	disableDomainDataCacheFlag,
 	waitForSyncedFlag,
@@ -514,9 +556,7 @@ var SlasherFlags = append(deprecatedFlags, []cli.Flag{
 // E2EValidatorFlags contains a list of the validator feature flags to be tested in E2E.
 var E2EValidatorFlags = []string{
 	"--wait-for-synced",
-	"--enable-protect-attester",
-	"--enable-protect-proposer",
-	// "--enable-stream-duties", // Currently disabled due to e2e flakes.
+	"--enable-local-protection",
 }
 
 // BeaconChainFlags contains a list of all the feature flags that apply to the beacon-chain client.
@@ -536,13 +576,11 @@ var BeaconChainFlags = append(deprecatedFlags, []cli.Flag{
 	disableUpdateHeadPerAttestation,
 	enableStateGenSigVerify,
 	checkHeadState,
-	enableNoiseHandshake,
+	disableNoiseHandshake,
 	dontPruneStateStartUp,
 	disableBroadcastSlashingFlag,
-	disableInitSyncBatchSaveBlocks,
 	waitForSyncedFlag,
 	skipRegenHistoricalStates,
-	disableInitSyncWeightedRoundRobin,
 	disableNewStateMgmt,
 	disableReduceAttesterStateCopy,
 	disableGRPCConnectionLogging,

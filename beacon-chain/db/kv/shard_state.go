@@ -23,7 +23,7 @@ func (k *Store) ShardState(ctx context.Context, blockRoot [32]byte) (*ethpb.Shar
 		}
 
 		var err error
-		s, err = createShardState(enc)
+		s, err = createShardState(ctx, enc)
 		return err
 	})
 	if err != nil {
@@ -54,7 +54,7 @@ func (k *Store) HeadShardState(ctx context.Context, shard uint64) (*ethpb.ShardS
 		}
 
 		var err error
-		s, err = createShardState(enc)
+		s, err = createShardState(ctx, enc)
 		return err
 	})
 	if err != nil {
@@ -82,7 +82,7 @@ func (k *Store) GenesisShardState(ctx context.Context, shard uint64) (*ethpb.Sha
 		}
 
 		var err error
-		s, err = createShardState(enc)
+		s, err = createShardState(ctx, enc)
 		return err
 	})
 	if err != nil {
@@ -101,7 +101,7 @@ func (k *Store) SaveShardState(ctx context.Context, state *ethpb.ShardState, blo
 	if state == nil {
 		return errors.New("nil state")
 	}
-	enc, err := encode(state)
+	enc, err := encode(ctx, state)
 	if err != nil {
 		return err
 	}
@@ -128,9 +128,9 @@ func (k *Store) HasShardState(ctx context.Context, blockRoot [32]byte) bool {
 }
 
 // creates shard state from marshaled proto state bytes.
-func createShardState(enc []byte) (*ethpb.ShardState, error) {
+func createShardState(ctx context.Context, enc []byte) (*ethpb.ShardState, error) {
 	protoState := &ethpb.ShardState{}
-	err := decode(enc, protoState)
+	err := decode(ctx, enc, protoState)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal encoding")
 	}

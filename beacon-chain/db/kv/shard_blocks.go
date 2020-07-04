@@ -24,7 +24,7 @@ func (k *Store) ShardBlock(ctx context.Context, blockRoot [32]byte) (*ethpb.Sign
 			return nil
 		}
 		block = &ethpb.SignedShardBlock{}
-		return decode(enc, block)
+		return decode(ctx, enc, block)
 	})
 
 	return block, err
@@ -46,7 +46,7 @@ func (k *Store) HeadShardBlock(ctx context.Context, shard uint64) (*ethpb.Signed
 			return nil
 		}
 		headBlock = &ethpb.SignedShardBlock{}
-		return decode(enc, headBlock)
+		return decode(ctx, enc, headBlock)
 	})
 	return headBlock, err
 }
@@ -81,7 +81,7 @@ func (k *Store) SaveShardBlock(ctx context.Context, signed *ethpb.SignedShardBlo
 		if existingBlock := bkt.Get(blockRoot[:]); existingBlock != nil {
 			return nil
 		}
-		enc, err := encode(signed)
+		enc, err := encode(ctx, signed)
 		if err != nil {
 			return err
 		}
@@ -116,7 +116,7 @@ func (k *Store) GenesisShardBlock(ctx context.Context, shard uint64) (*ethpb.Sig
 			return nil
 		}
 		block = &ethpb.SignedShardBlock{}
-		return decode(enc, block)
+		return decode(ctx, enc, block)
 	})
 	return block, err
 }
