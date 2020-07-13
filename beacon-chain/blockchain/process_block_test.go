@@ -2,14 +2,15 @@ package blockchain
 
 import (
 	"context"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/go-ssz"
+	"github.com/prysmaticlabs/prysm/beacon-chain/cache"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/blocks"
+	"github.com/prysmaticlabs/prysm/beacon-chain/core/state"
 	"github.com/prysmaticlabs/prysm/beacon-chain/db"
 	testDB "github.com/prysmaticlabs/prysm/beacon-chain/db/testing"
 	"github.com/prysmaticlabs/prysm/beacon-chain/forkchoice/protoarray"
@@ -37,7 +38,6 @@ func TestStore_OnBlock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	genesisStateRoot := [32]byte{}
 	genesis := blocks.NewGenesisBlock(genesisStateRoot[:])
 	if err := db.SaveBlock(ctx, genesis); err != nil {
@@ -100,7 +100,7 @@ func TestStore_OnBlock(t *testing.T) {
 			name:          "could not get finalized block",
 			blk:           &ethpb.BeaconBlock{ParentRoot: randomParentRoot[:]},
 			s:             st.Copy(),
-			wantErrString: "block from slot 0 is not a descendent of the current finalized block",
+			wantErrString: "is not a descendent of the current finalized block",
 		},
 		{
 			name:          "same slot as finalized block",
@@ -122,11 +122,70 @@ func TestStore_OnBlock(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			_, err = service.onBlock(ctx, &ethpb.SignedBeaconBlock{Block: tt.blk}, root)
+			err = service.onBlock(ctx, &ethpb.SignedBeaconBlock{Block: tt.blk}, root)
 			if err == nil || !strings.Contains(err.Error(), tt.wantErrString) {
 				t.Errorf("Store.OnBlock() error = %v, wantErr = %v", err, tt.wantErrString)
 			}
 		})
+	}
+}
+
+func TestStore_OnBlockBatch(t *testing.T) {
+	ctx := context.Background()
+	db, sc := testDB.SetupDB(t)
+
+	cfg := &Config{
+		BeaconDB: db,
+		StateGen: stategen.New(db, sc),
+	}
+	service, err := NewService(ctx, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	genesisStateRoot := [32]byte{}
+	genesis := blocks.NewGenesisBlock(genesisStateRoot[:])
+	if err := db.SaveBlock(ctx, genesis); err != nil {
+		t.Error(err)
+	}
+
+	st, keys := testutil.DeterministicGenesisState(t, 64)
+
+	bState := st.Copy()
+
+	blks := []*ethpb.SignedBeaconBlock{}
+	blkRoots := [][32]byte{}
+	var firstState *stateTrie.BeaconState
+	for i := 1; i < 10; i++ {
+		b, err := testutil.GenerateFullBlock(bState, keys, testutil.DefaultBlockGenConfig(), uint64(i))
+		if err != nil {
+			t.Fatal(err)
+		}
+		bState, err = state.ExecuteStateTransition(ctx, bState, b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if i == 1 {
+			firstState = bState.Copy()
+		}
+		root, err := stateutil.BlockRoot(b.Block)
+		if err != nil {
+			t.Fatal(err)
+		}
+		blks = append(blks, b)
+		blkRoots = append(blkRoots, root)
+	}
+	err = db.SaveBlock(context.Background(), blks[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = service.stateGen.SaveState(ctx, blkRoots[0], firstState)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, _, err = service.onBlockBatch(ctx, blks[1:], blkRoots[1:])
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -254,12 +313,8 @@ func TestCachedPreState_CanGetFromStateSummary(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	received, err := service.verifyBlkPreState(ctx, b)
-	if err != nil {
+	if err := service.verifyBlkPreState(ctx, b); err != nil {
 		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(s.InnerStateUnsafe(), received.InnerStateUnsafe()) {
-		t.Error("cached state not the same")
 	}
 }
 
@@ -283,7 +338,7 @@ func TestCachedPreState_CanGetFromDB(t *testing.T) {
 	b := &ethpb.BeaconBlock{Slot: 1, ParentRoot: r[:]}
 
 	service.finalizedCheckpt = &ethpb.Checkpoint{Root: r[:]}
-	_, err = service.verifyBlkPreState(ctx, b)
+	err = service.verifyBlkPreState(ctx, b)
 	wanted := "could not reconstruct parent state"
 	if err.Error() != wanted {
 		t.Error("Did not get wanted error")
@@ -300,12 +355,8 @@ func TestCachedPreState_CanGetFromDB(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	received, err := service.verifyBlkPreState(ctx, b)
-	if err != nil {
+	if err := service.verifyBlkPreState(ctx, b); err != nil {
 		t.Fatal(err)
-	}
-	if s.Slot() != received.Slot() {
-		t.Error("cached state not the same")
 	}
 }
 
@@ -313,7 +364,7 @@ func TestUpdateJustified_CouldUpdateBest(t *testing.T) {
 	ctx := context.Background()
 	db, _ := testDB.SetupDB(t)
 
-	cfg := &Config{BeaconDB: db}
+	cfg := &Config{BeaconDB: db, StateGen: stategen.New(db, cache.NewStateSummaryCache())}
 	service, err := NewService(ctx, cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -392,7 +443,8 @@ func TestFillForkChoiceMissingBlocks_CanSave(t *testing.T) {
 
 	beaconState, _ := testutil.DeterministicGenesisState(t, 32)
 	block := &ethpb.BeaconBlock{Slot: 9, ParentRoot: roots[8], Body: &ethpb.BeaconBlockBody{Graffiti: []byte{}}}
-	if err := service.fillInForkChoiceMissingBlocks(context.Background(), block, beaconState); err != nil {
+	if err := service.fillInForkChoiceMissingBlocks(context.Background(), block,
+		beaconState.FinalizedCheckpoint(), beaconState.CurrentJustifiedCheckpoint()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -463,7 +515,7 @@ func TestFillForkChoiceMissingBlocks_FilterFinalized(t *testing.T) {
 	}
 
 	beaconState, _ := testutil.DeterministicGenesisState(t, 32)
-	if err := service.fillInForkChoiceMissingBlocks(context.Background(), b65.Block, beaconState); err != nil {
+	if err := service.fillInForkChoiceMissingBlocks(context.Background(), b65.Block, beaconState.FinalizedCheckpoint(), beaconState.CurrentJustifiedCheckpoint()); err != nil {
 		t.Fatal(err)
 	}
 

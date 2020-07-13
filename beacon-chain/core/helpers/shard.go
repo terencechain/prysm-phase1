@@ -8,7 +8,6 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/hashutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
-	"github.com/prysmaticlabs/prysm/shared/sliceutil"
 )
 
 // OnlineValidatorIndices returns the online validator indices.
@@ -297,28 +296,4 @@ func AttsByTransitionRoot(atts []*ethpb.Attestation) map[[32]byte][]*ethpb.Attes
 		}
 	}
 	return attsByTRoot
-}
-
-// CanCrosslink returns true if more than 2/3 participants voted on input attestations. The voted
-// indices are compared against the input committee indices to see if it reaches 2/3 balance threshold.
-// The voted indices are also returned in the end.
-func CanCrosslink(beaconState *s.BeaconState, atts []*ethpb.Attestation, committee []uint64) (bool, []uint64, error) {
-	votedIndices := make([]uint64, 0, params.BeaconConfig().MaxValidatorsPerCommittee)
-	for _, a := range atts {
-		indices, err := AttestingIndices(a.AggregationBits, committee)
-		if err != nil {
-			return false, []uint64{}, err
-		}
-		votedIndices = append(votedIndices, indices...)
-	}
-	onlineIndices, err := OnlineValidatorIndices(beaconState)
-	if err != nil {
-		return false, []uint64{}, err
-	}
-
-	onlineCommitteeIndices := sliceutil.IntersectionUint64(onlineIndices, committee)
-	onlineVotedIndices := sliceutil.IntersectionUint64(onlineIndices, votedIndices)
-	enoughStaked := TotalBalance(beaconState, onlineVotedIndices)*3 >= TotalBalance(beaconState, onlineCommitteeIndices)*2
-
-	return enoughStaked, votedIndices, nil
 }

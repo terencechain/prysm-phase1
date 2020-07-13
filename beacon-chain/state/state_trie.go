@@ -12,12 +12,16 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/state/stateutil"
 	pbp2p "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
+	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/shared/hashutil"
 	"github.com/prysmaticlabs/prysm/shared/htrutils"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/sliceutil"
 	"go.opencensus.io/trace"
 )
+
+// There are 21 fields in the beacon state.
+const fieldCount = 26
 
 // InitializeFromProto the beacon state from a protobuf representation.
 func InitializeFromProto(st *pbp2p.BeaconState) (*BeaconState, error) {
@@ -33,15 +37,15 @@ func InitializeFromProtoUnsafe(st *pbp2p.BeaconState) (*BeaconState, error) {
 
 	b := &BeaconState{
 		state:                 st,
-		dirtyFields:           make(map[fieldIndex]interface{}, 26),
-		dirtyIndices:          make(map[fieldIndex][]uint64, 26),
-		stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, 26),
-		sharedFieldReferences: make(map[fieldIndex]*reference, 12),
-		rebuildTrie:           make(map[fieldIndex]bool, 26),
+		dirtyFields:           make(map[fieldIndex]interface{}, fieldCount),
+		dirtyIndices:          make(map[fieldIndex][]uint64, fieldCount),
+		stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, fieldCount),
+		sharedFieldReferences: make(map[fieldIndex]*reference, 10),
+		rebuildTrie:           make(map[fieldIndex]bool, fieldCount),
 		valIdxMap:             coreutils.ValidatorIndexMap(st.Validators),
 	}
 
-	for i := 0; i < 26; i++ {
+	for i := 0; i < fieldCount; i++ {
 		b.dirtyFields[fieldIndex(i)] = true
 		b.rebuildTrie[fieldIndex(i)] = true
 		b.dirtyIndices[fieldIndex(i)] = []uint64{}
@@ -74,52 +78,101 @@ func (b *BeaconState) Copy() *BeaconState {
 	if !b.HasInnerState() {
 		return nil
 	}
-	b.lock.RLock()
-	defer b.lock.RUnlock()
-	dst := &BeaconState{
-		state: &pbp2p.BeaconState{
-			// Primitive types, safe to copy.
-			GenesisTime:            b.state.GenesisTime,
-			Slot:                   b.state.Slot,
-			Eth1DepositIndex:       b.state.Eth1DepositIndex,
-			CurrentEpochStartShard: b.state.CurrentEpochStartShard,
+	var dst *BeaconState
+	if featureconfig.Get().NewBeaconStateLocks {
+		b.lock.RLock()
+		defer b.lock.RUnlock()
+		dst = &BeaconState{
+			state: &pbp2p.BeaconState{
+				// Primitive types, safe to copy.
+				GenesisTime:            b.state.GenesisTime,
+				Slot:                   b.state.Slot,
+				Eth1DepositIndex:       b.state.Eth1DepositIndex,
+				CurrentEpochStartShard: b.state.CurrentEpochStartShard,
 
-			// Large arrays, infrequently changed, constant size.
-			RandaoMixes:               b.state.RandaoMixes,
-			StateRoots:                b.state.StateRoots,
-			BlockRoots:                b.state.BlockRoots,
-			PreviousEpochAttestations: b.state.PreviousEpochAttestations,
-			CurrentEpochAttestations:  b.state.CurrentEpochAttestations,
-			Slashings:                 b.state.Slashings,
-			Eth1DataVotes:             b.state.Eth1DataVotes,
-			ShardStates:               b.state.ShardStates,
+				// Large arrays, infrequently changed, constant size.
+				RandaoMixes:               b.state.RandaoMixes,
+				StateRoots:                b.state.StateRoots,
+				BlockRoots:                b.state.BlockRoots,
+				PreviousEpochAttestations: b.state.PreviousEpochAttestations,
+				CurrentEpochAttestations:  b.state.CurrentEpochAttestations,
+				Slashings:                 b.state.Slashings,
+				Eth1DataVotes:             b.state.Eth1DataVotes,
+				ShardStates:               b.state.ShardStates,
 
-			// Large arrays, increases over time.
-			Validators:      b.state.Validators,
-			Balances:        b.state.Balances,
-			HistoricalRoots: b.state.HistoricalRoots,
-			OnlineCountdown: b.state.OnlineCountdown,
+				// Large arrays, increases over time.
+				Validators:      b.state.Validators,
+				Balances:        b.state.Balances,
+				HistoricalRoots: b.state.HistoricalRoots,
+				OnlineCountdown: b.state.OnlineCountdown,
 
-			// Everything else, too small to be concerned about, constant size.
-			Fork:                        b.Fork(),
-			LatestBlockHeader:           b.LatestBlockHeader(),
-			Eth1Data:                    b.Eth1Data(),
-			JustificationBits:           b.JustificationBits(),
-			PreviousJustifiedCheckpoint: b.PreviousJustifiedCheckpoint(),
-			CurrentJustifiedCheckpoint:  b.CurrentJustifiedCheckpoint(),
-			FinalizedCheckpoint:         b.FinalizedCheckpoint(),
-			GenesisValidatorsRoot:       b.GenesisValidatorRoot(),
-			CurrentLightCommittee:       b.CurrentLightCommittee(),
-			NextLightCommittee:          b.NextLightCommittee(),
-		},
-		dirtyFields:           make(map[fieldIndex]interface{}, 26),
-		dirtyIndices:          make(map[fieldIndex][]uint64, 26),
-		rebuildTrie:           make(map[fieldIndex]bool, 26),
-		sharedFieldReferences: make(map[fieldIndex]*reference, 12),
-		stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, 26),
+				// Everything else, too small to be concerned about, constant size.
+				Fork:                        b.fork(),
+				LatestBlockHeader:           b.latestBlockHeader(),
+				Eth1Data:                    b.eth1Data(),
+				JustificationBits:           b.justificationBits(),
+				PreviousJustifiedCheckpoint: b.previousJustifiedCheckpoint(),
+				CurrentJustifiedCheckpoint:  b.currentJustifiedCheckpoint(),
+				FinalizedCheckpoint:         b.finalizedCheckpoint(),
+				GenesisValidatorsRoot:       b.genesisValidatorRoot(),
+				CurrentLightCommittee:       b.CurrentLightCommittee(),
+				NextLightCommittee:          b.NextLightCommittee(),
+			},
+			dirtyFields:           make(map[fieldIndex]interface{}, fieldCount),
+			dirtyIndices:          make(map[fieldIndex][]uint64, fieldCount),
+			rebuildTrie:           make(map[fieldIndex]bool, fieldCount),
+			sharedFieldReferences: make(map[fieldIndex]*reference, 12),
+			stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, fieldCount),
 
-		// Copy on write validator index map.
-		valIdxMap: b.valIdxMap,
+			// Copy on write validator index map.
+			valIdxMap: b.valIdxMap,
+		}
+	} else {
+		dst = &BeaconState{
+			state: &pbp2p.BeaconState{
+				// Primitive types, safe to copy.
+				GenesisTime:            b.state.GenesisTime,
+				Slot:                   b.state.Slot,
+				Eth1DepositIndex:       b.state.Eth1DepositIndex,
+				CurrentEpochStartShard: b.state.CurrentEpochStartShard,
+
+				// Large arrays, infrequently changed, constant size.
+				RandaoMixes:               b.state.RandaoMixes,
+				StateRoots:                b.state.StateRoots,
+				BlockRoots:                b.state.BlockRoots,
+				PreviousEpochAttestations: b.state.PreviousEpochAttestations,
+				CurrentEpochAttestations:  b.state.CurrentEpochAttestations,
+				Slashings:                 b.state.Slashings,
+				Eth1DataVotes:             b.state.Eth1DataVotes,
+				ShardStates:               b.state.ShardStates,
+
+				// Large arrays, increases over time.
+				Validators:      b.state.Validators,
+				Balances:        b.state.Balances,
+				HistoricalRoots: b.state.HistoricalRoots,
+				OnlineCountdown: b.state.OnlineCountdown,
+
+				// Everything else, too small to be concerned about, constant size.
+				Fork:                        b.Fork(),
+				LatestBlockHeader:           b.LatestBlockHeader(),
+				Eth1Data:                    b.Eth1Data(),
+				JustificationBits:           b.JustificationBits(),
+				PreviousJustifiedCheckpoint: b.PreviousJustifiedCheckpoint(),
+				CurrentJustifiedCheckpoint:  b.CurrentJustifiedCheckpoint(),
+				FinalizedCheckpoint:         b.FinalizedCheckpoint(),
+				GenesisValidatorsRoot:       b.GenesisValidatorRoot(),
+				CurrentLightCommittee:       b.CurrentLightCommittee(),
+				NextLightCommittee:          b.NextLightCommittee(),
+			},
+			dirtyFields:           make(map[fieldIndex]interface{}, fieldCount),
+			dirtyIndices:          make(map[fieldIndex][]uint64, fieldCount),
+			rebuildTrie:           make(map[fieldIndex]bool, fieldCount),
+			sharedFieldReferences: make(map[fieldIndex]*reference, 12),
+			stateFieldLeaves:      make(map[fieldIndex]*FieldTrie, fieldCount),
+
+			// Copy on write validator index map.
+			valIdxMap: b.valIdxMap,
+		}
 	}
 
 	for field, ref := range b.sharedFieldReferences {
@@ -190,7 +243,7 @@ func (b *BeaconState) HashTreeRoot(ctx context.Context) ([32]byte, error) {
 		}
 		layers := merkleize(fieldRoots)
 		b.merkleLayers = layers
-		b.dirtyFields = make(map[fieldIndex]interface{}, 26)
+		b.dirtyFields = make(map[fieldIndex]interface{}, fieldCount)
 	}
 
 	for field := range b.dirtyFields {

@@ -12,9 +12,11 @@ import (
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/beacon-chain/state/stateutil"
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
+	"github.com/prysmaticlabs/prysm/shared/attestationutil"
 	"github.com/prysmaticlabs/prysm/shared/bls"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
+	"github.com/prysmaticlabs/prysm/shared/sliceutil"
 )
 
 // ShardStateTransition processes shard state transition.
@@ -314,7 +316,7 @@ func processCrosslinkForShard(bs *stateTrie.BeaconState, attestations []*ethpb.A
 
 	attsByTRoot := helpers.AttsByTransitionRoot(attestations)
 	for tRoot, atts := range attsByTRoot {
-		enough, tParticipants, err := helpers.CanCrosslink(bs, atts, bc)
+		enough, tParticipants, err := CanCrosslink(bs, atts, bc)
 		if err != nil {
 			return [32]byte{}, err
 		}
@@ -643,4 +645,25 @@ func verifyShardBlockSignature(beaconState *stateTrie.BeaconState, shardBlock *e
 	}
 
 	return sig.Verify(pubKey, signingRoot[:]), nil
+}
+
+// CanCrosslink returns true if more than 2/3 participants voted on input attestations. The voted
+// indices are compared against the input committee indices to see if it reaches 2/3 balance threshold.
+// The voted indices are also returned in the end.
+func CanCrosslink(beaconState *stateTrie.BeaconState, atts []*ethpb.Attestation, committee []uint64) (bool, []uint64, error) {
+	votedIndices := make([]uint64, 0, params.BeaconConfig().MaxValidatorsPerCommittee)
+	for _, a := range atts {
+		indices := attestationutil.AttestingIndices(a.AggregationBits, committee)
+		votedIndices = append(votedIndices, indices...)
+	}
+	onlineIndices, err := helpers.OnlineValidatorIndices(beaconState)
+	if err != nil {
+		return false, []uint64{}, err
+	}
+
+	onlineCommitteeIndices := sliceutil.IntersectionUint64(onlineIndices, committee)
+	onlineVotedIndices := sliceutil.IntersectionUint64(onlineIndices, votedIndices)
+	enoughStaked := helpers.TotalBalance(beaconState, onlineVotedIndices)*3 >= helpers.TotalBalance(beaconState, onlineCommitteeIndices)*2
+
+	return enoughStaked, votedIndices, nil
 }
