@@ -181,6 +181,13 @@ func fieldConverters(field fieldIndex, indices []uint64, elements interface{}, c
 				reflect.TypeOf([]*ethpb.ShardState{}).Name(), reflect.TypeOf(elements).Name())
 		}
 		return handleShardStateSlice(val, indices, convertAll)
+	case custodyChunkChallengeRecords:
+		val, ok := elements.([]*pb.CustodyChunkChallengeRecord)
+		if !ok {
+			return nil, errors.Errorf("Wanted type of %v but got %v",
+				reflect.TypeOf([]*pb.CustodyChunkChallengeRecord{}).Name(), reflect.TypeOf(elements).Name())
+		}
+		return handleCustodyChunkRecords(val, indices, convertAll)
 	default:
 		return [][32]byte{}, errors.Errorf("got unsupported type of %v", reflect.TypeOf(elements).Name())
 	}
@@ -295,6 +302,34 @@ func handleShardStateSlice(val []*ethpb.ShardState, indices []uint64, convertAll
 	roots := [][32]byte{}
 	rootCreator := func(input *ethpb.ShardState) error {
 		newRoot, err := stateutil.ShardStateRoot(input)
+		if err != nil {
+			return err
+		}
+		roots = append(roots, newRoot)
+		return nil
+	}
+	if convertAll {
+		for i := range val {
+			err := rootCreator(val[i])
+			if err != nil {
+				return nil, err
+			}
+		}
+		return roots, nil
+	}
+	for _, idx := range indices {
+		err := rootCreator(val[idx])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return roots, nil
+}
+
+func handleCustodyChunkRecords(val []*pb.CustodyChunkChallengeRecord, indices []uint64, convertAll bool) ([][32]byte, error) {
+	roots := [][32]byte{}
+	rootCreator := func(input *pb.CustodyChunkChallengeRecord) error {
+		newRoot, err := stateutil.CustodyChunkChallengeRecordRoot(input)
 		if err != nil {
 			return err
 		}

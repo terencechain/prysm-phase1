@@ -89,6 +89,12 @@ func ValidatorRoot(hasher htrutils.HashFn, validator *ethpb.Validator) ([32]byte
 		withdrawalBuf := [32]byte{}
 		binary.LittleEndian.PutUint64(withdrawalBuf[:8], validator.WithdrawableEpoch)
 
+		nextCustodyRevealBuf := [32]byte{}
+		binary.LittleEndian.PutUint64(nextCustodyRevealBuf[:8], validator.NextCustodySecretRevealEpoch)
+
+		allCustodyRevealBuf := [32]byte{}
+		binary.LittleEndian.PutUint64(allCustodyRevealBuf[:8], validator.AllCustodySecretsRevealedEpoch)
+
 		// Public key.
 		pubKeyChunks, err := htrutils.Pack([][]byte{pubkey[:]})
 		if err != nil {
@@ -99,7 +105,7 @@ func ValidatorRoot(hasher htrutils.HashFn, validator *ethpb.Validator) ([32]byte
 			return [32]byte{}, err
 		}
 		fieldRoots = [][32]byte{pubKeyRoot, withdrawCreds, effectiveBalanceBuf, slashBuf, activationEligibilityBuf,
-			activationBuf, exitBuf, withdrawalBuf}
+			activationBuf, exitBuf, withdrawalBuf, nextCustodyRevealBuf, allCustodyRevealBuf}
 	}
 	return htrutils.BitwiseMerkleizeArrays(hasher, fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))
 }
@@ -147,8 +153,8 @@ func (h *stateRootHasher) validatorRegistryRoot(validators []*ethpb.Validator) (
 
 func (h *stateRootHasher) validatorRoot(hasher htrutils.HashFn, validator *ethpb.Validator) ([32]byte, error) {
 	// Validator marshaling for caching.
-	enc := make([]byte, 122)
-	fieldRoots := make([][32]byte, 2, 8)
+	enc := make([]byte, 138)
+	fieldRoots := make([][32]byte, 2, 10)
 
 	if validator != nil {
 		pubkey := bytesutil.ToBytes48(validator.PublicKey)
@@ -178,6 +184,14 @@ func (h *stateRootHasher) validatorRoot(hasher htrutils.HashFn, validator *ethpb
 		withdrawalBuf := [32]byte{}
 		binary.LittleEndian.PutUint64(withdrawalBuf[:8], validator.WithdrawableEpoch)
 		copy(enc[113:121], withdrawalBuf[:8])
+
+		nextCustodyRevealBuf := [32]byte{}
+		binary.LittleEndian.PutUint64(nextCustodyRevealBuf[:8], validator.NextCustodySecretRevealEpoch)
+		copy(enc[121:129], nextCustodyRevealBuf[:8])
+
+		allCustodyRevealBuf := [32]byte{}
+		binary.LittleEndian.PutUint64(allCustodyRevealBuf[:8], validator.AllCustodySecretsRevealedEpoch)
+		copy(enc[129:137], allCustodyRevealBuf[:8])
 
 		// Check if it exists in cache:
 		if h.rootsCache != nil {
@@ -223,6 +237,9 @@ func (h *stateRootHasher) validatorRoot(hasher htrutils.HashFn, validator *ethpb
 
 		// Withdrawable epoch.
 		fieldRoots = append(fieldRoots, withdrawalBuf)
+
+		fieldRoots = append(fieldRoots, nextCustodyRevealBuf)
+		fieldRoots = append(fieldRoots, allCustodyRevealBuf)
 	}
 
 	valRoot, err := htrutils.BitwiseMerkleizeArrays(hasher, fieldRoots, uint64(len(fieldRoots)), uint64(len(fieldRoots)))

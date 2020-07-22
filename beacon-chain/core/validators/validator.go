@@ -166,6 +166,55 @@ func SlashValidator(state *stateTrie.BeaconState, slashedIdx uint64) (*stateTrie
 	return state, nil
 }
 
+// SlashValidatorForWhistleBlower slashes validator for whistle blower.
+func SlashValidatorForWhistleBlower(state *stateTrie.BeaconState, slashedIdx uint64, whistleBlowerIdx uint64) (*stateTrie.BeaconState, error) {
+	state, err := InitiateValidatorExit(state, slashedIdx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not initiate validator %d exit", slashedIdx)
+	}
+	currentEpoch := helpers.SlotToEpoch(state.Slot())
+	validator, err := state.ValidatorAtIndex(slashedIdx)
+	if err != nil {
+		return nil, err
+	}
+	validator.Slashed = true
+	maxWithdrawableEpoch := mathutil.Max(validator.WithdrawableEpoch, currentEpoch+params.BeaconConfig().EpochsPerSlashingsVector)
+	validator.WithdrawableEpoch = maxWithdrawableEpoch
+
+	if err := state.UpdateValidatorAtIndex(slashedIdx, validator); err != nil {
+		return nil, err
+	}
+
+	// The slashing amount is represented by epochs per slashing vector. The validator's effective balance is then applied to that amount.
+	slashings := state.Slashings()
+	currentSlashing := slashings[currentEpoch%params.BeaconConfig().EpochsPerSlashingsVector]
+	if err := state.UpdateSlashingsAtIndex(
+		currentEpoch%params.BeaconConfig().EpochsPerSlashingsVector,
+		currentSlashing+validator.EffectiveBalance,
+	); err != nil {
+		return nil, err
+	}
+	if err := helpers.DecreaseBalance(state, slashedIdx, validator.EffectiveBalance/params.BeaconConfig().MinSlashingPenaltyQuotient); err != nil {
+		return nil, err
+	}
+
+	proposerIdx, err := helpers.BeaconProposerIndex(state)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get proposer idx")
+	}
+	whistleblowerReward := validator.EffectiveBalance / params.BeaconConfig().WhistleBlowerRewardQuotient
+	proposerReward := whistleblowerReward / params.BeaconConfig().ProposerRewardQuotient
+	err = helpers.IncreaseBalance(state, proposerIdx, proposerReward)
+	if err != nil {
+		return nil, err
+	}
+	err = helpers.IncreaseBalance(state, whistleBlowerIdx, whistleblowerReward-proposerReward)
+	if err != nil {
+		return nil, err
+	}
+	return state, nil
+}
+
 // ActivatedValidatorIndices determines the indices activated during the given epoch.
 func ActivatedValidatorIndices(epoch uint64, validators []*ethpb.Validator) []uint64 {
 	activations := make([]uint64, 0)

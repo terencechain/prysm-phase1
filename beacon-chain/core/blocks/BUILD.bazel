@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "attestation.go",
         "attester_slashing.go",
+        "custody.go",
         "deposit.go",
         "eth1_data.go",
         "exit.go",

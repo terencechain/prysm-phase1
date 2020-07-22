@@ -106,7 +106,6 @@ func TestInitializeFromProtoUnsafe(t *testing.T) {
 
 func TestBeaconState_HashTreeRoot(t *testing.T) {
 	testState, _ := testutil.DeterministicGenesisState(t, 64)
-
 	type test struct {
 		name        string
 		stateModify func(*state.BeaconState) (*state.BeaconState, error)

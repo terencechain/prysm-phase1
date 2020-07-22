@@ -692,9 +692,9 @@ func (b *BeaconState) SetPreviousJustifiedCheckpoint(val *ethpb.Checkpoint) erro
 	return nil
 }
 
-// SetShardState for the beacon state. This PR updates the entire
+// SetShardStates for the beacon state. This method updates the entire
 // list to a new value by overwriting the previous one.
-func (b *BeaconState) SetShardState(val []*ethpb.ShardState) error {
+func (b *BeaconState) SetShardStates(val []*ethpb.ShardState) error {
 	if !b.HasInnerState() {
 		return ErrNilInnerState
 	}
@@ -710,7 +710,7 @@ func (b *BeaconState) SetShardState(val []*ethpb.ShardState) error {
 	return nil
 }
 
-// SetShardStateAtIndex for the beacon state. This PR updates the shard
+// SetShardStateAtIndex for the beacon state. This method updates the shard
 // state at index to a new value by overwriting the previous one.
 func (b *BeaconState) SetShardStateAtIndex(index uint64, val *ethpb.ShardState) error {
 	if !b.HasInnerState() {
@@ -728,7 +728,7 @@ func (b *BeaconState) SetShardStateAtIndex(index uint64, val *ethpb.ShardState) 
 	return nil
 }
 
-// SetOnlineCountdowns for the beacon state. This PR updates the entire
+// SetOnlineCountdowns for the beacon state. This method updates the entire
 // list to a new value by overwriting the previous one.
 func (b *BeaconState) SetOnlineCountdowns(val []uint64) error {
 	if !b.HasInnerState() {
@@ -835,6 +835,66 @@ func (b *BeaconState) SetNextLightCommittee(val *ethpb.CompactCommittee) error {
 
 	b.state.NextLightCommittee = val
 	b.markFieldAsDirty(nextLightCommittee)
+	return nil
+}
+
+// SetCustodyChunkChallengeRecords for the beacon state. This updates the entire
+// list to a new value by overwriting the previous one.
+func (b *BeaconState) SetCustodyChunkChallengeRecords(vals []*pbp2p.CustodyChunkChallengeRecord) error {
+	if !b.HasInnerState() {
+		return ErrNilInnerState
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.sharedFieldReferences[custodyChunkChallengeRecords].refs--
+	b.sharedFieldReferences[custodyChunkChallengeRecords] = &reference{refs: 1}
+
+	b.state.CustodyChunkChallengeRecords = vals
+	b.markFieldAsDirty(custodyChunkChallengeRecords)
+	b.rebuildTrie[custodyChunkChallengeRecords] = true
+	return nil
+}
+
+// ReplaceEmptyCustodyChunkChallengeRecord for the beacon state.
+func (b *BeaconState) ReplaceEmptyCustodyChunkChallengeRecord(val *pbp2p.CustodyChunkChallengeRecord) error {
+	if !b.HasInnerState() {
+		return ErrNilInnerState
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.sharedFieldReferences[custodyChunkChallengeRecords].refs--
+	b.sharedFieldReferences[custodyChunkChallengeRecords] = &reference{refs: 1}
+
+	replaced := false
+	for i := range b.state.CustodyChunkChallengeRecords {
+		r := b.state.CustodyChunkChallengeRecords[i]
+		if proto.Equal(r, &pbp2p.CustodyChunkChallengeRecord{}) {
+			b.state.CustodyChunkChallengeRecords[i] = val
+			replaced = true
+			break
+		}
+	}
+	if !replaced {
+		b.state.CustodyChunkChallengeRecords = append(b.state.CustodyChunkChallengeRecords, val)
+	}
+
+	b.markFieldAsDirty(custodyChunkChallengeRecords)
+	b.rebuildTrie[custodyChunkChallengeRecords] = true
+	return nil
+}
+
+// IncChallengeIndex for the beacon state.
+func (b *BeaconState) IncChallengeIndex() error {
+	if !b.HasInnerState() {
+		return ErrNilInnerState
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.state.CustodyChunkChallengeIndex++
+	b.markFieldAsDirty(custodyChunkChallengeIndex)
 	return nil
 }
 

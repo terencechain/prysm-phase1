@@ -222,7 +222,13 @@ func OptimizedGenesisBeaconState(genesisTime uint64, preState *stateTrie.BeaconS
 		PubKeys:           bytesutil.Copy2dBytes(pubKeys),
 		CompactValidators: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee),
 	}
-
+	custodyRecords := make([]*pb.CustodyChunkChallengeRecord, params.ShardConfig().MaxCustodyChunkChallengeRecords)
+	for i := 0; i < len(custodyRecords); i++ {
+		custodyRecords[i] = &pb.CustodyChunkChallengeRecord{
+			DataRoot: zeroHash,
+		}
+	}
+	state.CustodyChunkChallengeRecords = custodyRecords
 	return stateTrie.InitializeFromProto(state)
 }
 

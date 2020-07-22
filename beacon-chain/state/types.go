@@ -22,6 +22,7 @@ func init() {
 	fieldMap[previousEpochAttestations] = compositeArray
 	fieldMap[currentEpochAttestations] = compositeArray
 	fieldMap[shardStates] = compositeArray
+	fieldMap[custodyChunkChallengeRecords] = compositeArray
 }
 
 type fieldIndex int
@@ -61,6 +62,8 @@ const (
 	onlineCountDown
 	currentLightCommittee
 	nextLightCommittee
+	custodyChunkChallengeRecords
+	custodyChunkChallengeIndex
 )
 
 // List of current data types the state supports.

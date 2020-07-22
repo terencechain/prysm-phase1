@@ -218,7 +218,7 @@ func TestShardOffSetSlots(t *testing.T) {
 			t.Fatal(err)
 		}
 		shardState := &ethpb.ShardState{Slot: tt.startSlot}
-		if beaconState.SetShardState([]*ethpb.ShardState{shardState}) != nil {
+		if beaconState.SetShardStates([]*ethpb.ShardState{shardState}) != nil {
 			t.Fatal(err)
 		}
 		offsetSlots := ShardOffSetSlots(beaconState, 0)

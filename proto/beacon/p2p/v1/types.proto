@@ -52,6 +52,8 @@ message BeaconState {
   repeated uint64 online_countdown = 9003 [(gogoproto.moretags) = "ssz-max:\"1099511627776\""];
   ethereum.eth.v1alpha1.CompactCommittee current_light_committee = 9004;
   ethereum.eth.v1alpha1.CompactCommittee next_light_committee = 9005;
+  repeated CustodyChunkChallengeRecord custody_chunk_challenge_records = 9006 [(gogoproto.moretags) = "ssz-max:\"16\""];
+  uint64 custody_chunk_challenge_index = 9007;
 }
 
 message Fork {
@@ -114,5 +116,35 @@ message SignedAggregateAndProof {
   // The aggregated and proof from the aggregator.
   ethereum.eth.v1alpha1.AggregateAttestationAndProof message = 1;
   // The signature of the aggregator signing the aggregated and proof object.
+  bytes signature = 2 [(gogoproto.moretags) = "ssz-size:\"96\""];
+}
+
+// Custody objects.
+message CustodyChunkChallenge{
+  uint64 responder_index = 1;
+  ethereum.eth.v1alpha1.ShardTransition shard_transition = 2;
+  ethereum.eth.v1alpha1.Attestation attestation = 3;
+  uint64 data_index = 4;
+  uint64 chunk_index = 5;
+}
+
+message CustodyChunkRespond{
+  uint64 challenge_index = 1;
+  uint64 chunk_index = 2;
+  repeated bytes chunk = 3;
+  repeated bytes branch = 4;
+}
+
+message CustodyChunkChallengeRecord{
+  uint64 challenge_index = 1;
+  uint64 challenger_index = 2;
+  uint64 responder_index = 3;
+  uint64 inclusion_epoch = 4;
+  bytes data_root = 5 [(gogoproto.moretags) = "ssz-size:\"32\""];
+  uint64 chunk_index = 6;
+}
+
+message CustodyKeyReveal{
+  uint64 revealer_index = 1;
   bytes signature = 2 [(gogoproto.moretags) = "ssz-size:\"96\""];
 }

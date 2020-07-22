@@ -138,36 +138,44 @@ var mainnetBeaconConfig = &BeaconChainConfig{
 }
 
 type ShardChainConfig struct {
-	MaxShard                      uint64   // MaxShard defines the max shard allowed to crosslink with beacon chain.
-	MaxShardBlockSize             uint64   // MaxShardBlockSize defines the max shard block size.
-	TargetShardBlockSize          uint64   // TargetShardBlockSize defines the target shard block size.
-	DomainShardProposal           [4]byte  // DomainShardProposal defines the BLS signature domain for shard proposal.
-	DomainShardCommittee          [4]byte  // DomainShardCommittee defines the BLS signature domain for shard committee.
-	DomainLightClient             [4]byte  // DomainLightClient defines the BLS signature domain for light client.
-	Phase1GenesisSlot             uint64   // Phase1GenesisSlot defines the slot when phase 1 genesis
-	GasPriceAdjustmentCoefficient uint64   // GasPriceAdjustmentCoefficient defines the gas price adjustment coefficient.
-	MaxGasPrice                   uint64   // MaxGasPrice defines the max gas price.
-	MinGasPrice                   uint64   // MinGasPrice defines the min gas price.
-	ShardCommitteePeriod          uint64   // ShardCommitteePeriod defines the shard committee period.
-	ShardBlockOffsets             []uint64 // ShardBlockOffsets defines the shard block offsets.
-	OnlineCountDown               uint64   // OnlineCountDown defines the default count down start number.
-	LightClientCommitteeSize      uint64   // LightClientCommitteeSize defines the light client committee size.
-	LightClientCommitteePeriod    uint64   // LightClientCommitteePeriod defines the light client committee period.
+	MaxShard                        uint64   // MaxShard defines the max shard allowed to crosslink with beacon chain.
+	MaxShardBlockSize               uint64   // MaxShardBlockSize defines the max shard block size.
+	TargetShardBlockSize            uint64   // TargetShardBlockSize defines the target shard block size.
+	DomainShardProposal             [4]byte  // DomainShardProposal defines the BLS signature domain for shard proposal.
+	DomainShardCommittee            [4]byte  // DomainShardCommittee defines the BLS signature domain for shard committee.
+	DomainLightClient               [4]byte  // DomainLightClient defines the BLS signature domain for light client.
+	Phase1GenesisSlot               uint64   // Phase1GenesisSlot defines the slot when phase 1 genesis
+	GasPriceAdjustmentCoefficient   uint64   // GasPriceAdjustmentCoefficient defines the gas price adjustment coefficient.
+	MaxGasPrice                     uint64   // MaxGasPrice defines the max gas price.
+	MinGasPrice                     uint64   // MinGasPrice defines the min gas price.
+	ShardCommitteePeriod            uint64   // ShardCommitteePeriod defines the shard committee period.
+	ShardBlockOffsets               []uint64 // ShardBlockOffsets defines the shard block offsets.
+	OnlineCountDown                 uint64   // OnlineCountDown defines the default count down start number.
+	LightClientCommitteeSize        uint64   // LightClientCommitteeSize defines the light client committee size.
+	LightClientCommitteePeriod      uint64   // LightClientCommitteePeriod defines the light client committee period.
+	MaxChunkChallengeDelay          uint64   // MaxChunkChallengeDelay defines the max chunk challenge delay.
+	MinorRewardQuotient             uint64   // MinorRewardQuotient defines the minor reward quotient.
+	MaxCustodyChunkChallengeRecords uint64   // MaxCustodyChunkChallengeRecords defines the max custody chunk challenge records.
+	EpochsPerCustodyPeriod          uint64   // EpochsPerCustodyPeriod defines how many epochs per custody period.
 }
 
 var mainnetShardChainConfig = &ShardChainConfig{
-	MaxShard:                      64,
-	MaxShardBlockSize:             1 << 20,
-	TargetShardBlockSize:          1 << 18,
-	DomainShardProposal:           bytesutil.ToBytes4(bytesutil.Bytes4(128)),
-	DomainShardCommittee:          bytesutil.ToBytes4(bytesutil.Bytes4(129)),
-	DomainLightClient:             bytesutil.ToBytes4(bytesutil.Bytes4(130)),
-	GasPriceAdjustmentCoefficient: 8,
-	MaxGasPrice:                   16384,
-	MinGasPrice:                   8,
-	ShardCommitteePeriod:          256,
-	ShardBlockOffsets:             []uint64{1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233},
-	OnlineCountDown:               8,
-	LightClientCommitteeSize:      128,
-	LightClientCommitteePeriod:    256,
+	MaxShard:                        64,
+	MaxShardBlockSize:               1 << 20,
+	TargetShardBlockSize:            1 << 18,
+	DomainShardProposal:             bytesutil.ToBytes4(bytesutil.Bytes4(128)),
+	DomainShardCommittee:            bytesutil.ToBytes4(bytesutil.Bytes4(129)),
+	DomainLightClient:               bytesutil.ToBytes4(bytesutil.Bytes4(130)),
+	GasPriceAdjustmentCoefficient:   8,
+	MaxGasPrice:                     16384,
+	MinGasPrice:                     8,
+	ShardCommitteePeriod:            256,
+	ShardBlockOffsets:               []uint64{1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233},
+	OnlineCountDown:                 8,
+	LightClientCommitteeSize:        128,
+	LightClientCommitteePeriod:      256,
+	MaxChunkChallengeDelay:          1 << 15,
+	MinorRewardQuotient:             256,
+	MaxCustodyChunkChallengeRecords: 16, // TODO(0): Stubbed to be replaced by the real value.
+	EpochsPerCustodyPeriod:          16384,
 }

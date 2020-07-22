@@ -315,3 +315,18 @@ func CopyLightCommittee(data *ethpb.CompactCommittee) *ethpb.CompactCommittee {
 		CompactValidators: cv,
 	}
 }
+
+// CopyCustodyChunkRecord copies the provided custody chunk record object.
+func CopyCustodyChunkRecord(val *pbp2p.CustodyChunkChallengeRecord) *pbp2p.CustodyChunkChallengeRecord {
+	if val == nil {
+		return nil
+	}
+	return &pbp2p.CustodyChunkChallengeRecord{
+		ChallengeIndex:  val.ChunkIndex,
+		ChallengerIndex: val.ChallengerIndex,
+		ResponderIndex:  val.ResponderIndex,
+		InclusionEpoch:  val.InclusionEpoch,
+		DataRoot:        bytesutil.SafeCopyBytes(val.DataRoot),
+		ChunkIndex:      val.ChunkIndex,
+	}
+}

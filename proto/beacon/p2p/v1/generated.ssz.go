@@ -28,7 +28,7 @@ func (b *BeaconState) MarshalSSZ() ([]byte, error) {
 // MarshalSSZTo ssz marshals the BeaconState object to a target array
 func (b *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 	var err error
-	offset := int(2916769)
+	offset := int(2916781)
 
 	// Field (0) 'GenesisTime'
 	dst = ssz.MarshalUint64(dst, b.GenesisTime)
@@ -98,7 +98,7 @@ func (b *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 
 	// Offset (11) 'Validators'
 	dst = ssz.WriteOffset(dst, offset)
-	offset += len(b.Validators) * 121
+	offset += len(b.Validators) * 137
 
 	// Offset (12) 'Balances'
 	dst = ssz.WriteOffset(dst, offset)
@@ -192,6 +192,13 @@ func (b *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 		return nil, err
 	}
 
+	// Offset (26) 'CustodyChunkChallengeRecords'
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(b.CustodyChunkChallengeRecords) * 72
+
+	// Field (27) 'CustodyChunkChallengeIndex'
+	dst = ssz.MarshalUint64(dst, b.CustodyChunkChallengeIndex)
+
 	// Field (7) 'HistoricalRoots'
 	if len(b.HistoricalRoots) > 16777216 {
 		return nil, errMarshalList
@@ -282,6 +289,16 @@ func (b *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 		dst = ssz.MarshalUint64(dst, b.OnlineCountdown[ii])
 	}
 
+	// Field (26) 'CustodyChunkChallengeRecords'
+	if len(b.CustodyChunkChallengeRecords) > 16 {
+		return nil, errMarshalList
+	}
+	for ii := 0; ii < len(b.CustodyChunkChallengeRecords); ii++ {
+		if dst, err = b.CustodyChunkChallengeRecords[ii].MarshalSSZTo(dst); err != nil {
+			return nil, err
+		}
+	}
+
 	return dst, err
 }
 
@@ -289,12 +306,12 @@ func (b *BeaconState) MarshalSSZTo(dst []byte) ([]byte, error) {
 func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 	var err error
 	size := uint64(len(buf))
-	if size < 2916769 {
+	if size < 2916781 {
 		return errSize
 	}
 
 	tail := buf
-	var o7, o9, o11, o12, o15, o16, o22, o23 uint64
+	var o7, o9, o11, o12, o15, o16, o22, o23, o26 uint64
 
 	// Field (0) 'GenesisTime'
 	b.GenesisTime = ssz.UnmarshallUint64(buf[0:8])
@@ -442,6 +459,14 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 		return err
 	}
 
+	// Offset (26) 'CustodyChunkChallengeRecords'
+	if o26 = ssz.ReadOffset(buf[2916769:2916773]); o26 > size || o23 > o26 {
+		return errOffset
+	}
+
+	// Field (27) 'CustodyChunkChallengeIndex'
+	b.CustodyChunkChallengeIndex = ssz.UnmarshallUint64(buf[2916773:2916781])
+
 	// Field (7) 'HistoricalRoots'
 	{
 		buf = tail[o7:o9]
@@ -482,7 +507,7 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 	// Field (11) 'Validators'
 	{
 		buf = tail[o11:o12]
-		num, ok := ssz.DivideInt(len(buf), 121)
+		num, ok := ssz.DivideInt(len(buf), 137)
 		if !ok {
 			return errDivideInt
 		}
@@ -494,7 +519,7 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 			if b.Validators[ii] == nil {
 				b.Validators[ii] = new(v1alpha1.Validator)
 			}
-			if err = b.Validators[ii].UnmarshalSSZ(buf[ii*121 : (ii+1)*121]); err != nil {
+			if err = b.Validators[ii].UnmarshalSSZ(buf[ii*137 : (ii+1)*137]); err != nil {
 				return err
 			}
 		}
@@ -583,7 +608,7 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 
 	// Field (23) 'OnlineCountdown'
 	{
-		buf = tail[o23:]
+		buf = tail[o23:o26]
 		num, ok := ssz.DivideInt(len(buf), 8)
 		if !ok {
 			return errDivideInt
@@ -596,12 +621,33 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 			b.OnlineCountdown[ii] = ssz.UnmarshallUint64(buf[ii*8 : (ii+1)*8])
 		}
 	}
+
+	// Field (26) 'CustodyChunkChallengeRecords'
+	{
+		buf = tail[o26:]
+		num, ok := ssz.DivideInt(len(buf), 72)
+		if !ok {
+			return errDivideInt
+		}
+		if num > 16 {
+			return errListTooBig
+		}
+		b.CustodyChunkChallengeRecords = make([]*CustodyChunkChallengeRecord, num)
+		for ii := 0; ii < num; ii++ {
+			if b.CustodyChunkChallengeRecords[ii] == nil {
+				b.CustodyChunkChallengeRecords[ii] = new(CustodyChunkChallengeRecord)
+			}
+			if err = b.CustodyChunkChallengeRecords[ii].UnmarshalSSZ(buf[ii*72 : (ii+1)*72]); err != nil {
+				return err
+			}
+		}
+	}
 	return err
 }
 
 // SizeSSZ returns the ssz encoded size in bytes for the BeaconState object
 func (b *BeaconState) SizeSSZ() (size int) {
-	size = 2916769
+	size = 2916781
 
 	// Field (7) 'HistoricalRoots'
 	size += len(b.HistoricalRoots) * 32
@@ -610,7 +656,7 @@ func (b *BeaconState) SizeSSZ() (size int) {
 	size += len(b.Eth1DataVotes) * 72
 
 	// Field (11) 'Validators'
-	size += len(b.Validators) * 121
+	size += len(b.Validators) * 137
 
 	// Field (12) 'Balances'
 	size += len(b.Balances) * 8
@@ -632,6 +678,9 @@ func (b *BeaconState) SizeSSZ() (size int) {
 
 	// Field (23) 'OnlineCountdown'
 	size += len(b.OnlineCountdown) * 8
+
+	// Field (26) 'CustodyChunkChallengeRecords'
+	size += len(b.CustodyChunkChallengeRecords) * 72
 
 	return
 }
@@ -836,6 +885,74 @@ func (h *HistoricalBatch) UnmarshalSSZ(buf []byte) error {
 // SizeSSZ returns the ssz encoded size in bytes for the HistoricalBatch object
 func (h *HistoricalBatch) SizeSSZ() (size int) {
 	size = 524288
+	return
+}
+
+// MarshalSSZ ssz marshals the CustodyChunkChallengeRecord object
+func (c *CustodyChunkChallengeRecord) MarshalSSZ() ([]byte, error) {
+	buf := make([]byte, c.SizeSSZ())
+	return c.MarshalSSZTo(buf[:0])
+}
+
+// MarshalSSZTo ssz marshals the CustodyChunkChallengeRecord object to a target array
+func (c *CustodyChunkChallengeRecord) MarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field (0) 'ChallengeIndex'
+	dst = ssz.MarshalUint64(dst, c.ChallengeIndex)
+
+	// Field (1) 'ChallengerIndex'
+	dst = ssz.MarshalUint64(dst, c.ChallengerIndex)
+
+	// Field (2) 'ResponderIndex'
+	dst = ssz.MarshalUint64(dst, c.ResponderIndex)
+
+	// Field (3) 'InclusionEpoch'
+	dst = ssz.MarshalUint64(dst, c.InclusionEpoch)
+
+	// Field (4) 'DataRoot'
+	if dst, err = ssz.MarshalFixedBytes(dst, c.DataRoot, 32); err != nil {
+		return nil, errMarshalFixedBytes
+	}
+
+	// Field (5) 'ChunkIndex'
+	dst = ssz.MarshalUint64(dst, c.ChunkIndex)
+
+	return dst, err
+}
+
+// UnmarshalSSZ ssz unmarshals the CustodyChunkChallengeRecord object
+func (c *CustodyChunkChallengeRecord) UnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 72 {
+		return errSize
+	}
+
+	// Field (0) 'ChallengeIndex'
+	c.ChallengeIndex = ssz.UnmarshallUint64(buf[0:8])
+
+	// Field (1) 'ChallengerIndex'
+	c.ChallengerIndex = ssz.UnmarshallUint64(buf[8:16])
+
+	// Field (2) 'ResponderIndex'
+	c.ResponderIndex = ssz.UnmarshallUint64(buf[16:24])
+
+	// Field (3) 'InclusionEpoch'
+	c.InclusionEpoch = ssz.UnmarshallUint64(buf[24:32])
+
+	// Field (4) 'DataRoot'
+	c.DataRoot = append(c.DataRoot, buf[32:64]...)
+
+	// Field (5) 'ChunkIndex'
+	c.ChunkIndex = ssz.UnmarshallUint64(buf[64:72])
+
+	return err
+}
+
+// SizeSSZ returns the ssz encoded size in bytes for the CustodyChunkChallengeRecord object
+func (c *CustodyChunkChallengeRecord) SizeSSZ() (size int) {
+	size = 72
 	return
 }
 

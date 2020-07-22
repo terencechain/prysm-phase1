@@ -44,6 +44,7 @@ var st, _ = stateTrie.InitializeFromProtoUnsafe(&pb.BeaconState{
 		PubKeys:           filledByteSlice2D(params.BeaconConfig().MaxValidatorsPerCommittee, uint64(params.BeaconConfig().BLSPubkeyLength)),
 		CompactValidators: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee),
 	},
+	CustodyChunkChallengeRecords: make([]*pb.CustodyChunkChallengeRecord, 0),
 })
 
 // NewBeaconState creates a beacon state with minimum marshalable fields.

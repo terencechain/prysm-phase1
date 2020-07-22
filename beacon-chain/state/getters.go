@@ -112,56 +112,63 @@ func (b *BeaconState) CloneInnerState() *pbp2p.BeaconState {
 		b.lock.RLock()
 		defer b.lock.RUnlock()
 		return &pbp2p.BeaconState{
-			GenesisTime:                 b.genesisTime(),
-			GenesisValidatorsRoot:       b.genesisValidatorRoot(),
-			Slot:                        b.slot(),
-			Fork:                        b.fork(),
-			LatestBlockHeader:           b.latestBlockHeader(),
-			BlockRoots:                  b.blockRoots(),
-			StateRoots:                  b.stateRoots(),
-			HistoricalRoots:             b.historicalRoots(),
-			Eth1Data:                    b.eth1Data(),
-			Eth1DataVotes:               b.eth1DataVotes(),
-			Eth1DepositIndex:            b.eth1DepositIndex(),
-			Validators:                  b.validators(),
-			Balances:                    b.balances(),
-			RandaoMixes:                 b.randaoMixes(),
-			Slashings:                   b.slashings(),
-			PreviousEpochAttestations:   b.previousEpochAttestations(),
-			CurrentEpochAttestations:    b.currentEpochAttestations(),
-			JustificationBits:           b.justificationBits(),
-			PreviousJustifiedCheckpoint: b.previousJustifiedCheckpoint(),
-			CurrentJustifiedCheckpoint:  b.currentJustifiedCheckpoint(),
-			FinalizedCheckpoint:         b.finalizedCheckpoint(),
+			GenesisTime:                  b.genesisTime(),
+			GenesisValidatorsRoot:        b.genesisValidatorRoot(),
+			Slot:                         b.slot(),
+			Fork:                         b.fork(),
+			LatestBlockHeader:            b.latestBlockHeader(),
+			BlockRoots:                   b.blockRoots(),
+			StateRoots:                   b.stateRoots(),
+			HistoricalRoots:              b.historicalRoots(),
+			Eth1Data:                     b.eth1Data(),
+			Eth1DataVotes:                b.eth1DataVotes(),
+			Eth1DepositIndex:             b.eth1DepositIndex(),
+			Validators:                   b.validators(),
+			Balances:                     b.balances(),
+			RandaoMixes:                  b.randaoMixes(),
+			Slashings:                    b.slashings(),
+			PreviousEpochAttestations:    b.previousEpochAttestations(),
+			CurrentEpochAttestations:     b.currentEpochAttestations(),
+			JustificationBits:            b.justificationBits(),
+			PreviousJustifiedCheckpoint:  b.previousJustifiedCheckpoint(),
+			CurrentJustifiedCheckpoint:   b.currentJustifiedCheckpoint(),
+			FinalizedCheckpoint:          b.finalizedCheckpoint(),
+			CurrentEpochStartShard:       b.CurrentEpochStartShard(),
+			ShardStates:                  b.ShardStates(),
+			OnlineCountdown:              b.OnlineCountdowns(),
+			CurrentLightCommittee:        b.CurrentLightCommittee(),
+			NextLightCommittee:           b.NextLightCommittee(),
+			CustodyChunkChallengeRecords: b.CustodyChunkChallengeRecords(),
 		}
 	}
 	return &pbp2p.BeaconState{
-		GenesisTime:                 b.GenesisTime(),
-		GenesisValidatorsRoot:       b.GenesisValidatorRoot(),
-		Slot:                        b.Slot(),
-		Fork:                        b.Fork(),
-		LatestBlockHeader:           b.LatestBlockHeader(),
-		BlockRoots:                  b.BlockRoots(),
-		StateRoots:                  b.StateRoots(),
-		HistoricalRoots:             b.HistoricalRoots(),
-		Eth1Data:                    b.Eth1Data(),
-		Eth1DataVotes:               b.Eth1DataVotes(),
-		Eth1DepositIndex:            b.Eth1DepositIndex(),
-		Validators:                  b.Validators(),
-		Balances:                    b.Balances(),
-		RandaoMixes:                 b.RandaoMixes(),
-		Slashings:                   b.Slashings(),
-		PreviousEpochAttestations:   b.PreviousEpochAttestations(),
-		CurrentEpochAttestations:    b.CurrentEpochAttestations(),
-		JustificationBits:           b.JustificationBits(),
-		PreviousJustifiedCheckpoint: b.PreviousJustifiedCheckpoint(),
-		CurrentJustifiedCheckpoint:  b.CurrentJustifiedCheckpoint(),
-		FinalizedCheckpoint:         b.FinalizedCheckpoint(),
-		CurrentEpochStartShard:      b.CurrentEpochStartShard(),
-		ShardStates:                 b.ShardStates(),
-		OnlineCountdown:             b.OnlineCountdowns(),
-		CurrentLightCommittee:       b.CurrentLightCommittee(),
-		NextLightCommittee:          b.NextLightCommittee(),
+		GenesisTime:                  b.GenesisTime(),
+		GenesisValidatorsRoot:        b.GenesisValidatorRoot(),
+		Slot:                         b.Slot(),
+		Fork:                         b.Fork(),
+		LatestBlockHeader:            b.LatestBlockHeader(),
+		BlockRoots:                   b.BlockRoots(),
+		StateRoots:                   b.StateRoots(),
+		HistoricalRoots:              b.HistoricalRoots(),
+		Eth1Data:                     b.Eth1Data(),
+		Eth1DataVotes:                b.Eth1DataVotes(),
+		Eth1DepositIndex:             b.Eth1DepositIndex(),
+		Validators:                   b.Validators(),
+		Balances:                     b.Balances(),
+		RandaoMixes:                  b.RandaoMixes(),
+		Slashings:                    b.Slashings(),
+		PreviousEpochAttestations:    b.PreviousEpochAttestations(),
+		CurrentEpochAttestations:     b.CurrentEpochAttestations(),
+		JustificationBits:            b.JustificationBits(),
+		PreviousJustifiedCheckpoint:  b.PreviousJustifiedCheckpoint(),
+		CurrentJustifiedCheckpoint:   b.CurrentJustifiedCheckpoint(),
+		FinalizedCheckpoint:          b.FinalizedCheckpoint(),
+		CurrentEpochStartShard:       b.CurrentEpochStartShard(),
+		ShardStates:                  b.ShardStates(),
+		OnlineCountdown:              b.OnlineCountdowns(),
+		CurrentLightCommittee:        b.CurrentLightCommittee(),
+		NextLightCommittee:           b.NextLightCommittee(),
+		CustodyChunkChallengeRecords: b.CustodyChunkChallengeRecords(),
 	}
 }
 
@@ -1202,6 +1209,47 @@ func (b *BeaconState) NextLightCommittee() *ethpb.CompactCommittee {
 	}
 
 	return CopyLightCommittee(b.state.NextLightCommittee)
+}
+
+// CustodyChunkChallengeRecords returns custody chunk challenge records from beacon state.
+func (b *BeaconState) CustodyChunkChallengeRecords() []*pbp2p.CustodyChunkChallengeRecord {
+	if !b.HasInnerState() {
+		return nil
+	}
+	if b.state.CustodyChunkChallengeRecords == nil {
+		return nil
+	}
+
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+
+	res := make([]*pbp2p.CustodyChunkChallengeRecord, len(b.state.CustodyChunkChallengeRecords))
+	for i := 0; i < len(res); i++ {
+		res[i] = CopyCustodyChunkRecord(b.state.CustodyChunkChallengeRecords[i])
+	}
+	return res
+}
+
+// CustodyChallengeIndex of the current beacon chain state.
+func (b *BeaconState) CustodyChallengeIndex() uint64 {
+	if !b.HasInnerState() {
+		return 0
+	}
+
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+
+	return b.custodyChallengeIndex()
+}
+
+// custodyChallengeIndex of the current beacon chain state.
+// This assumes that a lock is already held on BeaconState.
+func (b *BeaconState) custodyChallengeIndex() uint64 {
+	if !b.HasInnerState() {
+		return 0
+	}
+
+	return b.state.CustodyChunkChallengeIndex
 }
 
 // finalizedCheckpointEpoch returns the epoch value of the finalized checkpoint.
