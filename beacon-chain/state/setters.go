@@ -856,8 +856,8 @@ func (b *BeaconState) SetCustodyChunkChallengeRecords(vals []*pbp2p.CustodyChunk
 	return nil
 }
 
-// ReplaceEmptyCustodyChunkChallengeRecord for the beacon state.
-func (b *BeaconState) ReplaceEmptyCustodyChunkChallengeRecord(val *pbp2p.CustodyChunkChallengeRecord) error {
+// ReplaceCustodyChunkChallengeRecord for the beacon state.
+func (b *BeaconState) ReplaceCustodyChunkChallengeRecord(val *pbp2p.CustodyChunkChallengeRecord) error {
 	if !b.HasInnerState() {
 		return ErrNilInnerState
 	}
@@ -879,6 +879,24 @@ func (b *BeaconState) ReplaceEmptyCustodyChunkChallengeRecord(val *pbp2p.Custody
 	if !replaced {
 		b.state.CustodyChunkChallengeRecords = append(b.state.CustodyChunkChallengeRecords, val)
 	}
+
+	b.markFieldAsDirty(custodyChunkChallengeRecords)
+	b.rebuildTrie[custodyChunkChallengeRecords] = true
+	return nil
+}
+
+// EmptyCustodyChunkChallengeRecord for the beacon state.
+func (b *BeaconState) EmptyCustodyChunkChallengeRecord(idx uint64) error {
+	if !b.HasInnerState() {
+		return ErrNilInnerState
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.sharedFieldReferences[custodyChunkChallengeRecords].refs--
+	b.sharedFieldReferences[custodyChunkChallengeRecords] = &reference{refs: 1}
+
+	b.state.CustodyChunkChallengeRecords[idx] = &pbp2p.CustodyChunkChallengeRecord{}
 
 	b.markFieldAsDirty(custodyChunkChallengeRecords)
 	b.rebuildTrie[custodyChunkChallengeRecords] = true

@@ -1,7 +1,6 @@
 package epoch
 
 import (
-	"github.com/prysmaticlabs/prysm/beacon-chain/core/blocks"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/validators"
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
@@ -16,7 +15,7 @@ func ProcessRevealDeadline(state *stateTrie.BeaconState) (*stateTrie.BeaconState
 	var err error
 	for i, val := range vals {
 		deadLine := val.NextCustodySecretRevealEpoch + 1
-		if blocks.CustodyPeriodForValidator(ce, uint64(i)) > deadLine {
+		if helpers.CustodyPeriodForValidator(ce, uint64(i)) > deadLine {
 			state, err = validators.SlashValidator(state, uint64(i))
 			if err != nil {
 				return nil, err

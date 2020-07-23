@@ -19,6 +19,346 @@ var (
 	errSize                = fmt.Errorf("incorrect size")
 )
 
+// MarshalSSZ ssz marshals the Status object
+func (s *Status) MarshalSSZ() ([]byte, error) {
+	buf := make([]byte, s.SizeSSZ())
+	return s.MarshalSSZTo(buf[:0])
+}
+
+// MarshalSSZTo ssz marshals the Status object to a target array
+func (s *Status) MarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field (0) 'ForkDigest'
+	if dst, err = ssz.MarshalFixedBytes(dst, s.ForkDigest, 4); err != nil {
+		return nil, errMarshalFixedBytes
+	}
+
+	// Field (1) 'FinalizedRoot'
+	if dst, err = ssz.MarshalFixedBytes(dst, s.FinalizedRoot, 32); err != nil {
+		return nil, errMarshalFixedBytes
+	}
+
+	// Field (2) 'FinalizedEpoch'
+	dst = ssz.MarshalUint64(dst, s.FinalizedEpoch)
+
+	// Field (3) 'HeadRoot'
+	if dst, err = ssz.MarshalFixedBytes(dst, s.HeadRoot, 32); err != nil {
+		return nil, errMarshalFixedBytes
+	}
+
+	// Field (4) 'HeadSlot'
+	dst = ssz.MarshalUint64(dst, s.HeadSlot)
+
+	return dst, err
+}
+
+// UnmarshalSSZ ssz unmarshals the Status object
+func (s *Status) UnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 84 {
+		return errSize
+	}
+
+	// Field (0) 'ForkDigest'
+	s.ForkDigest = append(s.ForkDigest, buf[0:4]...)
+
+	// Field (1) 'FinalizedRoot'
+	s.FinalizedRoot = append(s.FinalizedRoot, buf[4:36]...)
+
+	// Field (2) 'FinalizedEpoch'
+	s.FinalizedEpoch = ssz.UnmarshallUint64(buf[36:44])
+
+	// Field (3) 'HeadRoot'
+	s.HeadRoot = append(s.HeadRoot, buf[44:76]...)
+
+	// Field (4) 'HeadSlot'
+	s.HeadSlot = ssz.UnmarshallUint64(buf[76:84])
+
+	return err
+}
+
+// SizeSSZ returns the ssz encoded size in bytes for the Status object
+func (s *Status) SizeSSZ() (size int) {
+	size = 84
+	return
+}
+
+// MarshalSSZ ssz marshals the BeaconBlocksByRangeRequest object
+func (b *BeaconBlocksByRangeRequest) MarshalSSZ() ([]byte, error) {
+	buf := make([]byte, b.SizeSSZ())
+	return b.MarshalSSZTo(buf[:0])
+}
+
+// MarshalSSZTo ssz marshals the BeaconBlocksByRangeRequest object to a target array
+func (b *BeaconBlocksByRangeRequest) MarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field (0) 'StartSlot'
+	dst = ssz.MarshalUint64(dst, b.StartSlot)
+
+	// Field (1) 'Count'
+	dst = ssz.MarshalUint64(dst, b.Count)
+
+	// Field (2) 'Step'
+	dst = ssz.MarshalUint64(dst, b.Step)
+
+	return dst, err
+}
+
+// UnmarshalSSZ ssz unmarshals the BeaconBlocksByRangeRequest object
+func (b *BeaconBlocksByRangeRequest) UnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 24 {
+		return errSize
+	}
+
+	// Field (0) 'StartSlot'
+	b.StartSlot = ssz.UnmarshallUint64(buf[0:8])
+
+	// Field (1) 'Count'
+	b.Count = ssz.UnmarshallUint64(buf[8:16])
+
+	// Field (2) 'Step'
+	b.Step = ssz.UnmarshallUint64(buf[16:24])
+
+	return err
+}
+
+// SizeSSZ returns the ssz encoded size in bytes for the BeaconBlocksByRangeRequest object
+func (b *BeaconBlocksByRangeRequest) SizeSSZ() (size int) {
+	size = 24
+	return
+}
+
+// MarshalSSZ ssz marshals the BeaconBlocksByRootRequest object
+func (b *BeaconBlocksByRootRequest) MarshalSSZ() ([]byte, error) {
+	buf := make([]byte, b.SizeSSZ())
+	return b.MarshalSSZTo(buf[:0])
+}
+
+// MarshalSSZTo ssz marshals the BeaconBlocksByRootRequest object to a target array
+func (b *BeaconBlocksByRootRequest) MarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := int(4)
+
+	// Offset (0) 'BlockRoots'
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(b.BlockRoots) * 32
+
+	// Field (0) 'BlockRoots'
+	if len(b.BlockRoots) > 1024 {
+		return nil, errMarshalList
+	}
+	for ii := 0; ii < len(b.BlockRoots); ii++ {
+		if dst, err = ssz.MarshalFixedBytes(dst, b.BlockRoots[ii], 32); err != nil {
+			return nil, errMarshalFixedBytes
+		}
+	}
+
+	return dst, err
+}
+
+// UnmarshalSSZ ssz unmarshals the BeaconBlocksByRootRequest object
+func (b *BeaconBlocksByRootRequest) UnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 4 {
+		return errSize
+	}
+
+	tail := buf
+	var o0 uint64
+
+	// Offset (0) 'BlockRoots'
+	if o0 = ssz.ReadOffset(buf[0:4]); o0 > size {
+		return errOffset
+	}
+
+	// Field (0) 'BlockRoots'
+	{
+		buf = tail[o0:]
+		num, ok := ssz.DivideInt(len(buf), 32)
+		if !ok {
+			return errDivideInt
+		}
+		if num > 1024 {
+			return errListTooBig
+		}
+		b.BlockRoots = make([][]byte, num)
+		for ii := 0; ii < num; ii++ {
+			b.BlockRoots[ii] = append(b.BlockRoots[ii], buf[ii*32:(ii+1)*32]...)
+		}
+	}
+	return err
+}
+
+// SizeSSZ returns the ssz encoded size in bytes for the BeaconBlocksByRootRequest object
+func (b *BeaconBlocksByRootRequest) SizeSSZ() (size int) {
+	size = 4
+
+	// Field (0) 'BlockRoots'
+	size += len(b.BlockRoots) * 32
+
+	return
+}
+
+// MarshalSSZ ssz marshals the ErrorResponse object
+func (e *ErrorResponse) MarshalSSZ() ([]byte, error) {
+	buf := make([]byte, e.SizeSSZ())
+	return e.MarshalSSZTo(buf[:0])
+}
+
+// MarshalSSZTo ssz marshals the ErrorResponse object to a target array
+func (e *ErrorResponse) MarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+	offset := int(4)
+
+	// Offset (0) 'Message'
+	dst = ssz.WriteOffset(dst, offset)
+	offset += len(e.Message)
+
+	// Field (0) 'Message'
+	if len(e.Message) > 256 {
+		return nil, errMarshalDynamicBytes
+	}
+	dst = append(dst, e.Message...)
+
+	return dst, err
+}
+
+// UnmarshalSSZ ssz unmarshals the ErrorResponse object
+func (e *ErrorResponse) UnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size < 4 {
+		return errSize
+	}
+
+	tail := buf
+	var o0 uint64
+
+	// Offset (0) 'Message'
+	if o0 = ssz.ReadOffset(buf[0:4]); o0 > size {
+		return errOffset
+	}
+
+	// Field (0) 'Message'
+	{
+		buf = tail[o0:]
+		e.Message = append(e.Message, buf...)
+	}
+	return err
+}
+
+// SizeSSZ returns the ssz encoded size in bytes for the ErrorResponse object
+func (e *ErrorResponse) SizeSSZ() (size int) {
+	size = 4
+
+	// Field (0) 'Message'
+	size += len(e.Message)
+
+	return
+}
+
+// MarshalSSZ ssz marshals the ENRForkID object
+func (e *ENRForkID) MarshalSSZ() ([]byte, error) {
+	buf := make([]byte, e.SizeSSZ())
+	return e.MarshalSSZTo(buf[:0])
+}
+
+// MarshalSSZTo ssz marshals the ENRForkID object to a target array
+func (e *ENRForkID) MarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field (0) 'CurrentForkDigest'
+	if dst, err = ssz.MarshalFixedBytes(dst, e.CurrentForkDigest, 4); err != nil {
+		return nil, errMarshalFixedBytes
+	}
+
+	// Field (1) 'NextForkVersion'
+	if dst, err = ssz.MarshalFixedBytes(dst, e.NextForkVersion, 4); err != nil {
+		return nil, errMarshalFixedBytes
+	}
+
+	// Field (2) 'NextForkEpoch'
+	dst = ssz.MarshalUint64(dst, e.NextForkEpoch)
+
+	return dst, err
+}
+
+// UnmarshalSSZ ssz unmarshals the ENRForkID object
+func (e *ENRForkID) UnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 16 {
+		return errSize
+	}
+
+	// Field (0) 'CurrentForkDigest'
+	e.CurrentForkDigest = append(e.CurrentForkDigest, buf[0:4]...)
+
+	// Field (1) 'NextForkVersion'
+	e.NextForkVersion = append(e.NextForkVersion, buf[4:8]...)
+
+	// Field (2) 'NextForkEpoch'
+	e.NextForkEpoch = ssz.UnmarshallUint64(buf[8:16])
+
+	return err
+}
+
+// SizeSSZ returns the ssz encoded size in bytes for the ENRForkID object
+func (e *ENRForkID) SizeSSZ() (size int) {
+	size = 16
+	return
+}
+
+// MarshalSSZ ssz marshals the MetaData object
+func (m *MetaData) MarshalSSZ() ([]byte, error) {
+	buf := make([]byte, m.SizeSSZ())
+	return m.MarshalSSZTo(buf[:0])
+}
+
+// MarshalSSZTo ssz marshals the MetaData object to a target array
+func (m *MetaData) MarshalSSZTo(dst []byte) ([]byte, error) {
+	var err error
+
+	// Field (0) 'SeqNumber'
+	dst = ssz.MarshalUint64(dst, m.SeqNumber)
+
+	// Field (1) 'Attnets'
+	if dst, err = ssz.MarshalFixedBytes(dst, m.Attnets, 8); err != nil {
+		return nil, errMarshalFixedBytes
+	}
+
+	return dst, err
+}
+
+// UnmarshalSSZ ssz unmarshals the MetaData object
+func (m *MetaData) UnmarshalSSZ(buf []byte) error {
+	var err error
+	size := uint64(len(buf))
+	if size != 16 {
+		return errSize
+	}
+
+	// Field (0) 'SeqNumber'
+	m.SeqNumber = ssz.UnmarshallUint64(buf[0:8])
+
+	// Field (1) 'Attnets'
+	m.Attnets = append(m.Attnets, buf[8:16]...)
+
+	return err
+}
+
+// SizeSSZ returns the ssz encoded size in bytes for the MetaData object
+func (m *MetaData) SizeSSZ() (size int) {
+	size = 16
+	return
+}
+
 // MarshalSSZ ssz marshals the BeaconState object
 func (b *BeaconState) MarshalSSZ() ([]byte, error) {
 	buf := make([]byte, b.SizeSSZ())
@@ -953,345 +1293,5 @@ func (c *CustodyChunkChallengeRecord) UnmarshalSSZ(buf []byte) error {
 // SizeSSZ returns the ssz encoded size in bytes for the CustodyChunkChallengeRecord object
 func (c *CustodyChunkChallengeRecord) SizeSSZ() (size int) {
 	size = 72
-	return
-}
-
-// MarshalSSZ ssz marshals the Status object
-func (s *Status) MarshalSSZ() ([]byte, error) {
-	buf := make([]byte, s.SizeSSZ())
-	return s.MarshalSSZTo(buf[:0])
-}
-
-// MarshalSSZTo ssz marshals the Status object to a target array
-func (s *Status) MarshalSSZTo(dst []byte) ([]byte, error) {
-	var err error
-
-	// Field (0) 'ForkDigest'
-	if dst, err = ssz.MarshalFixedBytes(dst, s.ForkDigest, 4); err != nil {
-		return nil, errMarshalFixedBytes
-	}
-
-	// Field (1) 'FinalizedRoot'
-	if dst, err = ssz.MarshalFixedBytes(dst, s.FinalizedRoot, 32); err != nil {
-		return nil, errMarshalFixedBytes
-	}
-
-	// Field (2) 'FinalizedEpoch'
-	dst = ssz.MarshalUint64(dst, s.FinalizedEpoch)
-
-	// Field (3) 'HeadRoot'
-	if dst, err = ssz.MarshalFixedBytes(dst, s.HeadRoot, 32); err != nil {
-		return nil, errMarshalFixedBytes
-	}
-
-	// Field (4) 'HeadSlot'
-	dst = ssz.MarshalUint64(dst, s.HeadSlot)
-
-	return dst, err
-}
-
-// UnmarshalSSZ ssz unmarshals the Status object
-func (s *Status) UnmarshalSSZ(buf []byte) error {
-	var err error
-	size := uint64(len(buf))
-	if size != 84 {
-		return errSize
-	}
-
-	// Field (0) 'ForkDigest'
-	s.ForkDigest = append(s.ForkDigest, buf[0:4]...)
-
-	// Field (1) 'FinalizedRoot'
-	s.FinalizedRoot = append(s.FinalizedRoot, buf[4:36]...)
-
-	// Field (2) 'FinalizedEpoch'
-	s.FinalizedEpoch = ssz.UnmarshallUint64(buf[36:44])
-
-	// Field (3) 'HeadRoot'
-	s.HeadRoot = append(s.HeadRoot, buf[44:76]...)
-
-	// Field (4) 'HeadSlot'
-	s.HeadSlot = ssz.UnmarshallUint64(buf[76:84])
-
-	return err
-}
-
-// SizeSSZ returns the ssz encoded size in bytes for the Status object
-func (s *Status) SizeSSZ() (size int) {
-	size = 84
-	return
-}
-
-// MarshalSSZ ssz marshals the BeaconBlocksByRangeRequest object
-func (b *BeaconBlocksByRangeRequest) MarshalSSZ() ([]byte, error) {
-	buf := make([]byte, b.SizeSSZ())
-	return b.MarshalSSZTo(buf[:0])
-}
-
-// MarshalSSZTo ssz marshals the BeaconBlocksByRangeRequest object to a target array
-func (b *BeaconBlocksByRangeRequest) MarshalSSZTo(dst []byte) ([]byte, error) {
-	var err error
-
-	// Field (0) 'StartSlot'
-	dst = ssz.MarshalUint64(dst, b.StartSlot)
-
-	// Field (1) 'Count'
-	dst = ssz.MarshalUint64(dst, b.Count)
-
-	// Field (2) 'Step'
-	dst = ssz.MarshalUint64(dst, b.Step)
-
-	return dst, err
-}
-
-// UnmarshalSSZ ssz unmarshals the BeaconBlocksByRangeRequest object
-func (b *BeaconBlocksByRangeRequest) UnmarshalSSZ(buf []byte) error {
-	var err error
-	size := uint64(len(buf))
-	if size != 24 {
-		return errSize
-	}
-
-	// Field (0) 'StartSlot'
-	b.StartSlot = ssz.UnmarshallUint64(buf[0:8])
-
-	// Field (1) 'Count'
-	b.Count = ssz.UnmarshallUint64(buf[8:16])
-
-	// Field (2) 'Step'
-	b.Step = ssz.UnmarshallUint64(buf[16:24])
-
-	return err
-}
-
-// SizeSSZ returns the ssz encoded size in bytes for the BeaconBlocksByRangeRequest object
-func (b *BeaconBlocksByRangeRequest) SizeSSZ() (size int) {
-	size = 24
-	return
-}
-
-// MarshalSSZ ssz marshals the BeaconBlocksByRootRequest object
-func (b *BeaconBlocksByRootRequest) MarshalSSZ() ([]byte, error) {
-	buf := make([]byte, b.SizeSSZ())
-	return b.MarshalSSZTo(buf[:0])
-}
-
-// MarshalSSZTo ssz marshals the BeaconBlocksByRootRequest object to a target array
-func (b *BeaconBlocksByRootRequest) MarshalSSZTo(dst []byte) ([]byte, error) {
-	var err error
-	offset := int(4)
-
-	// Offset (0) 'BlockRoots'
-	dst = ssz.WriteOffset(dst, offset)
-	offset += len(b.BlockRoots) * 32
-
-	// Field (0) 'BlockRoots'
-	if len(b.BlockRoots) > 1024 {
-		return nil, errMarshalList
-	}
-	for ii := 0; ii < len(b.BlockRoots); ii++ {
-		if dst, err = ssz.MarshalFixedBytes(dst, b.BlockRoots[ii], 32); err != nil {
-			return nil, errMarshalFixedBytes
-		}
-	}
-
-	return dst, err
-}
-
-// UnmarshalSSZ ssz unmarshals the BeaconBlocksByRootRequest object
-func (b *BeaconBlocksByRootRequest) UnmarshalSSZ(buf []byte) error {
-	var err error
-	size := uint64(len(buf))
-	if size < 4 {
-		return errSize
-	}
-
-	tail := buf
-	var o0 uint64
-
-	// Offset (0) 'BlockRoots'
-	if o0 = ssz.ReadOffset(buf[0:4]); o0 > size {
-		return errOffset
-	}
-
-	// Field (0) 'BlockRoots'
-	{
-		buf = tail[o0:]
-		num, ok := ssz.DivideInt(len(buf), 32)
-		if !ok {
-			return errDivideInt
-		}
-		if num > 1024 {
-			return errListTooBig
-		}
-		b.BlockRoots = make([][]byte, num)
-		for ii := 0; ii < num; ii++ {
-			b.BlockRoots[ii] = append(b.BlockRoots[ii], buf[ii*32:(ii+1)*32]...)
-		}
-	}
-	return err
-}
-
-// SizeSSZ returns the ssz encoded size in bytes for the BeaconBlocksByRootRequest object
-func (b *BeaconBlocksByRootRequest) SizeSSZ() (size int) {
-	size = 4
-
-	// Field (0) 'BlockRoots'
-	size += len(b.BlockRoots) * 32
-
-	return
-}
-
-// MarshalSSZ ssz marshals the ErrorResponse object
-func (e *ErrorResponse) MarshalSSZ() ([]byte, error) {
-	buf := make([]byte, e.SizeSSZ())
-	return e.MarshalSSZTo(buf[:0])
-}
-
-// MarshalSSZTo ssz marshals the ErrorResponse object to a target array
-func (e *ErrorResponse) MarshalSSZTo(dst []byte) ([]byte, error) {
-	var err error
-	offset := int(4)
-
-	// Offset (0) 'Message'
-	dst = ssz.WriteOffset(dst, offset)
-	offset += len(e.Message)
-
-	// Field (0) 'Message'
-	if len(e.Message) > 256 {
-		return nil, errMarshalDynamicBytes
-	}
-	dst = append(dst, e.Message...)
-
-	return dst, err
-}
-
-// UnmarshalSSZ ssz unmarshals the ErrorResponse object
-func (e *ErrorResponse) UnmarshalSSZ(buf []byte) error {
-	var err error
-	size := uint64(len(buf))
-	if size < 4 {
-		return errSize
-	}
-
-	tail := buf
-	var o0 uint64
-
-	// Offset (0) 'Message'
-	if o0 = ssz.ReadOffset(buf[0:4]); o0 > size {
-		return errOffset
-	}
-
-	// Field (0) 'Message'
-	{
-		buf = tail[o0:]
-		e.Message = append(e.Message, buf...)
-	}
-	return err
-}
-
-// SizeSSZ returns the ssz encoded size in bytes for the ErrorResponse object
-func (e *ErrorResponse) SizeSSZ() (size int) {
-	size = 4
-
-	// Field (0) 'Message'
-	size += len(e.Message)
-
-	return
-}
-
-// MarshalSSZ ssz marshals the ENRForkID object
-func (e *ENRForkID) MarshalSSZ() ([]byte, error) {
-	buf := make([]byte, e.SizeSSZ())
-	return e.MarshalSSZTo(buf[:0])
-}
-
-// MarshalSSZTo ssz marshals the ENRForkID object to a target array
-func (e *ENRForkID) MarshalSSZTo(dst []byte) ([]byte, error) {
-	var err error
-
-	// Field (0) 'CurrentForkDigest'
-	if dst, err = ssz.MarshalFixedBytes(dst, e.CurrentForkDigest, 4); err != nil {
-		return nil, errMarshalFixedBytes
-	}
-
-	// Field (1) 'NextForkVersion'
-	if dst, err = ssz.MarshalFixedBytes(dst, e.NextForkVersion, 4); err != nil {
-		return nil, errMarshalFixedBytes
-	}
-
-	// Field (2) 'NextForkEpoch'
-	dst = ssz.MarshalUint64(dst, e.NextForkEpoch)
-
-	return dst, err
-}
-
-// UnmarshalSSZ ssz unmarshals the ENRForkID object
-func (e *ENRForkID) UnmarshalSSZ(buf []byte) error {
-	var err error
-	size := uint64(len(buf))
-	if size != 16 {
-		return errSize
-	}
-
-	// Field (0) 'CurrentForkDigest'
-	e.CurrentForkDigest = append(e.CurrentForkDigest, buf[0:4]...)
-
-	// Field (1) 'NextForkVersion'
-	e.NextForkVersion = append(e.NextForkVersion, buf[4:8]...)
-
-	// Field (2) 'NextForkEpoch'
-	e.NextForkEpoch = ssz.UnmarshallUint64(buf[8:16])
-
-	return err
-}
-
-// SizeSSZ returns the ssz encoded size in bytes for the ENRForkID object
-func (e *ENRForkID) SizeSSZ() (size int) {
-	size = 16
-	return
-}
-
-// MarshalSSZ ssz marshals the MetaData object
-func (m *MetaData) MarshalSSZ() ([]byte, error) {
-	buf := make([]byte, m.SizeSSZ())
-	return m.MarshalSSZTo(buf[:0])
-}
-
-// MarshalSSZTo ssz marshals the MetaData object to a target array
-func (m *MetaData) MarshalSSZTo(dst []byte) ([]byte, error) {
-	var err error
-
-	// Field (0) 'SeqNumber'
-	dst = ssz.MarshalUint64(dst, m.SeqNumber)
-
-	// Field (1) 'Attnets'
-	if dst, err = ssz.MarshalFixedBytes(dst, m.Attnets, 8); err != nil {
-		return nil, errMarshalFixedBytes
-	}
-
-	return dst, err
-}
-
-// UnmarshalSSZ ssz unmarshals the MetaData object
-func (m *MetaData) UnmarshalSSZ(buf []byte) error {
-	var err error
-	size := uint64(len(buf))
-	if size != 16 {
-		return errSize
-	}
-
-	// Field (0) 'SeqNumber'
-	m.SeqNumber = ssz.UnmarshallUint64(buf[0:8])
-
-	// Field (1) 'Attnets'
-	m.Attnets = append(m.Attnets, buf[8:16]...)
-
-	return err
-}
-
-// SizeSSZ returns the ssz encoded size in bytes for the MetaData object
-func (m *MetaData) SizeSSZ() (size int) {
-	size = 16
 	return
 }

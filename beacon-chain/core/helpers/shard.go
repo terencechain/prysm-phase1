@@ -297,3 +297,8 @@ func AttsByTransitionRoot(atts []*ethpb.Attestation) map[[32]byte][]*ethpb.Attes
 	}
 	return attsByTRoot
 }
+
+// CustodyPeriodForValidator returns the custody period of a given validator and epoch.
+func CustodyPeriodForValidator(epoch uint64, validator uint64) uint64 {
+	return 0
+}

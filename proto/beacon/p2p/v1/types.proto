@@ -148,3 +148,18 @@ message CustodyKeyReveal{
   uint64 revealer_index = 1;
   bytes signature = 2 [(gogoproto.moretags) = "ssz-size:\"96\""];
 }
+
+message CustodySlashing {
+  uint64 data_index = 1;
+  uint64 malefactor_index = 2;
+  bytes malefactor_secret = 3 [(gogoproto.moretags) = "ssz-size:\"96\""];
+  uint64 whistleblower_index = 4;
+  ethereum.eth.v1alpha1.ShardTransition shard_transition = 5;
+  ethereum.eth.v1alpha1.Attestation attestation = 6;
+  repeated bytes data = 7;
+}
+
+message SignedCustodySlashing {
+  CustodySlashing message = 1;
+  bytes signature = 2 [(gogoproto.moretags) = "ssz-size:\"96\""];
+}
