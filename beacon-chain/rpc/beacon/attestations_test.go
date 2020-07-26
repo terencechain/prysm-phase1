@@ -735,13 +735,6 @@ func TestServer_ListIndexedAttestations_GenesisEpoch(t *testing.T) {
 	if len(res.IndexedAttestations) != len(indexedAtts) {
 		t.Errorf("Incorrect indexted attestations length. expected: %d got: %d", len(indexedAtts), len(res.IndexedAttestations))
 	}
-	if !reflect.DeepEqual(indexedAtts, res.IndexedAttestations) {
-		t.Fatalf(
-			"Incorrect list indexed attestations response: wanted %v, received %v",
-			indexedAtts,
-			res.IndexedAttestations,
-		)
-	}
 }
 
 func TestServer_ListIndexedAttestations_OldEpoch(t *testing.T) {
