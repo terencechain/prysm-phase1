@@ -3,13 +3,14 @@ package depositcache
 import (
 	"context"
 	"math/big"
-	"reflect"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	dbpb "github.com/prysmaticlabs/prysm/proto/beacon/db"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
+	"github.com/prysmaticlabs/prysm/shared/params"
+	"github.com/prysmaticlabs/prysm/shared/testutil/assert"
 )
 
 var _ = PendingDepositsFetcher(&DepositCache{})
@@ -18,25 +19,21 @@ func TestInsertPendingDeposit_OK(t *testing.T) {
 	dc := DepositCache{}
 	dc.InsertPendingDeposit(context.Background(), &ethpb.Deposit{}, 111, 100, [32]byte{})
 
-	if len(dc.pendingDeposits) != 1 {
-		t.Error("Deposit not inserted")
-	}
+	assert.Equal(t, 1, len(dc.pendingDeposits), "Deposit not inserted")
 }
 
 func TestInsertPendingDeposit_ignoresNilDeposit(t *testing.T) {
 	dc := DepositCache{}
 	dc.InsertPendingDeposit(context.Background(), nil /*deposit*/, 0 /*blockNum*/, 0, [32]byte{})
 
-	if len(dc.pendingDeposits) > 0 {
-		t.Error("Unexpected deposit insertion")
-	}
+	assert.Equal(t, 0, len(dc.pendingDeposits))
 }
 
 func TestRemovePendingDeposit_OK(t *testing.T) {
 	db := DepositCache{}
-	proof1 := make([][]byte, 33)
+	proof1 := make([][]byte, int(params.BeaconConfig().DepositContractTreeDepth)+1)
 	proof1[0] = bytesutil.PadTo([]byte{'A'}, 32)
-	proof2 := make([][]byte, 33)
+	proof2 := make([][]byte, int(params.BeaconConfig().DepositContractTreeDepth)+1)
 	proof2[0] = bytesutil.PadTo([]byte{'A'}, 32)
 	depToRemove := &ethpb.Deposit{Proof: proof1}
 	otherDep := &ethpb.Deposit{Proof: proof2}
@@ -55,21 +52,17 @@ func TestRemovePendingDeposit_IgnoresNilDeposit(t *testing.T) {
 	dc := DepositCache{}
 	dc.pendingDeposits = []*dbpb.DepositContainer{{Deposit: &ethpb.Deposit{}}}
 	dc.RemovePendingDeposit(context.Background(), nil /*deposit*/)
-	if len(dc.pendingDeposits) != 1 {
-		t.Errorf("Deposit unexpectedly removed")
-	}
+	assert.Equal(t, 1, len(dc.pendingDeposits), "Deposit unexpectedly removed")
 }
 
 func TestPendingDeposit_RoundTrip(t *testing.T) {
 	dc := DepositCache{}
-	proof := make([][]byte, 33)
+	proof := make([][]byte, int(params.BeaconConfig().DepositContractTreeDepth)+1)
 	proof[0] = bytesutil.PadTo([]byte{'A'}, 32)
 	dep := &ethpb.Deposit{Proof: proof}
 	dc.InsertPendingDeposit(context.Background(), dep, 111, 100, [32]byte{})
 	dc.RemovePendingDeposit(context.Background(), dep)
-	if len(dc.pendingDeposits) != 0 {
-		t.Error("Failed to insert & delete a pending deposit")
-	}
+	assert.Equal(t, 0, len(dc.pendingDeposits), "Failed to insert & delete a pending deposit")
 }
 
 func TestPendingDeposits_OK(t *testing.T) {
@@ -86,15 +79,10 @@ func TestPendingDeposits_OK(t *testing.T) {
 		{Proof: [][]byte{[]byte("A")}},
 		{Proof: [][]byte{[]byte("B")}},
 	}
-
-	if !reflect.DeepEqual(deposits, expected) {
-		t.Errorf("Unexpected deposits. got=%+v want=%+v", deposits, expected)
-	}
+	assert.DeepEqual(t, expected, deposits)
 
 	all := dc.PendingDeposits(context.Background(), nil)
-	if len(all) != len(dc.pendingDeposits) {
-		t.Error("PendingDeposits(ctx, nil) did not return all deposits")
-	}
+	assert.Equal(t, len(dc.pendingDeposits), len(all), "PendingDeposits(ctx, nil) did not return all deposits")
 }
 
 func TestPrunePendingDeposits_ZeroMerkleIndex(t *testing.T) {
@@ -118,9 +106,7 @@ func TestPrunePendingDeposits_ZeroMerkleIndex(t *testing.T) {
 		{Eth1BlockHeight: 10, Index: 10},
 		{Eth1BlockHeight: 12, Index: 12},
 	}
-	if !reflect.DeepEqual(dc.pendingDeposits, expected) {
-		t.Errorf("Unexpected deposits. got=%+v want=%+v", dc.pendingDeposits, expected)
-	}
+	assert.DeepEqual(t, expected, dc.pendingDeposits)
 }
 
 func TestPrunePendingDeposits_OK(t *testing.T) {
@@ -143,9 +129,7 @@ func TestPrunePendingDeposits_OK(t *testing.T) {
 		{Eth1BlockHeight: 12, Index: 12},
 	}
 
-	if !reflect.DeepEqual(dc.pendingDeposits, expected) {
-		t.Errorf("Unexpected deposits. got=%+v want=%+v", dc.pendingDeposits, expected)
-	}
+	assert.DeepEqual(t, expected, dc.pendingDeposits)
 
 	dc.pendingDeposits = []*dbpb.DepositContainer{
 		{Eth1BlockHeight: 2, Index: 2},
@@ -162,8 +146,5 @@ func TestPrunePendingDeposits_OK(t *testing.T) {
 		{Eth1BlockHeight: 12, Index: 12},
 	}
 
-	if !reflect.DeepEqual(dc.pendingDeposits, expected) {
-		t.Errorf("Unexpected deposits. got=%+v want=%+v", dc.pendingDeposits, expected)
-	}
-
+	assert.DeepEqual(t, expected, dc.pendingDeposits)
 }

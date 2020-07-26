@@ -16,6 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/prysmaticlabs/prysm/shared"
+	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/cmd"
 	"github.com/prysmaticlabs/prysm/shared/debug"
 	"github.com/prysmaticlabs/prysm/shared/featureconfig"
@@ -78,11 +79,8 @@ func NewValidatorClient(cliCtx *cli.Context) (*ValidatorClient, error) {
 
 	cmd.ConfigureValidator(cliCtx)
 	featureconfig.ConfigureValidator(cliCtx)
-	keyManagerV1, err := selectV1Keymanager(cliCtx)
-	if err != nil {
-		return nil, err
-	}
 
+	var keyManagerV1 v1.KeyManager
 	var keyManagerV2 v2.IKeymanager
 	if featureconfig.Get().EnableAccountsV2 {
 		walletDir := cliCtx.String(flags.WalletDirFlag.Name)
@@ -94,24 +92,24 @@ func NewValidatorClient(cliCtx *cli.Context) (*ValidatorClient, error) {
 			passwordsDir = path.Join(passwordsDir, accountsv2.PasswordsDefaultDirName)
 		}
 		// Read the wallet from the specified path.
-		wallet, err := accountsv2.OpenWallet(context.Background(), &accountsv2.WalletConfig{
-			PasswordsDir:      passwordsDir,
-			WalletDir:         walletDir,
-			CanUnlockAccounts: true,
-		})
-		if err == accountsv2.ErrNoWalletFound {
-			log.Fatal("No wallet found at path, please create a new wallet using `validator accounts-v2 new`")
-		}
+		wallet, err := accountsv2.OpenWallet(cliCtx)
 		if err != nil {
 			log.Fatalf("Could not open wallet: %v", err)
 		}
-		keyManagerV2, err = wallet.ExistingKeyManager(context.Background())
+		keyManagerV2, err = wallet.InitializeKeymanager(
+			context.Background(), false, /* skipMnemonicConfirm */
+		)
 		if err != nil {
 			log.Fatalf("Could not read existing keymanager for wallet: %v", err)
 		}
+	} else {
+		keyManagerV1, err = selectV1Keymanager(cliCtx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	pubKeys, err := ExtractPublicKeysFromKeymanager(cliCtx, keyManagerV2)
+	pubKeys, err := ExtractPublicKeysFromKeymanager(cliCtx, keyManagerV1, keyManagerV2)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +118,7 @@ func NewValidatorClient(cliCtx *cli.Context) (*ValidatorClient, error) {
 	} else {
 		log.WithField("validators", len(pubKeys)).Debug("Found validator keys")
 		for _, key := range pubKeys {
-			log.WithField("pubKey", fmt.Sprintf("%#x", key)).Info("Validating for public key")
+			log.WithField("pubKey", fmt.Sprintf("%#x", bytesutil.Trunc(key[:]))).Info("Validating for public key")
 		}
 	}
 
@@ -226,6 +224,7 @@ func (s *ValidatorClient) registerClientService(
 	graffiti := s.cliCtx.String(flags.GraffitiFlag.Name)
 	maxCallRecvMsgSize := s.cliCtx.Int(cmd.GrpcMaxCallRecvMsgSizeFlag.Name)
 	grpcRetries := s.cliCtx.Uint(flags.GrpcRetriesFlag.Name)
+	grpcRetryDelay := s.cliCtx.Duration(flags.GrpcRetryDelayFlag.Name)
 	var sp *slashing_protection.Service
 	var protector slashing_protection.Protector
 	if err := s.services.FetchService(&sp); err == nil {
@@ -243,6 +242,7 @@ func (s *ValidatorClient) registerClientService(
 		ValidatingPubKeys:          validatingPubKeys,
 		GrpcMaxCallRecvMsgSizeFlag: maxCallRecvMsgSize,
 		GrpcRetriesFlag:            grpcRetries,
+		GrpcRetryDelay:             grpcRetryDelay,
 		GrpcHeadersFlag:            s.cliCtx.String(flags.GrpcHeadersFlag.Name),
 		Protector:                  protector,
 	})
@@ -261,11 +261,13 @@ func (s *ValidatorClient) registerSlasherClientService() error {
 	cert := s.cliCtx.String(flags.SlasherCertFlag.Name)
 	maxCallRecvMsgSize := s.cliCtx.Int(cmd.GrpcMaxCallRecvMsgSizeFlag.Name)
 	grpcRetries := s.cliCtx.Uint(flags.GrpcRetriesFlag.Name)
+	grpcRetryDelay := s.cliCtx.Duration(flags.GrpcRetryDelayFlag.Name)
 	sp, err := slashing_protection.NewSlashingProtectionService(context.Background(), &slashing_protection.Config{
 		Endpoint:                   endpoint,
 		CertFlag:                   cert,
 		GrpcMaxCallRecvMsgSizeFlag: maxCallRecvMsgSize,
 		GrpcRetriesFlag:            grpcRetries,
+		GrpcRetryDelay:             grpcRetryDelay,
 		GrpcHeadersFlag:            s.cliCtx.String(flags.GrpcHeadersFlag.Name),
 	})
 	if err != nil {
@@ -372,7 +374,7 @@ func clearDB(dataDir string, pubkeys [][48]byte, force bool) error {
 }
 
 // ExtractPublicKeysFromKeymanager extracts only the public keys from the specified key manager.
-func ExtractPublicKeysFromKeymanager(cliCtx *cli.Context, keyManagerV2 v2.IKeymanager) ([][48]byte, error) {
+func ExtractPublicKeysFromKeymanager(cliCtx *cli.Context, keyManagerV1 v1.KeyManager, keyManagerV2 v2.IKeymanager) ([][48]byte, error) {
 	var pubKeys [][48]byte
 	var err error
 	if featureconfig.Get().EnableAccountsV2 {
@@ -382,9 +384,5 @@ func ExtractPublicKeysFromKeymanager(cliCtx *cli.Context, keyManagerV2 v2.IKeyma
 		}
 		return pubKeys, nil
 	}
-	km, err := selectV1Keymanager(cliCtx)
-	if err != nil {
-		return nil, err
-	}
-	return km.FetchValidatingKeys()
+	return keyManagerV1.FetchValidatingKeys()
 }

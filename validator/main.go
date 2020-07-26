@@ -62,6 +62,7 @@ var appFlags = []cli.Flag{
 	flags.InteropStartIndex,
 	flags.InteropNumValidators,
 	flags.GrpcRetriesFlag,
+	flags.GrpcRetryDelayFlag,
 	flags.GrpcHeadersFlag,
 	flags.KeyManager,
 	flags.KeyManagerOpts,
@@ -107,7 +108,8 @@ func main() {
 	app.Version = version.GetVersion()
 	app.Action = startNode
 	app.Commands = []*cli.Command{
-		v2.Commands,
+		v2.WalletCommands,
+		v2.AccountCommands,
 		{
 			Name:     "accounts",
 			Category: "accounts",
@@ -169,6 +171,7 @@ contract in order to activate the validator client`,
 						flags.CertFlag,
 						flags.GrpcHeadersFlag,
 						flags.GrpcRetriesFlag,
+						flags.GrpcRetryDelayFlag,
 						flags.KeyManager,
 						flags.KeyManagerOpts,
 					},
@@ -178,6 +181,7 @@ contract in order to activate the validator client`,
 						if cliCtx.String(flags.KeyManager.Name) != "" {
 							pubKeysBytes48, success := node.ExtractPublicKeysFromKeymanager(
 								cliCtx,
+								nil, /* nil v1 keymanager */
 								nil, /* nil v2 keymanager */
 							)
 							pubKeys, err = bytesutil.FromBytes48Array(pubKeysBytes48), success
@@ -198,6 +202,7 @@ contract in order to activate the validator client`,
 							cliCtx.String(flags.CertFlag.Name),
 							strings.Split(cliCtx.String(flags.GrpcHeadersFlag.Name), ","),
 							cliCtx.Uint(flags.GrpcRetriesFlag.Name),
+							cliCtx.Duration(flags.GrpcRetryDelayFlag.Name),
 							grpc.WithBlock())
 						endpoint := cliCtx.String(flags.BeaconRPCProviderFlag.Name)
 						conn, err := grpc.DialContext(ctx, endpoint, dialOpts...)

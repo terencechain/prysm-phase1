@@ -27,11 +27,10 @@ var committeeCache = cache.NewCommitteesCache()
 //
 //
 // Spec pseudocode definition:
-//   def get_committee_count_at_slot(state: BeaconState, slot: Slot) -> uint64:
+//   def get_committee_count_per_slot(state: BeaconState, epoch: Epoch) -> uint64:
 //    """
-//    Return the number of committees at ``slot``.
+//    Return the number of committees in each slot for the given ``epoch``.
 //    """
-//    epoch = compute_epoch_at_slot(slot)
 //    return max(1, min(
 //        MAX_COMMITTEES_PER_SLOT,
 //        len(get_active_validator_indices(state, epoch)) // SLOTS_PER_EPOCH // TARGET_COMMITTEE_SIZE,
@@ -132,6 +131,10 @@ func ComputeCommittee(
 	validatorCount := uint64(len(indices))
 	start := sliceutil.SplitOffset(validatorCount, count, index)
 	end := sliceutil.SplitOffset(validatorCount, count, index+1)
+
+	if start > validatorCount || end > validatorCount {
+		return nil, errors.New("index out of range")
+	}
 
 	// Save the shuffled indices in cache, this is only needed once per epoch or once per new committee index.
 	shuffledIndices := make([]uint64, len(indices))

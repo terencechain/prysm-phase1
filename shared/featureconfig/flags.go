@@ -5,6 +5,16 @@ import (
 )
 
 var (
+	// AltonaTestnet flag for the multiclient eth2 testnet configuration.
+	AltonaTestnet = &cli.BoolFlag{
+		Name:  "altona",
+		Usage: "This defines the flag through which we can run on the Altona Multiclient Testnet",
+	}
+	// MedallaTestnet flag for the multiclient eth2 testnet configuration.
+	MedallaTestnet = &cli.BoolFlag{
+		Name:  "medalla",
+		Usage: "This defines the flag through which we can run on the Medalla Multiclient Testnet",
+	}
 	devModeFlag = &cli.BoolFlag{
 		Name:  "dev",
 		Usage: "Enable experimental features still in development. These features may not be stable.",
@@ -61,11 +71,11 @@ var (
 		Usage: "Cache filtered block tree by maintaining it rather than continually recalculating on the fly, " +
 			"this is used for fork choice.",
 	}
-
 	enableLocalProtectionFlag = &cli.BoolFlag{
 		Name: "enable-local-protection",
 		Usage: "Enables functionality to prevent the validator client from signing and " +
 			"broadcasting any messages that could be considered slashable according to its own history.",
+		Value: true,
 	}
 	enableExternalSlasherProtectionFlag = &cli.BoolFlag{
 		Name: "enable-external-slasher-protection",
@@ -111,10 +121,6 @@ var (
 		Name:  "wait-for-synced",
 		Usage: "Uses WaitForSynced for validator startup, to ensure a validator is able to communicate with the beacon node as quick as possible",
 	}
-	enableHistoricalDetectionFlag = &cli.BoolFlag{
-		Name:  "enable-historical-detection",
-		Usage: "Enables historical attestation detection for the slasher",
-	}
 	disableLookbackFlag = &cli.BoolFlag{
 		Name:  "disable-lookback",
 		Usage: "Disables use of the lookback feature and updates attestation history for validators from head to epoch 0",
@@ -143,10 +149,6 @@ var (
 	forceMaxCoverAttestationAggregation = &cli.BoolFlag{
 		Name:  "attestation-aggregation-force-maxcover",
 		Usage: "When enabled, forces --attestation-aggregation-strategy=max_cover setting.",
-	}
-	altonaTestnet = &cli.BoolFlag{
-		Name:  "altona",
-		Usage: "This defines the flag through which we can run on the Altona Multiclient Testnet",
 	}
 	enableAccountsV2 = &cli.BoolFlag{
 		Name:  "enable-accounts-v2",
@@ -573,13 +575,13 @@ var ValidatorFlags = append(deprecatedFlags, []cli.Flag{
 	enableExternalSlasherProtectionFlag,
 	disableDomainDataCacheFlag,
 	waitForSyncedFlag,
-	altonaTestnet,
+	AltonaTestnet,
+	MedallaTestnet,
 	enableAccountsV2,
 }...)
 
 // SlasherFlags contains a list of all the feature flags that apply to the slasher client.
 var SlasherFlags = append(deprecatedFlags, []cli.Flag{
-	enableHistoricalDetectionFlag,
 	disableLookbackFlag,
 }...)
 
@@ -617,7 +619,8 @@ var BeaconChainFlags = append(deprecatedFlags, []cli.Flag{
 	attestationAggregationStrategy,
 	newBeaconStateLocks,
 	forceMaxCoverAttestationAggregation,
-	altonaTestnet,
+	AltonaTestnet,
+	MedallaTestnet,
 	batchBlockVerify,
 	initSyncVerbose,
 	enableFinalizedDepositsCache,

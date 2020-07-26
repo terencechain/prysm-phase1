@@ -5,11 +5,14 @@ import (
 	"context"
 	"testing"
 
+	eth "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/go-ssz"
 	"github.com/prysmaticlabs/prysm/beacon-chain/state"
 	pbp2p "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
+	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/testutil"
+	"github.com/prysmaticlabs/prysm/shared/testutil/assert"
 )
 
 func TestInitializeFromProto(t *testing.T) {
@@ -151,9 +154,7 @@ func TestBeaconState_HashTreeRoot(t *testing.T) {
 	for _, tt := range initTests {
 		t.Run(tt.name, func(t *testing.T) {
 			testState, err = tt.stateModify(testState)
-			if err != nil {
-				t.Errorf("Unexpected error, expected %v, recevied %v", tt.error, err)
-			}
+			assert.NoError(t, err)
 			root, err := testState.HashTreeRoot(context.Background())
 			if err == nil && tt.error != "" {
 				t.Errorf("Expected error, expected %v, recevied %v", tt.error, err)
@@ -224,9 +225,7 @@ func TestBeaconState_HashTreeRoot_FieldTrie(t *testing.T) {
 	for _, tt := range initTests {
 		t.Run(tt.name, func(t *testing.T) {
 			testState, err = tt.stateModify(testState)
-			if err != nil {
-				t.Errorf("Unexpected error, expected %v, recevied %v", tt.error, err)
-			}
+			assert.NoError(t, err)
 			root, err := testState.HashTreeRoot(context.Background())
 			if err == nil && tt.error != "" {
 				t.Errorf("Expected error, expected %v, recevied %v", tt.error, err)
@@ -246,5 +245,22 @@ func TestBeaconState_HashTreeRoot_FieldTrie(t *testing.T) {
 			}
 			oldHTR = root[:]
 		})
+	}
+}
+
+func TestBeaconState_AppendValidator_DoesntMutateCopy(t *testing.T) {
+	st0 := testutil.NewBeaconState()
+	st1 := st0.Copy()
+	originalCount := st1.NumValidators()
+
+	val := &eth.Validator{Slashed: true}
+	if err := st0.AppendValidator(val); err != nil {
+		t.Error(err)
+	}
+	if count := st1.NumValidators(); count != originalCount {
+		t.Errorf("st1 NumValidators mutated. Wanted %d, got %d", originalCount, count)
+	}
+	if _, ok := st1.ValidatorIndexByPubkey(bytesutil.ToBytes48(val.PublicKey)); ok {
+		t.Error("Expected no validator index to be present in st1 for the newly inserted pubkey")
 	}
 }
