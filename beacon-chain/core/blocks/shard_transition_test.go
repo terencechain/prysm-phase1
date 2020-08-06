@@ -432,6 +432,8 @@ func TestShardStateTransition(t *testing.T) {
 }
 
 func TestCanCrosslink(t *testing.T) {
+	helpers.ClearCache()
+
 	validators := make([]*ethpb.Validator, 6)
 	for i := 0; i < len(validators); i++ {
 		validators[i] = &ethpb.Validator{
