@@ -3,8 +3,9 @@ package blocks
 import (
 	"bytes"
 	"context"
-	"errors"
+	"fmt"
 
+	"github.com/pkg/errors"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/go-ssz"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/epoch"
@@ -20,15 +21,16 @@ import (
 )
 
 // ShardStateTransition processes shard state transition.
+// Note: This diverges from spec implementation. There's no `validate_result`.
 //
 // Spec code:
 // def shard_state_transition(shard_state: ShardState,
 //                           signed_block: SignedShardBlock,
-//                           validate: bool = True,
-//                           beacon_parent_state: Optional[BeaconState] = None) -> ShardState:
-//    if validate:
-//        assert beacon_parent_state is not None
-//        assert verify_shard_block_message(beacon_parent_state, shard_state, signed_block.message)
+//                           beacon_parent_state: BeaconState,
+//                           validate_result: bool = True) -> ShardState:
+//    assert verify_shard_block_message(beacon_parent_state, shard_state, signed_block.message)
+//
+//    if validate_result:
 //        assert verify_shard_block_signature(beacon_parent_state, signed_block)
 //
 //    process_shard_block(shard_state, signed_block.message)
@@ -41,12 +43,8 @@ func ShardStateTransition(ctx context.Context, bps *stateTrie.BeaconState, shard
 	if !verified {
 		return nil, errors.New("could not verify shard block message")
 	}
-	verified, err = verifyShardBlockSignature(bps, block)
-	if err != nil {
-		return nil, err
-	}
-	if !verified {
-		return nil, errors.New("could not verify shard block signature")
+	if err := verifyShardBlockSignature(bps, block); err != nil {
+		return nil, errors.Wrap(err, "could not verify shard block signature")
 	}
 
 	return ProcessShardBlock(shardState, block.Message)
@@ -64,14 +62,11 @@ func ShardStateTransition(ctx context.Context, bps *stateTrie.BeaconState, shard
 //    prev_gasprice = shard_state.gasprice
 //    shard_block_length = len(block.body)
 //    shard_state.gasprice = compute_updated_gasprice(prev_gasprice, uint64(shard_block_length))
-//    if shard_block_length == 0:
-//        latest_block_root = shard_state.latest_block_root
-//    else:
-//        latest_block_root = hash_tree_root(block)
-//    shard_state.latest_block_root = latest_block_root
+//    if shard_block_length != 0:
+//        shard_state.latest_block_root = hash_tree_root(block)
 func ProcessShardBlock(shardState *ethpb.ShardState, shardBlock *ethpb.ShardBlock) (*ethpb.ShardState, error) {
-	shardState.GasPrice = helpers.UpdatedGasPrice(shardState.GasPrice, uint64(len(shardBlock.Body)))
 	shardState.Slot = shardBlock.Slot
+	shardState.GasPrice = helpers.UpdatedGasPrice(shardState.GasPrice, uint64(len(shardBlock.Body)))
 
 	if len(shardBlock.Body) != 0 {
 		root, err := ssz.HashTreeRoot(shardBlock)
@@ -117,7 +112,8 @@ func ProcessShardTransitions(
 //
 // Spec code:
 // def apply_shard_transition(state: BeaconState, shard: Shard, transition: ShardTransition) -> None:
-//    assert state.slot > PHASE_1_GENESIS_SLOT
+//    # TODO: only need to check it once when phase 1 starts
+//    assert state.slot > PHASE_1_FORK_SLOT
 //
 //    # Correct data root count
 //    offset_slots = get_offset_slots(state, shard)
@@ -155,6 +151,9 @@ func ProcessShardTransitions(
 //            shard_parent_root = hash_tree_root(header)
 //            headers.append(header)
 //            proposers.append(proposal_index)
+//        else:
+//            # Must have a stub for `shard_data_root` if empty slot
+//            assert transition.shard_data_roots[i] == Root()
 //
 //        prev_gasprice = shard_state.gasprice
 //
@@ -184,34 +183,9 @@ func applyShardTransition(beaconState *stateTrie.BeaconState, transition *ethpb.
 		return nil, err
 	}
 
-	// Verify proposer signatures.
-	pks := make([]bls.PublicKey, len(pIndices))
-	for i, index := range pIndices {
-		pkAtIndex := beaconState.PubkeyAtIndex(index)
-		p, err := bls.PublicKeyFromBytes(pkAtIndex[:])
-		if err != nil {
-			return nil, err
-		}
-		pks[i] = p
-	}
-	msgs := make([][32]byte, len(pIndices))
-	for i, header := range headers {
-		d, err := helpers.Domain(beaconState.Fork(), helpers.SlotToEpoch(header.Slot), params.ShardConfig().DomainShardProposal, beaconState.GenesisValidatorRoot())
-		if err != nil {
-			return nil, err
-		}
-		r, err := helpers.ComputeSigningRoot(header, d)
-		if err != nil {
-			return nil, err
-		}
-		msgs[i] = r
-	}
-	sig, err := bls.SignatureFromBytes(transition.ProposerSignatureAggregate)
-	if err != nil {
+	// Verify aggregated proposer signatures.
+	if err := verifyProposerSignature(beaconState, headers, pIndices, transition.ProposerSignatureAggregate); err != nil {
 		return nil, err
-	}
-	if !sig.AggregateVerify(pks, msgs) {
-		return nil, errors.New("could not verify aggregated proposer signature")
 	}
 
 	// Save shard state in beacon state and handle shard skip slot scenario.
@@ -223,6 +197,38 @@ func applyShardTransition(beaconState *stateTrie.BeaconState, transition *ethpb.
 	}
 
 	return beaconState, nil
+}
+
+func verifyProposerSignature(beaconState *stateTrie.BeaconState, headers []*ethpb.ShardBlockHeader, pIndices []uint64, sig []byte) error {
+	pks := make([]bls.PublicKey, len(pIndices))
+	for i, index := range pIndices {
+		pkAtIndex := beaconState.PubkeyAtIndex(index)
+		p, err := bls.PublicKeyFromBytes(pkAtIndex[:])
+		if err != nil {
+			return err
+		}
+		pks[i] = p
+	}
+	msgs := make([][32]byte, len(pIndices))
+	for i, header := range headers {
+		d, err := helpers.Domain(beaconState.Fork(), helpers.SlotToEpoch(header.Slot), params.ShardConfig().DomainShardProposal, beaconState.GenesisValidatorRoot())
+		if err != nil {
+			return err
+		}
+		r, err := helpers.ComputeSigningRoot(header, d)
+		if err != nil {
+			return err
+		}
+		msgs[i] = r
+	}
+	s, err := bls.SignatureFromBytes(sig)
+	if err != nil {
+		return err
+	}
+	if !s.AggregateVerify(pks, msgs) {
+		return errors.New("could not verify aggregated proposer signature")
+	}
+	return nil
 }
 
 // verifyShardDataRootLength verifies shard transition is consistent with offset slots for length.
@@ -265,9 +271,6 @@ func verifyShardDataRootLength(offsetSlots []uint64, transition *ethpb.ShardTran
 //        for attestation in transition_attestations:
 //            participants = get_attesting_indices(state, attestation.data, attestation.aggregation_bits)
 //            transition_participants = transition_participants.union(participants)
-//            assert attestation.data.shard_head_root == shard_transition.shard_data_roots[
-//                len(shard_transition.shard_data_roots) - 1
-//            ]
 //
 //        enough_online_stake = (
 //            get_total_balance(state, online_indices.intersection(transition_participants)) * 3 >=
@@ -279,6 +282,12 @@ func verifyShardDataRootLength(offsetSlots []uint64, transition *ethpb.ShardTran
 //
 //        # Attestation <-> shard transition consistency
 //        assert shard_transition_root == hash_tree_root(shard_transition)
+//
+//        # Check `shard_head_root` of the winning root
+//        last_offset_index = len(shard_transition.shard_states) - 1
+//        shard_head_root = shard_transition.shard_states[last_offset_index].latest_block_root
+//        for attestation in transition_attestations:
+//            assert attestation.data.shard_head_root == shard_head_root
 //
 //        # Apply transition
 //        apply_shard_transition(state, shard, shard_transition)
@@ -323,22 +332,12 @@ func processCrosslinkForShard(bs *stateTrie.BeaconState, attestations []*ethpb.A
 		if !enough {
 			continue
 		}
-
-		// TODO(0): Refactor this into its own function.
-		lastOffsetIndex := len(transition.ShardStates) - 1
-		shr := transition.ShardStates[lastOffsetIndex].LatestBlockRoot
-		for _, a := range atts {
-			if !bytes.Equal(a.Data.ShardHeadRoot, shr) {
-				return [32]byte{}, errors.New("attestation shard head root is not consistent with shard state")
-			}
-		}
-
-		wRoot, err := ssz.HashTreeRoot(transition)
-		if err != nil {
+		if err := verifyAttShardHeadRoot(transition, atts); err != nil {
 			return [32]byte{}, err
 		}
-		if tRoot != wRoot {
-			return [32]byte{}, errors.New("transition root missmatch")
+		wRoot, err := verifyAttTransitionRoot(transition, tRoot)
+		if err != nil {
+			return [32]byte{}, err
 		}
 		bs, err = applyShardTransition(bs, transition, shard)
 		if err != nil {
@@ -360,6 +359,28 @@ func processCrosslinkForShard(bs *stateTrie.BeaconState, attestations []*ethpb.A
 	}
 
 	return [32]byte{}, nil
+}
+
+func verifyAttTransitionRoot(transition *ethpb.ShardTransition, tRoot [32]byte) ([32]byte, error) {
+	r, err := ssz.HashTreeRoot(transition)
+	if err != nil {
+		return [32]byte{}, err
+	}
+	if tRoot != r {
+		return [32]byte{}, errors.New("transition root missmatch")
+	}
+	return r, nil
+}
+
+func verifyAttShardHeadRoot(transition *ethpb.ShardTransition, atts []*ethpb.Attestation) error {
+	lastOffset := len(transition.ShardStates) - 1
+	lbr := transition.ShardStates[lastOffset].LatestBlockRoot
+	for _, a := range atts {
+		if !bytes.Equal(a.Data.ShardHeadRoot, lbr) {
+			return errors.New("attestation shard head root is not consistent with shard state")
+		}
+	}
+	return nil
 }
 
 // processCrosslinks processes crosslinks for beacon block's shard transitions and attestations.
@@ -456,14 +477,14 @@ func shardBlockProposersAndHeaders(
 	shard uint64) ([]*ethpb.ShardBlockHeader, []uint64, error) {
 	shardState := beaconState.ShardStateAtIndex(shard)
 	prevGasPrice := shardState.GasPrice
-	shardParentRoot := shardState.LatestBlockRoot
+	shardParentRoot := bytesutil.ToBytes32(shardState.LatestBlockRoot)
 	proposerIndices := make([]uint64, 0, len(offsetSlots))
 	headers := make([]*ethpb.ShardBlockHeader, 0, len(offsetSlots))
 	for i, slot := range offsetSlots {
 		shardBlockLength := transition.ShardBlockLengths[i]
 		shardState := transition.ShardStates[i]
 		if shardState.GasPrice != helpers.UpdatedGasPrice(prevGasPrice, shardBlockLength) {
-			return nil, nil, errors.New("prev gas price != updated gas price")
+			return nil, nil, fmt.Errorf("prev gas price %d != updated gas price %d", shardState.GasPrice, helpers.UpdatedGasPrice(prevGasPrice, shardBlockLength))
 		}
 		if shardState.Slot != slot {
 			return nil, nil, errors.New("shard state slot != off set slot")
@@ -479,18 +500,30 @@ func shardBlockProposersAndHeaders(
 			if err != nil {
 				return nil, nil, err
 			}
+			spr := make([]byte, 32)
+			copy(spr[:], shardParentRoot[:])
 			shardBlockHeader := &ethpb.ShardBlockHeader{
-				ShardParentRoot:  shardParentRoot,
+				ShardParentRoot:  spr[:], // TODO(0): We should verify here
 				BeaconParentRoot: beaconParentRoot,
 				Shard:            shard,
 				Slot:             slot,
 				ProposerIndex:    proposerIndex,
 				BodyRoot:         transition.ShardDataRoots[i],
 			}
+			shardParentRoot, err = ssz.HashTreeRoot(shardBlockHeader)
+			if err != nil {
+				return nil, nil, err
+			}
 			headers = append(headers, shardBlockHeader)
 			proposerIndices = append(proposerIndices, proposerIndex)
+		} else {
+			if len(transition.ShardDataRoots[i]) != 0 {
+				return nil, nil, errors.New("empty proposal must have empty shard data root")
+			}
 		}
+		prevGasPrice = shardState.GasPrice
 	}
+
 	return headers, proposerIndices, nil
 }
 
@@ -567,6 +600,7 @@ func isWinningAttestation(pendingAttestation *pb.PendingAttestation, slot uint64
 //    assert 0 < len(block.body) <= MAX_SHARD_BLOCK_SIZE
 //    return True
 func verifyShardBlockMessage(ctx context.Context, beaconParentState *stateTrie.BeaconState, shardParentState *ethpb.ShardState, shardBlock *ethpb.ShardBlock) (bool, error) {
+	// TODO(0): These should be errors
 	if !bytes.Equal(shardParentState.LatestBlockRoot, shardBlock.ShardParentRoot) {
 		return false, nil
 	}
@@ -603,6 +637,7 @@ func verifyShardBlockMessage(ctx context.Context, beaconParentState *stateTrie.B
 		return false, err
 	}
 	if shardBlock.ProposerIndex != shardProposerIndex {
+		fmt.Println(shardProposerIndex)
 		return false, nil
 	}
 
@@ -622,29 +657,11 @@ func verifyShardBlockMessage(ctx context.Context, beaconParentState *stateTrie.B
 //    domain = get_domain(beacon_parent_state, DOMAIN_SHARD_PROPOSAL, compute_epoch_at_slot(signed_block.message.slot))
 //    signing_root = compute_signing_root(signed_block.message, domain)
 //    return bls.Verify(proposer.pubkey, signing_root, signed_block.signature)
-func verifyShardBlockSignature(beaconState *stateTrie.BeaconState, shardBlock *ethpb.SignedShardBlock) (bool, error) {
-	proposer, err := beaconState.ValidatorAtIndex(shardBlock.Message.ProposerIndex)
-	if err != nil {
-		return false, err
-	}
-	domain, err := helpers.Domain(beaconState.Fork(), helpers.SlotToEpoch(shardBlock.Message.Slot), params.ShardConfig().DomainShardProposal, beaconState.GenesisValidatorRoot())
-	if err != nil {
-		return false, err
-	}
-	signingRoot, err := helpers.ComputeSigningRoot(shardBlock.Message, domain)
-	if err != nil {
-		return false, err
-	}
-	pubKey, err := bls.PublicKeyFromBytes(proposer.PublicKey)
-	if err != nil {
-		return false, err
-	}
-	sig, err := bls.SignatureFromBytes(shardBlock.Signature)
-	if err != nil {
-		return false, err
-	}
-
-	return sig.Verify(pubKey, signingRoot[:]), nil
+func verifyShardBlockSignature(beaconState *stateTrie.BeaconState, shardBlock *ethpb.SignedShardBlock) error {
+	i := shardBlock.Message.ProposerIndex
+	e := helpers.SlotToEpoch(shardBlock.Message.Slot)
+	s := shardBlock.Signature
+	return helpers.ComputeDomainVerifySigningRoot(beaconState, i, e, shardBlock.Message, params.ShardConfig().DomainShardProposal, s)
 }
 
 // CanCrosslink returns true if more than 2/3 participants voted on input attestations. The voted

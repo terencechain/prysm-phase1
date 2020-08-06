@@ -106,7 +106,8 @@ func ShardProposerIndex(beaconState *s.BeaconState, slot uint64, shard uint64) (
 	seedWithSlot := append(seed[:], bytesutil.Bytes8(slot)...)
 	seedWithSlotHash := hashutil.Hash(seedWithSlot)
 	r := binary.LittleEndian.Uint64(seedWithSlotHash[:8])
-	return shardCommittee[int(r)%len(shardCommittee)], nil
+	i := r % uint64(len(shardCommittee))
+	return shardCommittee[i], nil
 }
 
 // ShardCommittee returns the shard committee of a given slot and shard.
