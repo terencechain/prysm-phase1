@@ -116,13 +116,12 @@ func TestIsWinningAttestation(t *testing.T) {
 }
 
 func TestVerifyShardBlockMessage(t *testing.T) {
-	// TODO(0): Find a better home
 	shardBlock := &ethpb.ShardBlock{
 		Slot:            1,
 		Shard:           1,
 		ShardParentRoot: bytesutil.PadTo([]byte{'a'}, 32),
 	}
-	validators := make([]*ethpb.Validator, 2048)
+	validators := make([]*ethpb.Validator, params.BeaconConfig().MaxValidatorsPerCommittee)
 	for i := 0; i < len(validators); i++ {
 		validators[i] = &ethpb.Validator{
 			ExitEpoch: params.BeaconConfig().FarFutureEpoch,
@@ -234,14 +233,10 @@ func TestVerifyShardBlockMessage(t *testing.T) {
 }
 
 func Test_VerifyShardBlockSignature(t *testing.T) {
-	priv := bls.RandKey()
-	bs, err := stateTrie.InitializeFromProto(&pb.BeaconState{
-		Fork: &pb.Fork{
-			PreviousVersion: []byte{0, 0, 0, 0},
-			CurrentVersion:  []byte{0, 0, 0, 0},
-		},
-		Validators: []*ethpb.Validator{{PublicKey: priv.PublicKey().Marshal()}}})
+	bs, err := testState(params.BeaconConfig().MaxValidatorsPerCommittee)
 	require.NoError(t, err)
+	priv := bls.RandKey()
+	require.NoError(t, bs.UpdateValidatorAtIndex(0, &ethpb.Validator{PublicKey: priv.PublicKey().Marshal()}))
 	sb := &ethpb.SignedShardBlock{Message: &ethpb.ShardBlock{ProposerIndex: 0}}
 	sb.Signature, err = helpers.ComputeDomainAndSign(bs, 0, sb.Message, params.ShardConfig().DomainShardProposal, priv)
 	require.NoError(t, err)
@@ -337,25 +332,11 @@ func TestProcessShardBlock(t *testing.T) {
 }
 
 func TestShardStateTransition(t *testing.T) {
-	validators := make([]*ethpb.Validator, 2048)
-	for i := 0; i < len(validators); i++ {
-		validators[i] = &ethpb.Validator{
-			ExitEpoch: params.BeaconConfig().FarFutureEpoch,
-		}
-	}
-	bh := &ethpb.BeaconBlockHeader{StateRoot: bytesutil.PadTo([]byte{'a'}, 32)}
-	hr, err := stateutil.BlockHeaderRoot(bh)
+	bs, err := testState(params.BeaconConfig().MaxValidatorsPerCommittee)
 	require.NoError(t, err)
-	bs, err := stateTrie.InitializeFromProto(&pb.BeaconState{
-		Fork: &pb.Fork{
-			PreviousVersion: []byte{0, 0, 0, 0},
-			CurrentVersion:  []byte{0, 0, 0, 0},
-		},
-		Validators:        validators,
-		RandaoMixes:       make([][]byte, params.BeaconConfig().EpochsPerHistoricalVector),
-		ShardStates:       make([]*ethpb.ShardState, 64),
-		LatestBlockHeader: bh,
-	})
+	bh := &ethpb.BeaconBlockHeader{StateRoot: bytesutil.PadTo([]byte{'a'}, 32)}
+	require.NoError(t, bs.SetLatestBlockHeader(bh))
+	hr, err := stateutil.BlockHeaderRoot(bh)
 	require.NoError(t, err)
 	pIdx, err := helpers.ShardProposerIndex(bs, 1, 0)
 	require.NoError(t, err)
@@ -433,34 +414,18 @@ func TestShardStateTransition(t *testing.T) {
 
 func TestCanCrosslink(t *testing.T) {
 	helpers.ClearCache()
-
-	validators := make([]*ethpb.Validator, 6)
-	for i := 0; i < len(validators); i++ {
-		validators[i] = &ethpb.Validator{
-			ExitEpoch:        params.BeaconConfig().FarFutureEpoch,
-			EffectiveBalance: params.BeaconConfig().MaxEffectiveBalance,
-		}
-	}
-	bs, err := stateTrie.InitializeFromProto(&pb.BeaconState{
-		Fork: &pb.Fork{
-			PreviousVersion: []byte{0, 0, 0, 0},
-			CurrentVersion:  []byte{0, 0, 0, 0},
-		},
-		Validators:      validators,
-		RandaoMixes:     make([][]byte, params.BeaconConfig().EpochsPerHistoricalVector),
-		ShardStates:     make([]*ethpb.ShardState, 64),
-		OnlineCountdown: []uint64{1, 1, 1, 1, 1, 1},
-	})
+	indices := []uint64{0, 1, 2, 3, 4, 5}
+	bs, err := testState(uint64(len(indices)))
 	require.NoError(t, err)
 	att1 := &ethpb.Attestation{AggregationBits: bitfield.Bitlist{0b11100}}
 	att2 := &ethpb.Attestation{AggregationBits: bitfield.Bitlist{0b10011}}
-	can, indices, err := CanCrosslink(bs, []*ethpb.Attestation{att1, att2}, []uint64{0, 1, 2, 3, 4, 5})
+	can, indices, err := CanCrosslink(bs, []*ethpb.Attestation{att1, att2}, indices)
 	require.NoError(t, err)
 	require.Equal(t, true, can)
 	sortkeys.Uint64s(indices)
 	require.DeepEqual(t, []uint64{0, 1, 2, 3}, indices)
 
-	can, indices, err = CanCrosslink(bs, []*ethpb.Attestation{att1}, []uint64{0, 1, 2, 3, 4, 5})
+	can, indices, err = CanCrosslink(bs, []*ethpb.Attestation{att1}, indices)
 	require.NoError(t, err)
 	require.Equal(t, false, can)
 	sortkeys.Uint64s(indices)
@@ -484,11 +449,8 @@ func TestVerifyAttTransitionRoot(t *testing.T) {
 	st := &ethpb.ShardTransition{StartSlot: 999}
 	r, err := ssz.HashTreeRoot(st)
 	require.NoError(t, err)
-	got, err := verifyAttTransitionRoot(st, r)
-	require.NoError(t, err)
-	require.Equal(t, r, got)
-	_, err = verifyAttTransitionRoot(st, [32]byte{'a'})
-	require.ErrorContains(t, "transition root missmatch", err)
+	require.NoError(t, verifyAttTransitionRoot(st, r))
+	require.ErrorContains(t, "transition root missmatch", verifyAttTransitionRoot(st, [32]byte{'a'}))
 }
 
 func TestVerifyShardDataRootLength(t *testing.T) {
@@ -579,27 +541,185 @@ func TestVerifyShardDataRootLength(t *testing.T) {
 	}
 }
 
-func Test_ShardBlockProposersAndHeaders(t *testing.T) {
-	validators := make([]*ethpb.Validator, 2048)
-	for i := 0; i < len(validators); i++ {
-		validators[i] = &ethpb.Validator{
-			ExitEpoch:        params.BeaconConfig().FarFutureEpoch,
-			EffectiveBalance: params.BeaconConfig().MaxEffectiveBalance,
-		}
-	}
-	bs, err := stateTrie.InitializeFromProto(&pb.BeaconState{
-		Slot: 3,
-		Fork: &pb.Fork{
-			PreviousVersion: []byte{0, 0, 0, 0},
-			CurrentVersion:  []byte{0, 0, 0, 0},
-		},
-		Validators:      validators,
-		RandaoMixes:     make([][]byte, params.BeaconConfig().EpochsPerHistoricalVector),
-		ShardStates:     []*ethpb.ShardState{{GasPrice: 876}},
-		OnlineCountdown: []uint64{1, 1, 1, 1, 1, 1},
-		BlockRoots:      [][]byte{{'a'}, {'b'}, {'c'}},
-	})
+func Test_ProcessCrosslink(t *testing.T) {
+	bs, err := testState(params.BeaconConfig().MaxValidatorsPerCommittee)
 	require.NoError(t, err)
+	require.NoError(t, bs.SetSlot(3))
+	st := &ethpb.ShardTransition{
+		StartSlot:         1,
+		ShardBlockLengths: []uint64{1000, 2000},
+		ShardDataRoots:    [][]byte{{'d'}, {'e'}},
+		ShardStates:       []*ethpb.ShardState{{Slot: 1, GasPrice: 767}, {Slot: 2, GasPrice: 672}},
+	}
+	headers, indices, err := shardBlockProposersAndHeaders(bs, st, helpers.ShardOffSetSlots(bs, 0), 0)
+	require.NoError(t, err)
+	sigs := make([]bls.Signature, 0)
+	for i, idx := range indices {
+		sk := bls.RandKey()
+		v, err := bs.ValidatorAtIndex(idx)
+		require.NoError(t, err)
+		v.PublicKey = sk.PublicKey().Marshal()
+		require.NoError(t, bs.UpdateValidatorAtIndex(idx, v))
+		s, err := helpers.ComputeDomainAndSign(bs, 0, headers[i], params.ShardConfig().DomainShardProposal, sk)
+		require.NoError(t, err)
+		sig, err := bls.SignatureFromBytes(s)
+		require.NoError(t, err)
+		sigs = append(sigs, sig)
+	}
+	as := bls.AggregateSignatures(sigs)
+	st.ProposerSignatureAggregate = as.Marshal()
+
+	tr, err := ssz.HashTreeRoot(st)
+	require.NoError(t, err)
+	atts := []*ethpb.Attestation{
+		{
+			AggregationBits: bitfield.Bitlist{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+			Data: &ethpb.AttestationData{
+				Slot:                2,
+				ShardTransitionRoot: tr[:],
+			},
+		},
+	}
+	a := atts[0]
+	require.NoError(t, bs.SetCurrentEpochAttestations([]*pb.PendingAttestation{{
+		Data: &ethpb.AttestationData{
+			Slot:                a.Data.Slot,
+			CommitteeIndex:      a.Data.CommitteeIndex,
+			ShardTransitionRoot: a.Data.ShardTransitionRoot[:],
+		}}}))
+	shard, err := helpers.ShardFromCommitteeIndex(bs, a.Data.Slot, a.Data.CommitteeIndex)
+	require.NoError(t, err)
+	sts := make([]*ethpb.ShardTransition, 64)
+	sts[shard] = st
+	bs, err = processCrosslinks(bs, sts, atts)
+	require.NoError(t, err)
+	pa := bs.CurrentEpochAttestations()[0]
+	require.Equal(t, true, pa.CrosslinkSuccess)
+}
+
+func Test_ProcessCrosslinkForShard(t *testing.T) {
+	bs, err := testState(params.BeaconConfig().MaxValidatorsPerCommittee)
+	require.NoError(t, err)
+	require.NoError(t, bs.SetSlot(3))
+	transition := &ethpb.ShardTransition{
+		StartSlot:         1,
+		ShardBlockLengths: []uint64{1000, 2000},
+		ShardDataRoots:    [][]byte{{'d'}, {'e'}},
+		ShardStates:       []*ethpb.ShardState{{Slot: 1, GasPrice: 767}, {Slot: 2, GasPrice: 672}},
+	}
+	headers, indices, err := shardBlockProposersAndHeaders(bs, transition, helpers.ShardOffSetSlots(bs, 0), 0)
+	require.NoError(t, err)
+	sigs := make([]bls.Signature, 0)
+	for i, idx := range indices {
+		sk := bls.RandKey()
+		v, err := bs.ValidatorAtIndex(idx)
+		require.NoError(t, err)
+		v.PublicKey = sk.PublicKey().Marshal()
+		require.NoError(t, bs.UpdateValidatorAtIndex(idx, v))
+		s, err := helpers.ComputeDomainAndSign(bs, 0, headers[i], params.ShardConfig().DomainShardProposal, sk)
+		require.NoError(t, err)
+		sig, err := bls.SignatureFromBytes(s)
+		require.NoError(t, err)
+		sigs = append(sigs, sig)
+	}
+	as := bls.AggregateSignatures(sigs)
+	transition.ProposerSignatureAggregate = as.Marshal()
+
+	tr, err := ssz.HashTreeRoot(transition)
+	require.NoError(t, err)
+	atts := []*ethpb.Attestation{
+		{
+			AggregationBits: bitfield.Bitlist{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+			Data: &ethpb.AttestationData{
+				ShardTransitionRoot: tr[:],
+			},
+		},
+	}
+	wr, err := processCrosslinkForShard(bs, atts, transition, 0)
+	require.NoError(t, err)
+	require.Equal(t, tr, wr)
+}
+
+func Test_ApplyShardTransition(t *testing.T) {
+	bs, err := testState(params.BeaconConfig().MaxValidatorsPerCommittee)
+	require.NoError(t, err)
+	require.NoError(t, bs.SetSlot(3))
+	transition := &ethpb.ShardTransition{
+		StartSlot:         1,
+		ShardBlockLengths: []uint64{1000, 2000},
+		ShardDataRoots:    [][]byte{{'d'}, {'e'}},
+		ShardStates:       []*ethpb.ShardState{{Slot: 1, GasPrice: 767}, {Slot: 2, GasPrice: 672}},
+	}
+	headers, indices, err := shardBlockProposersAndHeaders(bs, transition, helpers.ShardOffSetSlots(bs, 0), 0)
+	require.NoError(t, err)
+	sigs := make([]bls.Signature, 0)
+	for i, idx := range indices {
+		sk := bls.RandKey()
+		v, err := bs.ValidatorAtIndex(idx)
+		require.NoError(t, err)
+		v.PublicKey = sk.PublicKey().Marshal()
+		require.NoError(t, bs.UpdateValidatorAtIndex(idx, v))
+		s, err := helpers.ComputeDomainAndSign(bs, 0, headers[i], params.ShardConfig().DomainShardProposal, sk)
+		require.NoError(t, err)
+		sig, err := bls.SignatureFromBytes(s)
+		require.NoError(t, err)
+		sigs = append(sigs, sig)
+	}
+	as := bls.AggregateSignatures(sigs)
+	transition.ProposerSignatureAggregate = as.Marshal()
+
+	bs, err = applyShardTransition(bs, transition, 0)
+	require.NoError(t, err)
+
+	wanted := transition.ShardStates[len(transition.ShardStates)-1]
+	require.DeepEqual(t, wanted, bs.ShardStateAtIndex(0))
+}
+
+func Test_IncBeaconProposerBal(t *testing.T) {
+	bs, err := testState(params.BeaconConfig().MaxValidatorsPerCommittee)
+	require.NoError(t, err)
+	votedIndices := make([]uint64, 0)
+	for i := uint64(0); i < params.BeaconConfig().MaxValidatorsPerCommittee; i++ {
+		votedIndices = append(votedIndices, i)
+	}
+	require.NoError(t, err)
+
+	bs, err = incBeaconProposerBal(bs, votedIndices)
+	require.NoError(t, err)
+
+	p, err := helpers.BeaconProposerIndex(bs)
+	require.NoError(t, err)
+
+	b, err := bs.BalanceAtIndex(p)
+	require.NoError(t, err)
+	require.Equal(t, true, b > params.BeaconConfig().MaxEffectiveBalance)
+}
+
+func Test_DecShardProposerBal(t *testing.T) {
+	bs, err := testState(params.BeaconConfig().MaxValidatorsPerCommittee)
+	require.NoError(t, err)
+	require.NoError(t, bs.SetSlot(2))
+	s := helpers.ShardOffSetSlots(bs, 0)
+	p, err := helpers.ShardProposerIndex(bs, s[0], 0)
+	require.NoError(t, err)
+	l := uint64(100)
+	gp := uint64(5)
+	st := &ethpb.ShardTransition{
+		ShardBlockLengths: []uint64{l},
+		ShardStates:       []*ethpb.ShardState{{GasPrice: gp}},
+	}
+	bs, err = decShardProposerBal(bs, st, 0)
+	require.NoError(t, err)
+	b, err := bs.BalanceAtIndex(p)
+	require.NoError(t, err)
+	wanted := params.BeaconConfig().MaxEffectiveBalance - l*gp
+	require.Equal(t, wanted, b)
+}
+
+func Test_ShardBlockProposersAndHeaders(t *testing.T) {
+	bs, err := testState(params.BeaconConfig().MaxValidatorsPerCommittee)
+	require.NoError(t, err)
+	require.NoError(t, bs.SetSlot(3))
 	offSets := []uint64{1, 2}
 	transition := &ethpb.ShardTransition{
 		StartSlot:         0,
@@ -628,13 +748,10 @@ func Test_ShardBlockProposersAndHeaders(t *testing.T) {
 func Test_VerifyProposerSignature(t *testing.T) {
 	priv1 := bls.RandKey()
 	priv2 := bls.RandKey()
-	bs, err := stateTrie.InitializeFromProto(&pb.BeaconState{
-		Fork: &pb.Fork{
-			PreviousVersion: []byte{0, 0, 0, 0},
-			CurrentVersion:  []byte{0, 0, 0, 0},
-		},
-		Validators: []*ethpb.Validator{{PublicKey: priv1.PublicKey().Marshal()}, {PublicKey: priv2.PublicKey().Marshal()}}})
+	bs, err := testState(2)
 	require.NoError(t, err)
+	require.NoError(t, bs.UpdateValidatorAtIndex(0, &ethpb.Validator{PublicKey: priv1.PublicKey().Marshal()}))
+	require.NoError(t, bs.UpdateValidatorAtIndex(1, &ethpb.Validator{PublicKey: priv2.PublicKey().Marshal()}))
 	h1 := &ethpb.ShardBlockHeader{Slot: 1}
 	h2 := &ethpb.ShardBlockHeader{Slot: 2}
 	s1, err := helpers.ComputeDomainAndSign(bs, 0, h1, params.ShardConfig().DomainShardProposal, priv1)
@@ -648,4 +765,34 @@ func Test_VerifyProposerSignature(t *testing.T) {
 	as := bls.AggregateSignatures([]bls.Signature{s1s, s2s})
 	pIndices := []uint64{0, 1}
 	require.NoError(t, verifyProposerSignature(bs, []*ethpb.ShardBlockHeader{h1, h2}, pIndices, as.Marshal()))
+}
+
+func testState(vCount uint64) (*stateTrie.BeaconState, error) {
+	validators := make([]*ethpb.Validator, vCount)
+	balances := make([]uint64, vCount)
+	onlineCountdown := make([]uint64, vCount)
+	for i := 0; i < len(validators); i++ {
+		validators[i] = &ethpb.Validator{
+			ExitEpoch:        params.BeaconConfig().FarFutureEpoch,
+			EffectiveBalance: params.BeaconConfig().MaxEffectiveBalance,
+		}
+		balances[i] = params.BeaconConfig().MaxEffectiveBalance
+		onlineCountdown[i] = 1
+	}
+	votedIndices := make([]uint64, 0)
+	for i := uint64(0); i < params.BeaconConfig().MaxValidatorsPerCommittee; i++ {
+		votedIndices = append(votedIndices, i)
+	}
+	return stateTrie.InitializeFromProto(&pb.BeaconState{
+		Fork: &pb.Fork{
+			PreviousVersion: []byte{0, 0, 0, 0},
+			CurrentVersion:  []byte{0, 0, 0, 0},
+		},
+		Validators:      validators,
+		RandaoMixes:     make([][]byte, params.BeaconConfig().EpochsPerHistoricalVector),
+		ShardStates:     []*ethpb.ShardState{{GasPrice: 876}},
+		OnlineCountdown: onlineCountdown,
+		BlockRoots:      [][]byte{{'a'}, {'b'}, {'c'}},
+		Balances:        balances,
+	})
 }

@@ -25,10 +25,11 @@ func CopyPendingAttestation(att *pbp2p.PendingAttestation) *pbp2p.PendingAttesta
 	}
 	data := CopyAttestationData(att.Data)
 	return &pbp2p.PendingAttestation{
-		AggregationBits: bytesutil.SafeCopyBytes(att.AggregationBits),
-		Data:            data,
-		InclusionDelay:  att.InclusionDelay,
-		ProposerIndex:   att.ProposerIndex,
+		AggregationBits:  bytesutil.SafeCopyBytes(att.AggregationBits),
+		Data:             data,
+		InclusionDelay:   att.InclusionDelay,
+		ProposerIndex:    att.ProposerIndex,
+		CrosslinkSuccess: att.CrosslinkSuccess,
 	}
 }
 

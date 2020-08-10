@@ -190,7 +190,7 @@ func applyShardTransition(beaconState *stateTrie.BeaconState, transition *ethpb.
 
 	// Save shard state in beacon state and handle shard skip slot scenario.
 	currentShardState := transition.ShardStates[len(transition.ShardStates)-1]
-	// TODO(0): I think we should copy here.
+	// TODO(0): https://github.com/ethereum/eth2.0-specs/pull/2013
 	currentShardState.Slot = beaconState.Slot() - 1
 	if err := beaconState.SetShardStateAtIndex(shard, currentShardState); err != nil {
 		return nil, err
@@ -335,8 +335,7 @@ func processCrosslinkForShard(bs *stateTrie.BeaconState, attestations []*ethpb.A
 		if err := verifyAttShardHeadRoot(transition, atts); err != nil {
 			return [32]byte{}, err
 		}
-		wRoot, err := verifyAttTransitionRoot(transition, tRoot)
-		if err != nil {
+		if err := verifyAttTransitionRoot(transition, tRoot); err != nil {
 			return [32]byte{}, err
 		}
 		bs, err = applyShardTransition(bs, transition, shard)
@@ -351,7 +350,7 @@ func processCrosslinkForShard(bs *stateTrie.BeaconState, attestations []*ethpb.A
 		if err != nil {
 			return [32]byte{}, err
 		}
-		return wRoot, nil
+		return tRoot, nil
 	}
 
 	if helpers.IsEmptyShardTransition(transition) {
@@ -361,15 +360,15 @@ func processCrosslinkForShard(bs *stateTrie.BeaconState, attestations []*ethpb.A
 	return [32]byte{}, nil
 }
 
-func verifyAttTransitionRoot(transition *ethpb.ShardTransition, tRoot [32]byte) ([32]byte, error) {
+func verifyAttTransitionRoot(transition *ethpb.ShardTransition, tRoot [32]byte) error {
 	r, err := ssz.HashTreeRoot(transition)
 	if err != nil {
-		return [32]byte{}, err
+		return err
 	}
 	if tRoot != r {
-		return [32]byte{}, errors.New("transition root missmatch")
+		return errors.New("transition root missmatch")
 	}
-	return r, nil
+	return nil
 }
 
 func verifyAttShardHeadRoot(transition *ethpb.ShardTransition, atts []*ethpb.Attestation) error {
@@ -416,8 +415,10 @@ func processCrosslinks(
 	}
 	cCount := helpers.SlotCommitteeCount(vCount)
 	attsByCommitteeId := helpers.OnTimeAttsByCommitteeID(atts, bs.Slot())
-
 	for cID := uint64(0); cID < cCount; cID++ {
+		if len(attsByCommitteeId[cID]) == 0 {
+			continue
+		}
 		shard, err := helpers.ShardFromCommitteeIndex(bs, onTimeSlot, cID)
 		if err != nil {
 			return nil, err
@@ -431,7 +432,7 @@ func processCrosslinks(
 		if wRoot != [32]byte{} {
 			pendingAtts := bs.CurrentEpochAttestations()
 			for _, pendingAtt := range pendingAtts {
-				if isWinningAttestation(pendingAtt, bs.Slot(), cID, wRoot) {
+				if isWinningAttestation(pendingAtt, onTimeSlot, cID, wRoot) {
 					pendingAtt.CrosslinkSuccess = true
 				}
 			}
@@ -637,7 +638,6 @@ func verifyShardBlockMessage(ctx context.Context, beaconParentState *stateTrie.B
 		return false, err
 	}
 	if shardBlock.ProposerIndex != shardProposerIndex {
-		fmt.Println(shardProposerIndex)
 		return false, nil
 	}
 
@@ -669,9 +669,16 @@ func verifyShardBlockSignature(beaconState *stateTrie.BeaconState, shardBlock *e
 // The voted indices are also returned in the end.
 func CanCrosslink(beaconState *stateTrie.BeaconState, atts []*ethpb.Attestation, committee []uint64) (bool, []uint64, error) {
 	votedIndices := make([]uint64, 0, params.BeaconConfig().MaxValidatorsPerCommittee)
+	m := make(map[uint64]bool)
 	for _, a := range atts {
 		indices := attestationutil.AttestingIndices(a.AggregationBits, committee)
-		votedIndices = append(votedIndices, indices...)
+		for _, i := range indices {
+			if ok := m[i]; ok {
+				continue
+			}
+			m[i] = true
+			votedIndices = append(votedIndices, i)
+		}
 	}
 	onlineIndices, err := helpers.OnlineValidatorIndices(beaconState)
 	if err != nil {

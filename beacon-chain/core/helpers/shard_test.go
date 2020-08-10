@@ -10,28 +10,15 @@ import (
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
+	"github.com/prysmaticlabs/prysm/shared/testutil/require"
 )
 
 func TestShardCommittee(t *testing.T) {
 	ClearCache()
 
 	shardCommitteeSizePerEpoch := uint64(4)
-	validators := make([]*ethpb.Validator, shardCommitteeSizePerEpoch*params.BeaconConfig().SlotsPerEpoch)
-	for i := 0; i < len(validators); i++ {
-		validators[i] = &ethpb.Validator{
-			ExitEpoch: params.BeaconConfig().FarFutureEpoch,
-		}
-	}
-	beaconState, err := stateTrie.InitializeFromProto(&pb.BeaconState{
-		Slot:        params.BeaconConfig().SlotsPerEpoch,
-		Validators:  validators,
-		RandaoMixes: make([][]byte, params.BeaconConfig().EpochsPerHistoricalVector),
-		ShardStates: make([]*ethpb.ShardState, 64),
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	beaconState, err := testState(shardCommitteeSizePerEpoch * params.BeaconConfig().SlotsPerEpoch)
+	require.NoError(t, err)
 	tests := []struct {
 		epoch     uint64
 		shard     uint64
@@ -138,8 +125,7 @@ func TestOnlineValidatorIndices(t *testing.T) {
 
 	for _, tt := range tests {
 		ClearCache()
-		s := &pb.BeaconState{}
-		state, err := stateTrie.InitializeFromProto(s)
+		state, err := stateTrie.InitializeFromProto(&pb.BeaconState{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -212,8 +198,7 @@ func TestShardOffSetSlots(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		s := &pb.BeaconState{Slot: tt.endSlot}
-		beaconState, err := stateTrie.InitializeFromProto(s)
+		beaconState, err := stateTrie.InitializeFromProto(&pb.BeaconState{Slot: tt.endSlot})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -453,4 +438,72 @@ func TestAttsByTransitionRoot(t *testing.T) {
 			t.Error("Did not receive wanted atts")
 		}
 	}
+}
+
+func TestShardFromCommitteeIndex(t *testing.T) {
+	bs, err := testState(params.BeaconConfig().MaxValidatorsPerCommittee)
+	require.NoError(t, err)
+	type args struct {
+		beaconState *stateTrie.BeaconState
+		slot        uint64
+		committeeID uint64
+	}
+	tests := []struct {
+		name string
+		args args
+		want uint64
+	}{
+		{
+			name: "slot 1, committee 0",
+			args: args{beaconState: bs, slot: 1, committeeID: 0},
+			want: 1,
+		},
+		{
+			name: "slot 1, committee 1",
+			args: args{beaconState: bs, slot: 1, committeeID: 1},
+			want: 2,
+		},
+		{
+			name: "slot 2, committee 0",
+			args: args{beaconState: bs, slot: 2, committeeID: 3},
+			want: 5,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ShardFromCommitteeIndex(tt.args.beaconState, tt.args.slot, tt.args.committeeID)
+			require.NoError(t, err)
+			require.Equal(t, got, tt.want)
+		})
+	}
+}
+
+func testState(vCount uint64) (*stateTrie.BeaconState, error) {
+	validators := make([]*ethpb.Validator, vCount)
+	balances := make([]uint64, vCount)
+	onlineCountdown := make([]uint64, vCount)
+	for i := 0; i < len(validators); i++ {
+		validators[i] = &ethpb.Validator{
+			ExitEpoch:        params.BeaconConfig().FarFutureEpoch,
+			EffectiveBalance: params.BeaconConfig().MaxEffectiveBalance,
+		}
+		balances[i] = params.BeaconConfig().MaxEffectiveBalance
+		onlineCountdown[i] = 1
+	}
+	votedIndices := make([]uint64, 0)
+	for i := uint64(0); i < params.BeaconConfig().MaxValidatorsPerCommittee; i++ {
+		votedIndices = append(votedIndices, i)
+	}
+	return stateTrie.InitializeFromProto(&pb.BeaconState{
+		Fork: &pb.Fork{
+			PreviousVersion: []byte{0, 0, 0, 0},
+			CurrentVersion:  []byte{0, 0, 0, 0},
+		},
+		Validators:      validators,
+		RandaoMixes:     make([][]byte, params.BeaconConfig().EpochsPerHistoricalVector),
+		ShardStates:     make([]*ethpb.ShardState, 64),
+		OnlineCountdown: onlineCountdown,
+		BlockRoots:      [][]byte{{'a'}, {'b'}, {'c'}},
+		Balances:        balances,
+	})
 }
