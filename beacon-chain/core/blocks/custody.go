@@ -49,7 +49,7 @@ func RandaoEpochForCustodyPeriod(period uint64, validator uint64) uint64 {
 func ProcessChunkChallenge(ctx context.Context, state *state.BeaconState, challenge *pb.CustodyChunkChallenge) (*state.BeaconState, error) {
 	a := challenge.Attestation
 	// Verify challenge has a valid attestation.
-	if err := VerifyAttestation(ctx, state, a); err != nil {
+	if err := VerifyAttestationSignature(ctx, state, a); err != nil {
 		return nil, err
 	}
 
@@ -71,7 +71,7 @@ func ProcessChunkChallenge(ctx context.Context, state *state.BeaconState, challe
 	}
 
 	// Verify the responder is slashable.
-	if !helpers.IsSlashableValidator(responder, helpers.CurrentEpoch(state)) {
+	if !helpers.IsSlashableValidator(responder.ActivationEpoch, responder.WithdrawableEpoch, responder.Slashed, helpers.CurrentEpoch(state)) {
 		return nil, errors.New("not slashable attestation")
 	}
 
@@ -211,7 +211,7 @@ func ProcessCustodyKeyReveal(ctx context.Context, state *state.BeaconState, r *p
 	}
 
 	// Verify validator is slashable.
-	if !helpers.IsSlashableValidator(rVal, ce) {
+	if !helpers.IsSlashableValidator(rVal.ActivationEpoch, rVal.WithdrawableEpoch, rVal.Slashed, ce) {
 		return nil, errors.New("validator is not slashable")
 	}
 
@@ -292,16 +292,16 @@ func ProcessSignedCustodySlashing(ctx context.Context, state *state.BeaconState,
 	if !sig.Verify(pk, sr[:]) {
 		return nil, errors.New("could not verify whistleblower signature")
 	}
-	if !helpers.IsSlashableValidator(w, helpers.CurrentEpoch(state)) {
+	if !helpers.IsSlashableValidator(w.ActivationEpoch, w.WithdrawableEpoch, w.Slashed, helpers.CurrentEpoch(state)) {
 		return nil, errors.New("not slashable whistleblower")
 	}
-	if !helpers.IsSlashableValidator(m, helpers.CurrentEpoch(state)) {
+	if !helpers.IsSlashableValidator(m.ActivationEpoch, m.WithdrawableEpoch, m.Slashed, helpers.CurrentEpoch(state)) {
 		return nil, errors.New("not slashable malefactor")
 	}
 
 	// Verify the slashing has a valid attestation.
 	a := c.Attestation
-	if err := VerifyAttestation(ctx, state, a); err != nil {
+	if err := VerifyAttestationSignature(ctx, state, a); err != nil {
 		return nil, err
 	}
 
