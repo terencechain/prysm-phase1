@@ -316,13 +316,7 @@ func TestCommitteeCountDelta(t *testing.T) {
 
 func TestActiveShardCount(t *testing.T) {
 	shardCount := uint64(64)
-	s := &pb.BeaconState{ShardStates: make([]*ethpb.ShardState, shardCount)}
-	state, err := stateTrie.InitializeFromProto(s)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if ActiveShardCount(state) != shardCount {
+	if ActiveShardCount() != shardCount {
 		t.Fatal("Did not get correct active shard count")
 	}
 }

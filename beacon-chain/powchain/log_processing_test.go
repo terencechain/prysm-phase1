@@ -234,7 +234,7 @@ func TestProcessETH2GenesisLog_8DuplicatePubkeys(t *testing.T) {
 	require.NoError(t, err)
 
 	params.SetupTestConfigCleanup(t)
-	bConfig := params.MinimalSpecConfig()
+	bConfig := params.BeaconMinimalSpecConfig()
 	bConfig.MinGenesisTime = 0
 	params.OverrideBeaconConfig(bConfig)
 
@@ -306,7 +306,7 @@ func TestProcessETH2GenesisLog(t *testing.T) {
 	web3Service.depositContractCaller, err = contracts.NewDepositContractCaller(testAcc.ContractAddr, testAcc.Backend)
 	require.NoError(t, err)
 	params.SetupTestConfigCleanup(t)
-	bConfig := params.MinimalSpecConfig()
+	bConfig := params.BeaconMinimalSpecConfig()
 	bConfig.MinGenesisTime = 0
 	params.OverrideBeaconConfig(bConfig)
 
@@ -403,7 +403,7 @@ func TestProcessETH2GenesisLog_CorrectNumOfDeposits(t *testing.T) {
 	web3Service.latestEth1Data.BlockHeight = testAcc.Backend.Blockchain().CurrentBlock().NumberU64()
 	web3Service.latestEth1Data.BlockTime = testAcc.Backend.Blockchain().CurrentBlock().Time()
 	params.SetupTestConfigCleanup(t)
-	bConfig := params.MinimalSpecConfig()
+	bConfig := params.BeaconMinimalSpecConfig()
 	bConfig.MinGenesisTime = 0
 	bConfig.SecondsPerETH1Block = 10
 	params.OverrideBeaconConfig(bConfig)
@@ -493,7 +493,7 @@ func TestWeb3ServiceProcessDepositLog_RequestMissedDeposits(t *testing.T) {
 	require.NoError(t, err)
 	web3Service.httpLogger = testAcc.Backend
 	params.SetupTestConfigCleanup(t)
-	bConfig := params.MinimalSpecConfig()
+	bConfig := params.BeaconMinimalSpecConfig()
 	bConfig.MinGenesisTime = 0
 	params.OverrideBeaconConfig(bConfig)
 
@@ -652,7 +652,7 @@ func newPowchainService(t *testing.T, eth1Backend *contracts.TestAccount, beacon
 	web3Service.eth1DataFetcher = &goodFetcher{backend: eth1Backend.Backend}
 	web3Service.httpLogger = &goodLogger{backend: eth1Backend.Backend}
 	params.SetupTestConfigCleanup(t)
-	bConfig := params.MinimalSpecConfig()
+	bConfig := params.BeaconMinimalSpecConfig()
 	bConfig.MinGenesisTime = 0
 	params.OverrideBeaconConfig(bConfig)
 	web3Service.headerChan = make(chan *gethTypes.Header)

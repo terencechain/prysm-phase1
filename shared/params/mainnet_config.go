@@ -11,9 +11,15 @@ func MainnetConfig() *BeaconChainConfig {
 	return mainnetBeaconConfig
 }
 
+// MainnetShardConfig returns the configuration to be used in the main network.
+func MainnetShardConfig() *ShardChainConfig {
+	return mainnetShardChainConfig
+}
+
 // UseMainnetConfig for beacon chain services.
 func UseMainnetConfig() {
 	beaconConfig = MainnetConfig()
+	shardConfig = MainnetShardConfig()
 }
 
 var mainnetNetworkConfig = &NetworkConfig{
@@ -160,10 +166,12 @@ type ShardChainConfig struct {
 	MinorRewardQuotient             uint64   // MinorRewardQuotient defines the minor reward quotient.
 	MaxCustodyChunkChallengeRecords uint64   // MaxCustodyChunkChallengeRecords defines the max custody chunk challenge records.
 	EpochsPerCustodyPeriod          uint64   // EpochsPerCustodyPeriod defines how many epochs per custody period.
+	InitialActiveShards             uint64   // InitialActiveShards defines the initial active shard count.
 }
 
 var mainnetShardChainConfig = &ShardChainConfig{
 	MaxShard:                        64,
+	InitialActiveShards:             64,
 	MaxShardBlockSize:               1 << 20,
 	TargetShardBlockSize:            1 << 18,
 	DomainShardProposal:             bytesutil.ToBytes4(bytesutil.Bytes4(128)),

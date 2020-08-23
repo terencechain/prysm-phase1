@@ -15,7 +15,7 @@ import (
 func TestSkipSlotCache_OK(t *testing.T) {
 	state.SkipSlotCache.Enable()
 	defer state.SkipSlotCache.Disable()
-	bState, privs := testutil.DeterministicGenesisState(t, params.MinimalSpecConfig().MinGenesisActiveValidatorCount)
+	bState, privs := testutil.DeterministicGenesisState(t, params.BeaconMinimalSpecConfig().MinGenesisActiveValidatorCount)
 	originalState, err := beaconstate.InitializeFromProto(bState.CloneInnerState())
 	require.NoError(t, err)
 

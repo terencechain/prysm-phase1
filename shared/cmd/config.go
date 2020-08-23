@@ -73,7 +73,7 @@ func newConfig(ctx *cli.Context) *Flags {
 	if ctx.Bool(MinimalConfigFlag.Name) {
 		log.Warn("Using minimal config")
 		cfg.MinimalConfig = true
-		params.UseMinimalConfig()
+		params.UseBeaconMinimalConfig()
 	}
 	if ctx.Bool(E2EConfigFlag.Name) {
 		log.Warn("Using end-to-end testing config")

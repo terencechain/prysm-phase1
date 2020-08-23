@@ -1731,7 +1731,7 @@ func TestServer_GetIndividualVotes_ValidatorsDontExist(t *testing.T) {
 	resetCfg := featureconfig.InitWithReset(&featureconfig.Flags{NewStateMgmt: true})
 	defer resetCfg()
 
-	params.UseMinimalConfig()
+	params.UseBeaconMinimalConfig()
 	defer params.UseMainnetConfig()
 	db, sc := dbTest.SetupDB(t)
 	ctx := context.Background()
@@ -1805,7 +1805,7 @@ func TestServer_GetIndividualVotes_Working(t *testing.T) {
 	resetCfg := featureconfig.InitWithReset(&featureconfig.Flags{NewStateMgmt: true})
 	defer resetCfg()
 
-	params.UseMinimalConfig()
+	params.UseBeaconMinimalConfig()
 	defer params.UseMainnetConfig()
 	db, sc := dbTest.SetupDB(t)
 	ctx := context.Background()

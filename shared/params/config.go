@@ -142,3 +142,12 @@ func (c *BeaconChainConfig) Copy() *BeaconChainConfig {
 	}
 	return &config
 }
+
+// Copy returns a copy of the config object.
+func (c *ShardChainConfig) Copy() *ShardChainConfig {
+	config, ok := deepcopy.Copy(*c).(ShardChainConfig)
+	if !ok {
+		config = *shardConfig
+	}
+	return &config
+}

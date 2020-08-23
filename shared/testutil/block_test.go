@@ -27,7 +27,7 @@ func TestGenerateFullBlock_PassesStateTransition(t *testing.T) {
 
 func TestGenerateFullBlock_ThousandValidators(t *testing.T) {
 	params.SetupTestConfigCleanup(t)
-	params.OverrideBeaconConfig(params.MinimalSpecConfig())
+	params.OverrideBeaconConfig(params.BeaconMinimalSpecConfig())
 	beaconState, privs := DeterministicGenesisState(t, 1024)
 	conf := &BlockGenConfig{
 		NumAttestations: 4,
@@ -45,7 +45,7 @@ func TestGenerateFullBlock_ThousandValidators(t *testing.T) {
 func TestGenerateFullBlock_Passes4Epochs(t *testing.T) {
 	// Changing to minimal config as this will process 4 epochs of blocks.
 	params.SetupTestConfigCleanup(t)
-	params.OverrideBeaconConfig(params.MinimalSpecConfig())
+	params.OverrideBeaconConfig(params.BeaconMinimalSpecConfig())
 	beaconState, privs := DeterministicGenesisState(t, 64)
 
 	conf := &BlockGenConfig{
@@ -77,7 +77,7 @@ func TestGenerateFullBlock_Passes4Epochs(t *testing.T) {
 
 func TestGenerateFullBlock_ValidProposerSlashings(t *testing.T) {
 	params.SetupTestConfigCleanup(t)
-	params.OverrideBeaconConfig(params.MinimalSpecConfig())
+	params.OverrideBeaconConfig(params.BeaconMinimalSpecConfig())
 	beaconState, privs := DeterministicGenesisState(t, 32)
 	conf := &BlockGenConfig{
 		NumProposerSlashings: 1,
@@ -102,7 +102,7 @@ func TestGenerateFullBlock_ValidProposerSlashings(t *testing.T) {
 
 func TestGenerateFullBlock_ValidAttesterSlashings(t *testing.T) {
 	params.SetupTestConfigCleanup(t)
-	params.OverrideBeaconConfig(params.MinimalSpecConfig())
+	params.OverrideBeaconConfig(params.BeaconMinimalSpecConfig())
 	beaconState, privs := DeterministicGenesisState(t, 32)
 	conf := &BlockGenConfig{
 		NumAttesterSlashings: 1,
@@ -127,7 +127,7 @@ func TestGenerateFullBlock_ValidAttesterSlashings(t *testing.T) {
 
 func TestGenerateFullBlock_ValidAttestations(t *testing.T) {
 	params.SetupTestConfigCleanup(t)
-	params.OverrideBeaconConfig(params.MinimalSpecConfig())
+	params.OverrideBeaconConfig(params.BeaconMinimalSpecConfig())
 
 	beaconState, privs := DeterministicGenesisState(t, 256)
 	conf := &BlockGenConfig{

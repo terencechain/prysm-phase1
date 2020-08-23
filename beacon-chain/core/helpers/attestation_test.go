@@ -51,7 +51,7 @@ func TestAttestation_IsAggregator(t *testing.T) {
 	})
 
 	t.Run("not aggregator", func(t *testing.T) {
-		params.UseMinimalConfig()
+		params.UseShardMinimalConfig()
 		defer params.UseMainnetConfig()
 		beaconState, privKeys := testutil.DeterministicGenesisState(t, 2048)
 

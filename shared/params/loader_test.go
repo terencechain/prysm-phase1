@@ -24,14 +24,14 @@ func TestLoadConfigFile(t *testing.T) {
 	}
 	minimalConfigFile := ConfigFilePath(t, "minimal")
 	LoadChainConfigFile(minimalConfigFile)
-	if BeaconConfig().MaxCommitteesPerSlot != MinimalSpecConfig().MaxCommitteesPerSlot {
+	if BeaconConfig().MaxCommitteesPerSlot != BeaconMinimalSpecConfig().MaxCommitteesPerSlot {
 		t.Errorf("Expected MaxCommitteesPerSlot to be set to minimal value: %d found: %d",
-			MinimalSpecConfig().MaxCommitteesPerSlot,
+			BeaconMinimalSpecConfig().MaxCommitteesPerSlot,
 			BeaconConfig().MaxCommitteesPerSlot)
 	}
-	if BeaconConfig().SecondsPerSlot != MinimalSpecConfig().SecondsPerSlot {
+	if BeaconConfig().SecondsPerSlot != BeaconMinimalSpecConfig().SecondsPerSlot {
 		t.Errorf("Expected SecondsPerSlot to be set to minimal value: %d found: %d",
-			MinimalSpecConfig().SecondsPerSlot,
+			BeaconMinimalSpecConfig().SecondsPerSlot,
 			BeaconConfig().SecondsPerSlot)
 	}
 }
@@ -42,7 +42,7 @@ func TestLoadConfigFile_OverwriteCorrectly(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Set current config to minimal config
-	OverrideBeaconConfig(MinimalSpecConfig())
+	OverrideBeaconConfig(BeaconMinimalSpecConfig())
 
 	// load empty config file, so that it defaults to mainnet values
 	LoadChainConfigFile(file.Name())

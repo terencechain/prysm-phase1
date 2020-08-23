@@ -151,7 +151,7 @@ func TestStore_OnBlockBatch(t *testing.T) {
 func TestRemoveStateSinceLastFinalized_EmptyStartSlot(t *testing.T) {
 	ctx := context.Background()
 	db, _ := testDB.SetupDB(t)
-	params.UseMinimalConfig()
+	params.UseBeaconMinimalConfig()
 	defer params.UseMainnetConfig()
 
 	cfg := &Config{BeaconDB: db, ForkChoiceStore: protoarray.New(0, 0, [32]byte{})}
@@ -185,7 +185,7 @@ func TestRemoveStateSinceLastFinalized_EmptyStartSlot(t *testing.T) {
 func TestShouldUpdateJustified_ReturnFalse(t *testing.T) {
 	ctx := context.Background()
 	db, _ := testDB.SetupDB(t)
-	params.UseMinimalConfig()
+	params.UseBeaconMinimalConfig()
 	defer params.UseMainnetConfig()
 
 	cfg := &Config{BeaconDB: db}

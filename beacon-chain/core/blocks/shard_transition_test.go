@@ -542,6 +542,7 @@ func TestVerifyShardDataRootLength(t *testing.T) {
 }
 
 func Test_ProcessCrosslink(t *testing.T) {
+	helpers.ClearCache()
 	bs, err := testState(params.BeaconConfig().MaxValidatorsPerCommittee)
 	require.NoError(t, err)
 	require.NoError(t, bs.SetSlot(3))
@@ -551,7 +552,7 @@ func Test_ProcessCrosslink(t *testing.T) {
 		ShardDataRoots:    [][]byte{{'d'}, {'e'}},
 		ShardStates:       []*ethpb.ShardState{{Slot: 1, GasPrice: 767}, {Slot: 2, GasPrice: 672}},
 	}
-	headers, indices, err := shardBlockProposersAndHeaders(bs, st, helpers.ShardOffSetSlots(bs, 0), 0)
+	headers, indices, err := shardBlockProposersAndHeaders(bs, st, helpers.ShardOffSetSlots(bs, 3), 3)
 	require.NoError(t, err)
 	sigs := make([]bls.Signature, 0)
 	for i, idx := range indices {
@@ -607,7 +608,7 @@ func Test_ProcessCrosslinkForShard(t *testing.T) {
 		ShardDataRoots:    [][]byte{{'d'}, {'e'}},
 		ShardStates:       []*ethpb.ShardState{{Slot: 1, GasPrice: 767}, {Slot: 2, GasPrice: 672}},
 	}
-	headers, indices, err := shardBlockProposersAndHeaders(bs, transition, helpers.ShardOffSetSlots(bs, 0), 0)
+	headers, indices, err := shardBlockProposersAndHeaders(bs, transition, helpers.ShardOffSetSlots(bs, 3), 3)
 	require.NoError(t, err)
 	sigs := make([]bls.Signature, 0)
 	for i, idx := range indices {
@@ -783,6 +784,11 @@ func testState(vCount uint64) (*stateTrie.BeaconState, error) {
 	for i := uint64(0); i < params.BeaconConfig().MaxValidatorsPerCommittee; i++ {
 		votedIndices = append(votedIndices, i)
 	}
+	shardState := make([]*ethpb.ShardState, helpers.ActiveShardCount())
+	for i := 0; i < len(shardState); i++ {
+		shardState[i] = &ethpb.ShardState{GasPrice: 876}
+	}
+	shardState[0].GasPrice = 876
 	return stateTrie.InitializeFromProto(&pb.BeaconState{
 		Fork: &pb.Fork{
 			PreviousVersion: []byte{0, 0, 0, 0},
@@ -790,7 +796,7 @@ func testState(vCount uint64) (*stateTrie.BeaconState, error) {
 		},
 		Validators:      validators,
 		RandaoMixes:     make([][]byte, params.BeaconConfig().EpochsPerHistoricalVector),
-		ShardStates:     []*ethpb.ShardState{{GasPrice: 876}},
+		ShardStates:     shardState,
 		OnlineCountdown: onlineCountdown,
 		BlockRoots:      [][]byte{{'a'}, {'b'}, {'c'}},
 		Balances:        balances,

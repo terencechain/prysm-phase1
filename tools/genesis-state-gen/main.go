@@ -32,7 +32,7 @@ func main() {
 		log.Fatal("Expected --output-ssz, --output-yaml, or --output-json to have been provided, received nil")
 	}
 	if !*useMainnetConfig {
-		params.OverrideBeaconConfig(params.MinimalSpecConfig())
+		params.OverrideBeaconConfig(params.BeaconMinimalSpecConfig())
 	}
 
 	genesisState, _, err := interop.GenerateGenesisState(*genesisTime, uint64(*numValidators))

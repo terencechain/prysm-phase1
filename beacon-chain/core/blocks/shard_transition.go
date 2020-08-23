@@ -458,7 +458,7 @@ func processCrosslinks(
 //                return False
 //    return True
 func verifyEmptyShardTransition(beaconState *stateTrie.BeaconState, transitions []*ethpb.ShardTransition) bool {
-	activeShardCount := helpers.ActiveShardCount(beaconState)
+	activeShardCount := helpers.ActiveShardCount()
 	for i := uint64(0); i < activeShardCount; i++ {
 		shardState := beaconState.ShardStateAtIndex(i)
 		if shardState.Slot != helpers.PrevSlot(beaconState.Slot()) {

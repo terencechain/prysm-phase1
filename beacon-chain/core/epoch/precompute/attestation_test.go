@@ -146,7 +146,7 @@ func TestAttestedCurrentEpoch(t *testing.T) {
 }
 
 func TestProcessAttestations(t *testing.T) {
-	params.UseMinimalConfig()
+	params.UseBeaconMinimalConfig()
 	defer params.UseMainnetConfig()
 
 	validators := uint64(64)

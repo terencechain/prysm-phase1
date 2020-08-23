@@ -14,7 +14,7 @@ func TestMain(m *testing.M) {
 	logrus.SetOutput(ioutil.Discard)
 	// Use minimal config to reduce test setup time.
 	prevConfig := params.BeaconConfig().Copy()
-	params.OverrideBeaconConfig(params.MinimalSpecConfig())
+	params.OverrideBeaconConfig(params.BeaconMinimalSpecConfig())
 
 	retVal := m.Run()
 

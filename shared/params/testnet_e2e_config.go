@@ -13,7 +13,7 @@ func UseE2EConfig() {
 // E2ETestConfig retrieves the configurations made specifically for E2E testing.
 // Warning: This config is only for testing, it is not meant for use outside of E2E.
 func E2ETestConfig() *BeaconChainConfig {
-	e2eConfig := MinimalSpecConfig()
+	e2eConfig := BeaconMinimalSpecConfig()
 
 	// Misc.
 	e2eConfig.MinGenesisActiveValidatorCount = 256

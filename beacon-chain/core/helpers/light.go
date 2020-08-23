@@ -100,7 +100,7 @@ func LightClientCommittee(state *state.BeaconState, epoch uint64) ([]uint64, err
 	if err != nil {
 		return nil, err
 	}
-	activeShardCount := ActiveShardCount(state)
+	activeShardCount := ActiveShardCount()
 	lightClientCommittee, err := ComputeCommittee(activeValidatorIndices, seed, 0, activeShardCount)
 	if err != nil {
 		return nil, err

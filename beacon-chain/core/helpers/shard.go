@@ -41,7 +41,7 @@ func OnlineValidatorIndices(beaconState *s.BeaconState) ([]uint64, error) {
 //    active_shards = get_active_shard_count(state)
 //    return Shard((index + get_start_shard(state, slot)) % active_shards)
 func ShardFromCommitteeIndex(beaconState *s.BeaconState, slot uint64, committeeID uint64) (uint64, error) {
-	activeShards := ActiveShardCount(beaconState)
+	activeShards := ActiveShardCount()
 	startShard, err := StartShard(beaconState, slot)
 	if err != nil {
 		return 0, err
@@ -119,12 +119,11 @@ func ShardProposerIndex(beaconState *s.BeaconState, slot uint64, shard uint64) (
 //    source_epoch = compute_committee_source_epoch(epoch, SHARD_COMMITTEE_PERIOD)
 //    active_validator_indices = get_active_validator_indices(beacon_state, source_epoch)
 //    seed = get_seed(beacon_state, source_epoch, DOMAIN_SHARD_COMMITTEE)
-//    active_shard_count = get_active_shard_count(beacon_state)
 //    return compute_committee(
 //        indices=active_validator_indices,
 //        seed=seed,
 //        index=shard,
-//        count=active_shard_count,
+//        count=get_active_shard_count(beacon_state),
 //    )
 func ShardCommittee(beaconState *s.BeaconState, epoch uint64, shard uint64) ([]uint64, error) {
 	se := SourceEpoch(epoch, params.ShardConfig().ShardCommitteePeriod)
@@ -136,8 +135,7 @@ func ShardCommittee(beaconState *s.BeaconState, epoch uint64, shard uint64) ([]u
 	if err != nil {
 		return nil, err
 	}
-	activeShardCount := ActiveShardCount(beaconState)
-	return ComputeCommittee(activeValidatorIndices, seed, shard, activeShardCount)
+	return ComputeCommittee(activeValidatorIndices, seed, shard, ActiveShardCount())
 }
 
 // ShardFromAttestation returns the shard number of a given attestation.
@@ -146,7 +144,7 @@ func ShardCommittee(beaconState *s.BeaconState, epoch uint64, shard uint64) ([]u
 //    active_shards = get_active_shard_count(state)
 //    return Shard((index + get_start_shard(state, slot)) % active_shards)
 func ShardFromAttestation(beaconState *s.BeaconState, attestation *ethpb.Attestation) (uint64, error) {
-	activeShards := ActiveShardCount(beaconState)
+	activeShards := ActiveShardCount()
 	startShard, err := StartShard(beaconState, attestation.Data.Slot)
 	if err != nil {
 		return 0, err
@@ -194,8 +192,16 @@ func IsEmptyShardTransition(transition *ethpb.ShardTransition) bool {
 }
 
 // ActiveShardCount returns the active shard count.
-func ActiveShardCount(beaconState *s.BeaconState) uint64 {
-	return beaconState.ShardStateLength()
+// Spec code:
+// def get_active_shard_count(state: BeaconState) -> uint64:
+//    return len(state.shard_states)  # May adapt in the future, or change over time.
+//    """
+//    Return the number of active shards.
+//    Note that this puts an upper bound on the number of committees per slot.
+//    """
+//    return INITIAL_ACTIVE_SHARDS
+func ActiveShardCount() uint64 {
+	return params.ShardConfig().InitialActiveShards
 }
 
 // StartShard returns the start shard of a given slot.
@@ -215,16 +221,17 @@ func ActiveShardCount(beaconState *s.BeaconState) uint64 {
 //    else:
 //        # Previous epoch
 //        shard_delta = get_committee_count_delta(state, start_slot=slot, stop_slot=current_epoch_start_slot)
-//        max_committees_per_epoch = MAX_COMMITTEES_PER_SLOT * SLOTS_PER_EPOCH
+//        max_committees_per_slot = active_shard_count
+//        max_committees_in_span = max_committees_per_slot * (current_epoch_start_slot - slot)
 //        return Shard(
 //            # Ensure positive
-//            (state.current_epoch_start_shard + max_committees_per_epoch * active_shard_count - shard_delta)
+//            (state.current_epoch_start_shard + max_committees_in_span - shard_delta)
 //            % active_shard_count
 //        )
 func StartShard(beaconState *s.BeaconState, slot uint64) (uint64, error) {
 	currentEpoch := CurrentEpoch(beaconState)
 	currentEpochStartSlot := StartSlot(currentEpoch)
-	activeShardCount := ActiveShardCount(beaconState)
+	activeShardCount := ActiveShardCount()
 	if slot == currentEpochStartSlot {
 		return beaconState.CurrentEpochStartShard(), nil
 	} else if slot > currentEpochStartSlot {
@@ -234,13 +241,12 @@ func StartShard(beaconState *s.BeaconState, slot uint64) (uint64, error) {
 		}
 		return (beaconState.CurrentEpochStartShard() + shardDelta) % activeShardCount, nil
 	}
-
 	shardDelta, err := CommitteeCountDelta(beaconState, slot, currentEpochStartSlot)
 	if err != nil {
 		return 0, err
 	}
-	maxShardCountPerEpoch := params.ShardConfig().MaxShard * params.BeaconConfig().SlotsPerEpoch * activeShardCount
-	return (beaconState.CurrentEpochStartShard() + maxShardCountPerEpoch - shardDelta) % activeShardCount, nil
+	maxCommitteesInSpan := activeShardCount * (currentEpochStartSlot - shardDelta)
+	return (beaconState.CurrentEpochStartShard() + maxCommitteesInSpan - shardDelta) % activeShardCount, nil
 }
 
 // CommitteeCountDelta returns the sum of committee counts between start slot and stop slot.

@@ -16,7 +16,7 @@ func SetConfig(t *testing.T, config string) error {
 	params.SetupTestConfigCleanup(t)
 	switch config {
 	case "minimal":
-		params.OverrideBeaconConfig(params.MinimalSpecConfig())
+		params.OverrideBeaconConfig(params.BeaconMinimalSpecConfig())
 		return nil
 	case "mainnet":
 		params.OverrideBeaconConfig(params.MainnetConfig())
