@@ -54,6 +54,7 @@ func NewBeaconBlock() *ethpb.SignedBeaconBlock {
 					BlockHash:   make([]byte, 32),
 				},
 				Graffiti:             make([]byte, 32),
+				LightClientBits: bitfield.Bitlist{0b1},
 				LightClientSignature: make([]byte, 96),
 			},
 		},

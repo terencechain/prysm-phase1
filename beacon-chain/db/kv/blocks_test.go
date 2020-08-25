@@ -22,19 +22,14 @@ func TestStore_SaveBlock_NoDuplicates(t *testing.T) {
 	slot := uint64(20)
 	ctx := context.Background()
 	// First we save a previous block to ensure the cache max size is reached.
-	prevBlock := &ethpb.SignedBeaconBlock{
-		Block: &ethpb.BeaconBlock{
-			Slot:       slot - 1,
-			ParentRoot: bytesutil.PadTo([]byte{1, 2, 3}, 32),
-		},
-	}
+	prevBlock := testutil.NewBeaconBlock()
+	prevBlock.Block.Slot = slot - 1
+	prevBlock.Block.ParentRoot = bytesutil.PadTo([]byte{1, 2, 3}, 32)
 	require.NoError(t, db.SaveBlock(ctx, prevBlock))
-	block := &ethpb.SignedBeaconBlock{
-		Block: &ethpb.BeaconBlock{
-			Slot:       slot,
-			ParentRoot: bytesutil.PadTo([]byte{1, 2, 3}, 32),
-		},
-	}
+
+	block := testutil.NewBeaconBlock()
+	block.Block.Slot = slot
+	block.Block.ParentRoot = bytesutil.PadTo([]byte{1, 2, 3}, 32)
 	// Even with a full cache, saving new blocks should not cause
 	// duplicated blocks in the DB.
 	for i := 0; i < 100; i++ {

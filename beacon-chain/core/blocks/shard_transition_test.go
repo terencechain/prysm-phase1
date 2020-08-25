@@ -151,7 +151,7 @@ func TestVerifyShardBlockMessage(t *testing.T) {
 		latestBlockRoot  []byte
 		beaconParentRoot []byte
 		shardBodyLength  []byte
-		body             [][]byte
+		body             []byte
 		want             bool
 	}{
 		{
@@ -160,7 +160,7 @@ func TestVerifyShardBlockMessage(t *testing.T) {
 			proposerIndex:    38,
 			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
 			beaconParentRoot: hr[:],
-			body:             make([][]byte, 1),
+			body:             make([]byte, 1),
 			want:             true,
 		},
 		{
@@ -170,7 +170,7 @@ func TestVerifyShardBlockMessage(t *testing.T) {
 			proposerIndex:    38,
 			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
 			beaconParentRoot: hr[:],
-			body:             make([][]byte, 1),
+			body:             make([]byte, 1),
 			want:             false,
 		},
 		{
@@ -179,7 +179,7 @@ func TestVerifyShardBlockMessage(t *testing.T) {
 			proposerIndex:    39,
 			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
 			beaconParentRoot: hr[:],
-			body:             make([][]byte, 1),
+			body:             make([]byte, 1),
 			want:             false,
 		},
 		{
@@ -188,7 +188,7 @@ func TestVerifyShardBlockMessage(t *testing.T) {
 			proposerIndex:    38,
 			latestBlockRoot:  bytesutil.PadTo([]byte{'b'}, 32),
 			beaconParentRoot: hr[:],
-			body:             make([][]byte, 1),
+			body:             make([]byte, 1),
 			want:             false,
 		},
 		{
@@ -197,7 +197,7 @@ func TestVerifyShardBlockMessage(t *testing.T) {
 			proposerIndex:    38,
 			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
 			beaconParentRoot: hr[:],
-			body:             make([][]byte, params.ShardConfig().MaxShardBlockSize+1),
+			body:             make([]byte, params.ShardConfig().MaxShardBlockSize+1),
 			want:             false,
 		},
 		{
@@ -206,7 +206,7 @@ func TestVerifyShardBlockMessage(t *testing.T) {
 			proposerIndex:    38,
 			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
 			beaconParentRoot: bytesutil.PadTo([]byte{'b'}, 32),
-			body:             make([][]byte, params.ShardConfig().MaxShardBlockSize+1),
+			body:             make([]byte, params.ShardConfig().MaxShardBlockSize+1),
 			want:             false,
 		},
 	}
@@ -280,7 +280,7 @@ func Test_VerifyShardBlockSignature(t *testing.T) {
 }
 
 func TestProcessShardBlock(t *testing.T) {
-	sb := &ethpb.ShardBlock{Slot: 100, Body: [][]byte{{'a'}}}
+	sb := &ethpb.ShardBlock{Slot: 100, Body: []byte{'a'}}
 	r, err := ssz.HashTreeRoot(sb)
 	require.NoError(t, err)
 
@@ -341,7 +341,7 @@ func TestShardStateTransition(t *testing.T) {
 	pIdx, err := helpers.ShardProposerIndex(bs, 1, 0)
 	require.NoError(t, err)
 	goodBlock := &ethpb.ShardBlock{
-		Slot: 1, ProposerIndex: pIdx, Body: make([][]byte, 1), BeaconParentRoot: hr[:], ShardParentRoot: []byte{'a'},
+		Slot: 1, ProposerIndex: pIdx, Body: make([]byte, 1), BeaconParentRoot: hr[:], ShardParentRoot: []byte{'a'},
 	}
 	priv := bls.RandKey()
 	require.NoError(t, bs.UpdateValidatorAtIndex(pIdx, &ethpb.Validator{PublicKey: priv.PublicKey().Marshal()}))
