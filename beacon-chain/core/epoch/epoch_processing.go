@@ -401,6 +401,8 @@ func BaseReward(state *stateTrie.BeaconState, index uint64) (uint64, error) {
 }
 
 // ProcessOnlineTracking processes online tracking field for the beacon state.
+// It keeps track of which validators have been recently online and hence should
+// be counted toward participation in crosslink committees.
 //
 // Spec code:
 // def process_online_tracking(state: BeaconState) -> None:
@@ -429,7 +431,7 @@ func ProcessOnlineTracking(beaconState *stateTrie.BeaconState) (*stateTrie.Beaco
 		}
 		indices := attestationutil.AttestingIndices(attestation.AggregationBits, committee)
 		for _, index := range indices {
-			onlineCountdowns[index] = params.ShardConfig().OnlineCountDown
+			onlineCountdowns[index] = params.BeaconConfig().OnlinePeriod
 		}
 	}
 
@@ -440,7 +442,7 @@ func ProcessOnlineTracking(beaconState *stateTrie.BeaconState) (*stateTrie.Beaco
 	return beaconState, nil
 }
 
-// ProcessLightClientCommitteeUpdates processes light client committee updates for the beacon state.
+// ProcessLightClientCommitteeUpdates updates the commitment to the light client committee in the beacon state.
 //
 // Spec code:
 // def process_light_client_committee_updates(state: BeaconState) -> None:
@@ -452,11 +454,11 @@ func ProcessOnlineTracking(beaconState *stateTrie.BeaconState) (*stateTrie.Beaco
 //        new_committee = get_light_client_committee(state, get_current_epoch(state) + LIGHT_CLIENT_COMMITTEE_PERIOD)
 //        state.next_light_committee = committee_to_compact_committee(state, new_committee)
 func ProcessLightClientCommitteeUpdates(beaconState *stateTrie.BeaconState) (*stateTrie.BeaconState, error) {
-	if helpers.CurrentEpoch(beaconState)%params.ShardConfig().LightClientCommitteePeriod == 0 {
+	if helpers.CurrentEpoch(beaconState)%params.BeaconConfig().LightClientCommitteePeriod == 0 {
 		if err := beaconState.SetCurrentLightCommittee(beaconState.NextLightCommittee()); err != nil {
 			return nil, err
 		}
-		indices, err := helpers.LightClientCommittee(beaconState, helpers.CurrentEpoch(beaconState)+params.ShardConfig().LightClientCommitteePeriod)
+		indices, err := helpers.LightClientCommittee(beaconState, helpers.CurrentEpoch(beaconState)+params.BeaconConfig().LightClientCommitteePeriod)
 		if err != nil {
 			return nil, err
 		}

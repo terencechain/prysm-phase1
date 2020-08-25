@@ -10,7 +10,7 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/roughtime"
 )
 
-// PrevSlot returns previous slot.
+// PrevSlot returns previous slot, with an exception in slot 0 to prevent underflow.
 //
 // Spec code:
 // def compute_previous_slot(slot: Slot) -> Slot:
@@ -152,7 +152,9 @@ func RoundUpToNearestEpoch(slot uint64) uint64 {
 	return slot
 }
 
-// ComputeSourceEpoch returns the source epoch of a given period.
+// ComputeSourceEpoch returns epoch at the start of the previous period.
+// This is used to facilitate computing shard proposer committees and light client committees.
+//
 // Spec code:
 // def compute_committee_source_epoch(epoch: Epoch, period: uint64) -> Epoch:
 //    """

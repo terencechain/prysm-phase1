@@ -35,7 +35,7 @@ func TestShardCommittee(t *testing.T) {
 			committee: []uint64{78, 114},
 		},
 		{
-			epoch:     params.ShardConfig().ShardCommitteePeriod,
+			epoch:     params.BeaconConfig().ShardCommitteePeriod,
 			shard:     0,
 			committee: []uint64{111, 67},
 		},
@@ -64,26 +64,26 @@ func TestUpdatedGasPrice(t *testing.T) {
 	}{
 		{
 			// Test max gas price is the upper bound.
-			prevGasPrice:     params.ShardConfig().MaxGasPrice + 1,
-			shardBlockLength: params.ShardConfig().TargetShardBlockSize + 1,
-			finalGasPrice:    params.ShardConfig().MaxGasPrice,
+			prevGasPrice:     params.BeaconConfig().MaxGasPrice + 1,
+			shardBlockLength: params.BeaconConfig().TargetShardBlockSize + 1,
+			finalGasPrice:    params.BeaconConfig().MaxGasPrice,
 		},
 		{
 			// Test min gas price is the lower bound.
 			prevGasPrice:     0,
-			shardBlockLength: params.ShardConfig().TargetShardBlockSize - 1,
-			finalGasPrice:    params.ShardConfig().MinGasPrice,
+			shardBlockLength: params.BeaconConfig().TargetShardBlockSize - 1,
+			finalGasPrice:    params.BeaconConfig().MinGasPrice,
 		},
 		{
 			// Test max gas price is the upper bound.
 			prevGasPrice:     10000,
-			shardBlockLength: params.ShardConfig().TargetShardBlockSize + 10000,
+			shardBlockLength: params.BeaconConfig().TargetShardBlockSize + 10000,
 			finalGasPrice:    10047,
 		},
 		{
 			// Test decreasing gas price.
 			prevGasPrice:     100000000,
-			shardBlockLength: params.ShardConfig().TargetShardBlockSize - 1,
+			shardBlockLength: params.BeaconConfig().TargetShardBlockSize - 1,
 			finalGasPrice:    99999953,
 		},
 	}

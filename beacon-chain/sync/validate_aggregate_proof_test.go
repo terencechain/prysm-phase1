@@ -80,7 +80,7 @@ func TestVerifyIndexInCommittee_ExistsInBeaconCommittee(t *testing.T) {
 
 func TestVerifySelection_NotAnAggregator(t *testing.T) {
 	ctx := context.Background()
-	params.UseShardMinimalConfig()
+	params.UseBeaconMinimalConfig()
 	defer params.UseMainnetConfig()
 	validators := uint64(2048)
 	beaconState, privKeys := testutil.DeterministicGenesisState(t, validators)

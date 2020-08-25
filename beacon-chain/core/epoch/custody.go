@@ -31,7 +31,7 @@ func ProcessChallengeDeadline(state *stateTrie.BeaconState) (*stateTrie.BeaconSt
 	records := state.CustodyChunkChallengeRecords()
 	var err error
 	for _, r := range records {
-		if ce > r.InclusionEpoch+params.ShardConfig().EpochsPerCustodyPeriod {
+		if ce > r.InclusionEpoch+params.BeaconConfig().EpochsPerCustodyPeriod {
 			state, err = validators.SlashValidatorForWhistleBlower(state, r.ResponderIndex, r.ChallengerIndex)
 			if err != nil {
 				return nil, err

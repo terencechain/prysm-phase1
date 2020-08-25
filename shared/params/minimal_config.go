@@ -7,11 +7,6 @@ func UseBeaconMinimalConfig() {
 	beaconConfig = BeaconMinimalSpecConfig()
 }
 
-// UseShardMinimalConfig for beacon chain services.
-func UseShardMinimalConfig() {
-	shardConfig = ShardMinimalSpecConfig()
-}
-
 // BeaconMinimalSpecConfig retrieves the minimal config used in spec tests.
 func BeaconMinimalSpecConfig() *BeaconChainConfig {
 	minimalBeaconConfig := mainnetBeaconConfig.Copy()
@@ -83,13 +78,7 @@ func BeaconMinimalSpecConfig() *BeaconChainConfig {
 	minimalBeaconConfig.DepositContractTreeDepth = 32
 	minimalBeaconConfig.FarFutureEpoch = 1<<64 - 1
 
+	minimalBeaconConfig.InitialActiveShards = 4
+
 	return minimalBeaconConfig
-}
-
-// ShardMinimalSpecConfig retrieves the minimal config used in spec tests.
-func ShardMinimalSpecConfig() *ShardChainConfig {
-	minimalShardConfig := mainnetShardChainConfig.Copy()
-	minimalShardConfig.InitialActiveShards = 4
-
-	return minimalShardConfig
 }

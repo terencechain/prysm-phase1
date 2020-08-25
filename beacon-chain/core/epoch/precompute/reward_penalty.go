@@ -177,7 +177,7 @@ func ProposersDelta(state *stateTrie.BeaconState, pBal *Balance, vp []*Validator
 	return rewards, nil
 }
 
-// isInInactivityLeak returns true if the state is experiencing inactivity leak.
+// This returns true if the state is experiencing inactivity leak.
 //
 // Spec code:
 // def is_in_inactivity_leak(state: BeaconState) -> bool:

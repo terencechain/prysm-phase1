@@ -10,8 +10,11 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/params"
 )
 
-// OnlineValidatorIndices returns the online validator indices.
-// Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
+// OnlineValidatorIndices returns the validator indices that have been online recently.
+// Only these validators are counted toward crosslink committees,
+// to ensure that even in the case where >1/3 of validator goes offline crosslink committees can continue to happen.
+//
+// Spec code:
 // def get_online_validator_indices(state: BeaconState) -> Set[ValidatorIndex]:
 //    active_validators = get_active_validator_indices(state, get_current_epoch(state))
 //    return set([i for i in active_validators if state.online_countdown[i] != 0])
@@ -35,8 +38,10 @@ func OnlineValidatorIndices(beaconState *s.BeaconState) ([]uint64, error) {
 	return activeValidators, nil
 }
 
-// ShardFromCommitteeIndex returns shard using input slot and the committee index.
-// Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
+// ShardFromCommitteeIndex converts the index of a committee into which shard that committee is responsible for
+// at the given slot.
+//
+// Spec code:
 // def compute_shard_from_committee_index(state: BeaconState, index: CommitteeIndex, slot: Slot) -> Shard:
 //    active_shards = get_active_shard_count(state)
 //    return Shard((index + get_start_shard(state, slot)) % active_shards)
@@ -49,7 +54,7 @@ func ShardFromCommitteeIndex(beaconState *s.BeaconState, slot uint64, committeeI
 	return (startShard + committeeID) % activeShards, nil
 }
 
-// UpdatedGasPrice returns the updated gas price.
+// UpdatedGasPrice returns the updated gas price based on the EIP 1599 formulas.
 // Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
 // def compute_updated_gasprice(prev_gasprice: Gwei, length: uint8) -> Gwei:
 //    if length > TARGET_SHARD_BLOCK_SIZE:
@@ -61,10 +66,10 @@ func ShardFromCommitteeIndex(beaconState *s.BeaconState, slot uint64, committeeI
 //                 // TARGET_SHARD_BLOCK_SIZE // GASPRICE_ADJUSTMENT_COEFFICIENT)
 //        return max(prev_gasprice, MIN_GASPRICE + delta) - delta
 func UpdatedGasPrice(prevGasPrice uint64, shardBlockLength uint64) uint64 {
-	targetBlockSize := params.ShardConfig().TargetShardBlockSize
-	gasPriceAdjustmentCoefficient := params.ShardConfig().GasPriceAdjustmentCoefficient
-	maxGasPrice := params.ShardConfig().MaxGasPrice
-	minGasPrice := params.ShardConfig().MinGasPrice
+	targetBlockSize := params.BeaconConfig().TargetShardBlockSize
+	gasPriceAdjustmentCoefficient := params.BeaconConfig().GasPriceAdjustmentCoefficient
+	maxGasPrice := params.BeaconConfig().MaxGasPrice
+	minGasPrice := params.BeaconConfig().MinGasPrice
 	if shardBlockLength > targetBlockSize {
 		delta := prevGasPrice * (shardBlockLength - targetBlockSize) / targetBlockSize / gasPriceAdjustmentCoefficient
 		// Max gas price is the upper bound.
@@ -82,7 +87,8 @@ func UpdatedGasPrice(prevGasPrice uint64, shardBlockLength uint64) uint64 {
 	return prevGasPrice - delta
 }
 
-// ShardProposerIndex returns the shard proposer index of a given slot and shard.
+// ShardProposerIndex returns the validator index for the proposer of a given shard block in a given slot.
+// Randomly samples from the shard proposer committee that changes once per day.
 // Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
 // def get_shard_proposer_index(beacon_state: BeaconState, slot: Slot, shard: Shard) -> ValidatorIndex:
 //    """
@@ -99,7 +105,7 @@ func ShardProposerIndex(beaconState *s.BeaconState, slot uint64, shard uint64) (
 		return 0, err
 	}
 
-	seed, err := Seed(beaconState, CurrentEpoch(beaconState), params.ShardConfig().DomainShardCommittee)
+	seed, err := Seed(beaconState, CurrentEpoch(beaconState), params.BeaconConfig().DomainShardCommittee)
 	if err != nil {
 		return 0, err
 	}
@@ -111,6 +117,8 @@ func ShardProposerIndex(beaconState *s.BeaconState, slot uint64, shard uint64) (
 }
 
 // ShardCommittee returns the shard committee of a given slot and shard.
+// The proposer of a shard block is randomly sampled from the shard committee,
+// which changes only once per ~1 day (with committees being computable 1 day ahead of time).
 // Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
 // def get_shard_committee(beacon_state: BeaconState, epoch: Epoch, shard: Shard) -> Sequence[ValidatorIndex]:
 //    """
@@ -126,12 +134,12 @@ func ShardProposerIndex(beaconState *s.BeaconState, slot uint64, shard uint64) (
 //        count=get_active_shard_count(beacon_state),
 //    )
 func ShardCommittee(beaconState *s.BeaconState, epoch uint64, shard uint64) ([]uint64, error) {
-	se := SourceEpoch(epoch, params.ShardConfig().ShardCommitteePeriod)
+	se := SourceEpoch(epoch, params.BeaconConfig().ShardCommitteePeriod)
 	activeValidatorIndices, err := ActiveValidatorIndices(beaconState, se)
 	if err != nil {
 		return nil, err
 	}
-	seed, err := Seed(beaconState, se, params.ShardConfig().DomainShardCommittee)
+	seed, err := Seed(beaconState, se, params.BeaconConfig().DomainShardCommittee)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +174,7 @@ func ShardOffSetSlots(beaconState *s.BeaconState, shard uint64) []uint64 {
 // def compute_offset_slots(start_slot: Slot, end_slot: Slot) -> Sequence[Slot]:
 //    return [Slot(start_slot + x) for x in SHARD_BLOCK_OFFSETS if start_slot + x < end_slot]
 func ComputeOffsetSlots(startSlot uint64, endSlot uint64) []uint64 {
-	shardBlockOffsets := params.ShardConfig().ShardBlockOffsets
+	shardBlockOffsets := params.BeaconConfig().ShardBlockOffsets
 	filteredShardBlockOffsets := make([]uint64, 0, len(shardBlockOffsets))
 
 	for _, offset := range shardBlockOffsets {
@@ -192,6 +200,8 @@ func IsEmptyShardTransition(transition *ethpb.ShardTransition) bool {
 }
 
 // ActiveShardCount returns the active shard count.
+// Currently 64, may be changed in the future.
+//
 // Spec code:
 // def get_active_shard_count(state: BeaconState) -> uint64:
 //    return len(state.shard_states)  # May adapt in the future, or change over time.
@@ -201,10 +211,11 @@ func IsEmptyShardTransition(transition *ethpb.ShardTransition) bool {
 //    """
 //    return INITIAL_ACTIVE_SHARDS
 func ActiveShardCount() uint64 {
-	return params.ShardConfig().InitialActiveShards
+	return params.BeaconConfig().InitialActiveShards
 }
 
-// StartShard returns the start shard of a given slot.
+// StartShard returns the starting shard of a historical epoch
+//
 // Spec code:
 // def get_start_shard(state: BeaconState, slot: Slot) -> Shard:
 //    """
@@ -249,7 +260,9 @@ func StartShard(beaconState *s.BeaconState, slot uint64) (uint64, error) {
 	return (beaconState.CurrentEpochStartShard() + maxCommitteesInSpan - shardDelta) % activeShardCount, nil
 }
 
-// CommitteeCountDelta returns the sum of committee counts between start slot and stop slot.
+// CommitteeCountDelta returns the total sum of committee counts in the given range of slots.
+// This is used as a helper function by `StartShard`.
+//
 // Spec code:
 // def get_committee_count_delta(state: BeaconState, start_slot: Slot, stop_slot: Slot) -> uint64:
 //    """

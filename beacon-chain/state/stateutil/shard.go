@@ -117,7 +117,7 @@ func shardStatesRoot(shardStates []*ethpb.ShardState) ([32]byte, error) {
 		hasher,
 		roots,
 		uint64(len(roots)),
-		params.ShardConfig().MaxShard,
+		params.BeaconConfig().MaxShard,
 	)
 	if err != nil {
 		return [32]byte{}, errors.Wrap(err, "could not compute shard states merkleization")
@@ -183,7 +183,7 @@ func custodyRecordsRoot(custodyRecords []*pb.CustodyChunkChallengeRecord) ([32]b
 		hasher,
 		roots,
 		uint64(len(roots)),
-		params.ShardConfig().MaxCustodyChunkChallengeRecords,
+		params.BeaconConfig().MaxCustodyChunkChallengeRecords,
 	)
 	if err != nil {
 		return [32]byte{}, errors.Wrap(err, "could not compute custody records merkleization")

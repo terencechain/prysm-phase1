@@ -297,7 +297,7 @@ func shardTransition(beaconState *stateTrie.BeaconState, shardBlocks []*ethpb.Si
 	}, nil
 }
 
-// shardTransitionFields returns the fields for shard transitions given shard blocks and shard.
+// This returns the fields for shard transitions given shard blocks and shard.
 //
 // Spec code:
 // def get_shard_transition_fields(

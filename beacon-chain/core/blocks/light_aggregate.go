@@ -11,7 +11,9 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/params"
 )
 
-// ProcessLightClientAggregate processes light client signature.
+// ProcessLightClientAggregate verifies that the light client signature is correct,
+// and rewards every committee member who participated in it.
+//
 // Spec code:
 // def process_light_client_aggregate(state: BeaconState, block_body: BeaconBlockBody) -> None:
 //    committee = get_light_client_committee(state, get_current_epoch(state))
@@ -78,7 +80,7 @@ func ProcessLightClientAggregate(state *state.BeaconState, body *ethpb.BeaconBlo
 	if err != nil {
 		return nil, err
 	}
-	d, err := helpers.Domain(state.Fork(), helpers.SlotToEpoch(ps), params.ShardConfig().DomainLightClient, state.GenesisValidatorRoot())
+	d, err := helpers.Domain(state.Fork(), helpers.SlotToEpoch(ps), params.BeaconConfig().DomainLightClient, state.GenesisValidatorRoot())
 	if err != nil {
 		return nil, err
 	}

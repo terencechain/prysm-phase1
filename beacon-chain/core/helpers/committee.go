@@ -37,8 +37,8 @@ var committeeCache = cache.NewCommitteesCache()
 //    ))
 func SlotCommitteeCount(activeValidatorCount uint64) uint64 {
 	var committeePerSlot = activeValidatorCount / params.BeaconConfig().SlotsPerEpoch / params.BeaconConfig().TargetCommitteeSize
-	if committeePerSlot > params.ShardConfig().InitialActiveShards {
-		return params.ShardConfig().InitialActiveShards
+	if committeePerSlot > params.BeaconConfig().InitialActiveShards {
+		return params.BeaconConfig().InitialActiveShards
 	}
 	if committeePerSlot == 0 {
 		return 1

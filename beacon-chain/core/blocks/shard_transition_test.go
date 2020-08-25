@@ -197,7 +197,7 @@ func TestVerifyShardBlockMessage(t *testing.T) {
 			proposerIndex:    38,
 			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
 			beaconParentRoot: hr[:],
-			body:             make([][]byte, params.ShardConfig().MaxShardBlockSize+1),
+			body:             make([][]byte, params.BeaconConfig().MaxShardBlockSize+1),
 			want:             false,
 		},
 		{
@@ -206,7 +206,7 @@ func TestVerifyShardBlockMessage(t *testing.T) {
 			proposerIndex:    38,
 			latestBlockRoot:  bytesutil.PadTo([]byte{'a'}, 32),
 			beaconParentRoot: bytesutil.PadTo([]byte{'b'}, 32),
-			body:             make([][]byte, params.ShardConfig().MaxShardBlockSize+1),
+			body:             make([][]byte, params.BeaconConfig().MaxShardBlockSize+1),
 			want:             false,
 		},
 	}
@@ -238,7 +238,7 @@ func Test_VerifyShardBlockSignature(t *testing.T) {
 	priv := bls.RandKey()
 	require.NoError(t, bs.UpdateValidatorAtIndex(0, &ethpb.Validator{PublicKey: priv.PublicKey().Marshal()}))
 	sb := &ethpb.SignedShardBlock{Message: &ethpb.ShardBlock{ProposerIndex: 0}}
-	sb.Signature, err = helpers.ComputeDomainAndSign(bs, 0, sb.Message, params.ShardConfig().DomainShardProposal, priv)
+	sb.Signature, err = helpers.ComputeDomainAndSign(bs, 0, sb.Message, params.BeaconConfig().DomainShardProposal, priv)
 	require.NoError(t, err)
 
 	type args struct {
@@ -345,7 +345,7 @@ func TestShardStateTransition(t *testing.T) {
 	}
 	priv := bls.RandKey()
 	require.NoError(t, bs.UpdateValidatorAtIndex(pIdx, &ethpb.Validator{PublicKey: priv.PublicKey().Marshal()}))
-	goodSig, err := helpers.ComputeDomainAndSign(bs, 0, goodBlock, params.ShardConfig().DomainShardProposal, priv)
+	goodSig, err := helpers.ComputeDomainAndSign(bs, 0, goodBlock, params.BeaconConfig().DomainShardProposal, priv)
 	require.NoError(t, err)
 	r, err := ssz.HashTreeRoot(goodBlock)
 	require.NoError(t, err)
@@ -561,7 +561,7 @@ func Test_ProcessCrosslink(t *testing.T) {
 		require.NoError(t, err)
 		v.PublicKey = sk.PublicKey().Marshal()
 		require.NoError(t, bs.UpdateValidatorAtIndex(idx, v))
-		s, err := helpers.ComputeDomainAndSign(bs, 0, headers[i], params.ShardConfig().DomainShardProposal, sk)
+		s, err := helpers.ComputeDomainAndSign(bs, 0, headers[i], params.BeaconConfig().DomainShardProposal, sk)
 		require.NoError(t, err)
 		sig, err := bls.SignatureFromBytes(s)
 		require.NoError(t, err)
@@ -617,7 +617,7 @@ func Test_ProcessCrosslinkForShard(t *testing.T) {
 		require.NoError(t, err)
 		v.PublicKey = sk.PublicKey().Marshal()
 		require.NoError(t, bs.UpdateValidatorAtIndex(idx, v))
-		s, err := helpers.ComputeDomainAndSign(bs, 0, headers[i], params.ShardConfig().DomainShardProposal, sk)
+		s, err := helpers.ComputeDomainAndSign(bs, 0, headers[i], params.BeaconConfig().DomainShardProposal, sk)
 		require.NoError(t, err)
 		sig, err := bls.SignatureFromBytes(s)
 		require.NoError(t, err)
@@ -660,7 +660,7 @@ func Test_ApplyShardTransition(t *testing.T) {
 		require.NoError(t, err)
 		v.PublicKey = sk.PublicKey().Marshal()
 		require.NoError(t, bs.UpdateValidatorAtIndex(idx, v))
-		s, err := helpers.ComputeDomainAndSign(bs, 0, headers[i], params.ShardConfig().DomainShardProposal, sk)
+		s, err := helpers.ComputeDomainAndSign(bs, 0, headers[i], params.BeaconConfig().DomainShardProposal, sk)
 		require.NoError(t, err)
 		sig, err := bls.SignatureFromBytes(s)
 		require.NoError(t, err)
@@ -755,9 +755,9 @@ func Test_VerifyProposerSignature(t *testing.T) {
 	require.NoError(t, bs.UpdateValidatorAtIndex(1, &ethpb.Validator{PublicKey: priv2.PublicKey().Marshal()}))
 	h1 := &ethpb.ShardBlockHeader{Slot: 1}
 	h2 := &ethpb.ShardBlockHeader{Slot: 2}
-	s1, err := helpers.ComputeDomainAndSign(bs, 0, h1, params.ShardConfig().DomainShardProposal, priv1)
+	s1, err := helpers.ComputeDomainAndSign(bs, 0, h1, params.BeaconConfig().DomainShardProposal, priv1)
 	require.NoError(t, err)
-	s2, err := helpers.ComputeDomainAndSign(bs, 0, h2, params.ShardConfig().DomainShardProposal, priv2)
+	s2, err := helpers.ComputeDomainAndSign(bs, 0, h2, params.BeaconConfig().DomainShardProposal, priv2)
 	require.NoError(t, err)
 	s1s, err := bls.SignatureFromBytes(s1)
 	require.NoError(t, err)
