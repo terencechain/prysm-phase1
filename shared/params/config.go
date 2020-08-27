@@ -110,6 +110,28 @@ type BeaconChainConfig struct {
 	NextForkVersion     []byte            `yaml:"NEXT_FORK_VERSION"`    // NextForkVersion is used to track the upcoming fork version, if any.
 	NextForkEpoch       uint64            `yaml:"NEXT_FORK_EPOCH"`      // NextForkEpoch is used to track the epoch of the next fork, if any.
 	ForkVersionSchedule map[uint64][]byte // Schedule of fork versions by epoch number.
+
+	// Shard constants.
+	MaxShard                        uint64   // MaxShard defines the long-run max number of shards that is planned for.
+	MaxShardBlockSize               uint64   // MaxShardBlockSize defines the max shard block size.
+	TargetShardBlockSize            uint64   // TargetShardBlockSize defines the EIP1559 implementation of target block being full.
+	DomainShardProposal             [4]byte  // DomainShardProposal defines the BLS signature domain for shard proposal.
+	DomainShardCommittee            [4]byte  // DomainShardCommittee defines the BLS signature domain for shard committee.
+	DomainLightClient               [4]byte  // DomainLightClient defines the BLS signature domain for light client.
+	DomainCustodyBitSlashing        [4]byte  // DomainCustodyBitSlashing defines the custody bit slashing.
+	Phase1GenesisSlot               uint64   // Phase1GenesisSlot defines the slot when phase 1 genesis
+	GasPriceAdjustmentCoefficient   uint64   // GasPriceAdjustmentCoefficient is the EIP 1599 per-block gas price adjustment coefficient.
+	MaxGasPrice                     uint64   // MaxGasPrice defines the max gas price.
+	MinGasPrice                     uint64   // MinGasPrice defines the min gas price.
+	ShardBlockOffsets               []uint64 // ShardBlockOffsets defines how often shard blocks get included in the chain in the event of skip slots.
+	OnlinePeriod                    uint64   // OnlinePeriod defines epoch duration in which validators must be online to crosslink.
+	LightClientCommitteeSize        uint64   // LightClientCommitteeSize of the committee that signs block to facilitate light client access to the chain.
+	LightClientCommitteePeriod      uint64   // LightClientCommitteePeriod defines the epoch duration of how often light client committee gets swapped.
+	MaxChunkChallengeDelay          uint64   // MaxChunkChallengeDelay defines the max chunk challenge delay.
+	MinorRewardQuotient             uint64   // MinorRewardQuotient defines the minor reward quotient.
+	MaxCustodyChunkChallengeRecords uint64   // MaxCustodyChunkChallengeRecords defines the max custody chunk challenge records.
+	EpochsPerCustodyPeriod          uint64   // EpochsPerCustodyPeriod defines how many epochs per custody period.
+	InitialActiveShards             uint64   // InitialActiveShards defines the initial active shard count.
 }
 
 var beaconConfig = MainnetConfig()
@@ -117,13 +139,6 @@ var beaconConfig = MainnetConfig()
 // BeaconConfig retrieves beacon chain config.
 func BeaconConfig() *BeaconChainConfig {
 	return beaconConfig
-}
-
-var shardConfig = mainnetShardChainConfig
-
-// ShardConfig retrieves shard chain config.
-func ShardConfig() *ShardChainConfig {
-	return shardConfig
 }
 
 // OverrideBeaconConfig by replacing the config. The preferred pattern is to
@@ -143,11 +158,3 @@ func (c *BeaconChainConfig) Copy() *BeaconChainConfig {
 	return &config
 }
 
-// Copy returns a copy of the config object.
-func (c *ShardChainConfig) Copy() *ShardChainConfig {
-	config, ok := deepcopy.Copy(*c).(ShardChainConfig)
-	if !ok {
-		config = *shardConfig
-	}
-	return &config
-}

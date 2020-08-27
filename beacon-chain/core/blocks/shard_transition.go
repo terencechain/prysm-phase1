@@ -108,7 +108,7 @@ func ProcessShardTransitions(
 	return beaconState, nil
 }
 
-// applyShardTransition applies shard transition to the beacon state.
+// This applies shard transition to the beacon state.
 //
 // Spec code:
 // def apply_shard_transition(state: BeaconState, shard: Shard, transition: ShardTransition) -> None:
@@ -169,7 +169,7 @@ func ProcessShardTransitions(
 //    state.shard_states[shard] = transition.shard_states[len(transition.shard_states) - 1]
 //    state.shard_states[shard].slot = compute_previous_slot(state.slot)
 func applyShardTransition(beaconState *stateTrie.BeaconState, transition *ethpb.ShardTransition, shard uint64) (*stateTrie.BeaconState, error) {
-	if params.ShardConfig().Phase1GenesisSlot >= beaconState.Slot() {
+	if params.BeaconConfig().Phase1GenesisSlot >= beaconState.Slot() {
 		return nil, errors.New("phase1 genesis slot can not be greater than beacon slot")
 	}
 
@@ -211,7 +211,7 @@ func verifyProposerSignature(beaconState *stateTrie.BeaconState, headers []*ethp
 	}
 	msgs := make([][32]byte, len(pIndices))
 	for i, header := range headers {
-		d, err := helpers.Domain(beaconState.Fork(), helpers.SlotToEpoch(header.Slot), params.ShardConfig().DomainShardProposal, beaconState.GenesisValidatorRoot())
+		d, err := helpers.Domain(beaconState.Fork(), helpers.SlotToEpoch(header.Slot), params.BeaconConfig().DomainShardProposal, beaconState.GenesisValidatorRoot())
 		if err != nil {
 			return err
 		}
@@ -248,7 +248,7 @@ func verifyShardDataRootLength(offsetSlots []uint64, transition *ethpb.ShardTran
 	return nil
 }
 
-// processCrosslinkForShard processes the crosslinks of a given shard, if there's a successful crosslink, the winning transition root will be return.
+// This processes the crosslinks of a given shard, if there's a successful crosslink, the winning transition root will be return.
 // If there's no successful crosslink, an empty root will be returned.
 //
 // processCrosslinkForShard processes crosslink of an individual shard.
@@ -382,7 +382,7 @@ func verifyAttShardHeadRoot(transition *ethpb.ShardTransition, atts []*ethpb.Att
 	return nil
 }
 
-// processCrosslinks processes crosslinks for beacon block's shard transitions and attestations.
+// This processes crosslinks for beacon block's shard transitions and attestations.
 //
 // Spec code:
 // def process_crosslinks(state: BeaconState,
@@ -641,7 +641,7 @@ func verifyShardBlockMessage(ctx context.Context, beaconParentState *stateTrie.B
 		return false, nil
 	}
 
-	if len(shardBlock.Body) == 0 || uint64(len(shardBlock.Body)) > params.ShardConfig().MaxShardBlockSize {
+	if len(shardBlock.Body) == 0 || uint64(len(shardBlock.Body)) > params.BeaconConfig().MaxShardBlockSize {
 		return false, nil
 	}
 
@@ -661,7 +661,7 @@ func verifyShardBlockSignature(beaconState *stateTrie.BeaconState, shardBlock *e
 	i := shardBlock.Message.ProposerIndex
 	e := helpers.SlotToEpoch(shardBlock.Message.Slot)
 	s := shardBlock.Signature
-	return helpers.ComputeDomainVerifySigningRoot(beaconState, i, e, shardBlock.Message, params.ShardConfig().DomainShardProposal, s)
+	return helpers.ComputeDomainVerifySigningRoot(beaconState, i, e, shardBlock.Message, params.BeaconConfig().DomainShardProposal, s)
 }
 
 // CanCrosslink returns true if more than 2/3 participants voted on input attestations. The voted

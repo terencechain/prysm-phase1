@@ -54,7 +54,7 @@ func ProcessChunkChallenge(ctx context.Context, state *state.BeaconState, challe
 	}
 
 	// Verify it's not too late to challenge the attestation.
-	maxChallengeEpoch := a.Data.Target.Epoch + params.ShardConfig().MaxChunkChallengeDelay
+	maxChallengeEpoch := a.Data.Target.Epoch + params.BeaconConfig().MaxChunkChallengeDelay
 	if helpers.CurrentEpoch(state) > maxChallengeEpoch {
 		return nil, errors.New("too late to challenge the attestation")
 	}
@@ -65,7 +65,7 @@ func ProcessChunkChallenge(ctx context.Context, state *state.BeaconState, challe
 		return nil, err
 	}
 	if responder.ExitEpoch < params.BeaconConfig().FarFutureEpoch {
-		if helpers.CurrentEpoch(state) > responder.ExitEpoch+params.ShardConfig().MaxChunkChallengeDelay {
+		if helpers.CurrentEpoch(state) > responder.ExitEpoch+params.BeaconConfig().MaxChunkChallengeDelay {
 			return nil, errors.New("too late to challenge the responder")
 		}
 	}
@@ -187,7 +187,7 @@ func ProcessChunkChallengeResponse(ctx context.Context, state *state.BeaconState
 	if err != nil {
 		return nil, err
 	}
-	if err := helpers.IncreaseBalance(state, proposer, b/params.ShardConfig().MinorRewardQuotient); err != nil {
+	if err := helpers.IncreaseBalance(state, proposer, b/params.BeaconConfig().MinorRewardQuotient); err != nil {
 		return nil, err
 	}
 	return state, nil
@@ -251,7 +251,7 @@ func ProcessCustodyKeyReveal(ctx context.Context, state *state.BeaconState, r *p
 	if err != nil {
 		return nil, err
 	}
-	if err := helpers.IncreaseBalance(state, proposer, b/params.ShardConfig().MinorRewardQuotient); err != nil {
+	if err := helpers.IncreaseBalance(state, proposer, b/params.BeaconConfig().MinorRewardQuotient); err != nil {
 		return nil, err
 	}
 
@@ -273,7 +273,7 @@ func ProcessSignedCustodySlashing(ctx context.Context, state *state.BeaconState,
 	if err != nil {
 		return nil, err
 	}
-	d, err := helpers.Domain(state.Fork(), helpers.CurrentEpoch(state), params.ShardConfig().DomainCustodyBitSlashing, state.GenesisValidatorRoot())
+	d, err := helpers.Domain(state.Fork(), helpers.CurrentEpoch(state), params.BeaconConfig().DomainCustodyBitSlashing, state.GenesisValidatorRoot())
 	if err != nil {
 		return nil, err
 	}

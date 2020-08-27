@@ -137,13 +137,13 @@ func BlockBodyRoot(body *ethpb.BeaconBlockBody) ([32]byte, error) {
 	}
 	fieldRoots[7] = exitRoot
 
-	shardTransitionRoot, err := ssz.HashTreeRootWithCapacity(body.ShardTransitions, params.ShardConfig().MaxShard)
+	shardTransitionRoot, err := ssz.HashTreeRootWithCapacity(body.ShardTransitions, params.BeaconConfig().MaxShard)
 	if err != nil {
 		return [32]byte{}, err
 	}
 	fieldRoots[8] = shardTransitionRoot
 
-	lightBitsRoot, err := htrutils.BitlistRoot(hasher, body.LightClientBits, params.ShardConfig().LightClientCommitteeSize)
+	lightBitsRoot, err := htrutils.BitlistRoot(hasher, body.LightClientBits, params.BeaconConfig().LightClientCommitteeSize)
 	if err != nil {
 		return [32]byte{}, err
 	}

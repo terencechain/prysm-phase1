@@ -24,8 +24,8 @@ func New(justifiedEpoch uint64, finalizedEpoch uint64, finalizedRoot [32]byte) *
 		nodes:            make([]*Node, 0),
 		nodesIndices:     make(map[[32]byte]uint64),
 		pruneThreshold:   defaultPruneThreshold,
-		shardNodes:       make([][]*ShardNode, params.ShardConfig().MaxShard),
-		shardNodeIndices: make([]map[[32]byte]uint64, params.ShardConfig().MaxShard),
+		shardNodes:       make([][]*ShardNode, params.BeaconConfig().MaxShard),
+		shardNodeIndices: make([]map[[32]byte]uint64, params.BeaconConfig().MaxShard),
 	}
 
 	b := make([]uint64, 0)

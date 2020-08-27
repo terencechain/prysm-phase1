@@ -13,6 +13,7 @@ import (
 )
 
 // ReceiveShardBlock receives and processes an incoming shard block.
+//
 // Spec code:
 // def on_shard_block(store: Store, shard_store: ShardStore, signed_shard_block: SignedShardBlock) -> None:
 //    shard_block = signed_shard_block.message

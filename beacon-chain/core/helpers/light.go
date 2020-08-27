@@ -8,7 +8,6 @@ import (
 
 // PackCompactValidator packs validator index, slashed status and compressed balance into a single uint value.
 //
-// Spec pseudocode definition:
 // Spec code:
 // def pack_compact_validator(index: ValidatorIndex, slashed: bool, balance_in_increments: uint64) -> uint64:
 //    """
@@ -44,7 +43,8 @@ func UnpackCompactValidator(compactValidator uint64) (uint64, bool, uint64) {
 	return index, slashed, balance
 }
 
-// CommitteeToCompactCommittee converts a committee object to compact committee object.
+// CommitteeToCompactCommittee computes a compact representation of a committee.
+// It is used to generate the `CompactCommittee` object for commit to the light client committees in the beacon state
 //
 // Spec code:
 //   def committee_to_compact_committee(state: BeaconState, committee: Sequence[ValidatorIndex]) -> CompactCommittee:
@@ -91,12 +91,12 @@ func CommitteeToCompactCommittee(state *state.BeaconState, committee []uint64) (
 //        count=get_active_shard_count(beacon_state),
 //    )[:LIGHT_CLIENT_COMMITTEE_SIZE]
 func LightClientCommittee(state *state.BeaconState, epoch uint64) ([]uint64, error) {
-	se := SourceEpoch(epoch, params.ShardConfig().LightClientCommitteePeriod)
+	se := SourceEpoch(epoch, params.BeaconConfig().LightClientCommitteePeriod)
 	activeValidatorIndices, err := ActiveValidatorIndices(state, se)
 	if err != nil {
 		return nil, err
 	}
-	seed, err := Seed(state, se, params.ShardConfig().DomainLightClient)
+	seed, err := Seed(state, se, params.BeaconConfig().DomainLightClient)
 	if err != nil {
 		return nil, err
 	}
@@ -105,5 +105,5 @@ func LightClientCommittee(state *state.BeaconState, epoch uint64) ([]uint64, err
 	if err != nil {
 		return nil, err
 	}
-	return lightClientCommittee[:params.ShardConfig().LightClientCommitteeSize], nil
+	return lightClientCommittee[:params.BeaconConfig().LightClientCommitteeSize], nil
 }

@@ -203,7 +203,7 @@ func OptimizedGenesisBeaconState(genesisTime uint64, preState *stateTrie.BeaconS
 
 	// Phase 1 set ups.
 	// TODO(0): Align this with the spec.
-	shardStates := make([]*ethpb.ShardState, params.ShardConfig().MaxShard)
+	shardStates := make([]*ethpb.ShardState, params.BeaconConfig().MaxShard)
 	for i := 0; i < len(shardStates); i++ {
 		shardStates[i] = &ethpb.ShardState{
 			LatestBlockRoot: zeroHash,
@@ -222,7 +222,7 @@ func OptimizedGenesisBeaconState(genesisTime uint64, preState *stateTrie.BeaconS
 		PubKeys:           bytesutil.Copy2dBytes(pubKeys),
 		CompactValidators: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee),
 	}
-	custodyRecords := make([]*pb.CustodyChunkChallengeRecord, params.ShardConfig().MaxCustodyChunkChallengeRecords)
+	custodyRecords := make([]*pb.CustodyChunkChallengeRecord, params.BeaconConfig().MaxCustodyChunkChallengeRecords)
 	for i := 0; i < len(custodyRecords); i++ {
 		custodyRecords[i] = &pb.CustodyChunkChallengeRecord{
 			DataRoot: zeroHash,

@@ -763,7 +763,7 @@ func (vs *Server) shardTransitionRoots(ctx context.Context,
 	}
 	cCount := helpers.SlotCommitteeCount(vCount)
 	attsByCommitteeId := helpers.OnTimeAttsByCommitteeID(atts, bs.Slot())
-	winningRoots := make([][32]byte, params.ShardConfig().MaxShard)
+	winningRoots := make([][32]byte, params.BeaconConfig().MaxShard)
 
 	for cID := uint64(0); cID < cCount; cID++ {
 		attsByTRoot := helpers.AttsByTransitionRoot(attsByCommitteeId[cID])
