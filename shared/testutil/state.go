@@ -52,6 +52,13 @@ func NewBeaconState() *stateTrie.BeaconState {
 	return st.Copy()
 }
 
+// NewShardState creates a shard state with minimum marshalable fields.
+func NewShardState() *ethpb.ShardState {
+	return &ethpb.ShardState{
+		LatestBlockRoot: make([]byte, 32),
+	}
+}
+
 // SSZ will fill 2D byte slices with their respective values, so we must fill these in too for round
 // trip testing.
 func filledByteSlice2D(len, innerLen uint64) [][]byte {

@@ -61,6 +61,17 @@ func NewBeaconBlock() *ethpb.SignedBeaconBlock {
 	}
 }
 
+// NewShardblock creates a shard block with minimum marshalable fields.
+func NewShardblock() *ethpb.SignedShardBlock {
+	return &ethpb.SignedShardBlock{
+		Message: &ethpb.ShardBlock{
+			ShardParentRoot:      make([]byte, 32),
+			BeaconParentRoot:     make([]byte, 32),
+		},
+		Signature: make([]byte, 96),
+	}
+}
+
 // NewAttestation creates an attestation block with minimum marshalable fields.
 func NewAttestation() *ethpb.Attestation {
 	return &ethpb.Attestation{

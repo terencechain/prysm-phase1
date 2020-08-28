@@ -280,8 +280,8 @@ func Test_VerifyShardBlockSignature(t *testing.T) {
 }
 
 func TestProcessShardBlock(t *testing.T) {
-	sb := &ethpb.ShardBlock{Slot: 100, Body: []byte{'a'}}
-	r, err := ssz.HashTreeRoot(sb)
+	sb := &ethpb.ShardBlock{Slot: 100, Body: bytesutil.PadTo([]byte{'a'},32), ShardParentRoot: make([]byte, 32), BeaconParentRoot: make([]byte,32)}
+	r, err := sb.HashTreeRoot()
 	require.NoError(t, err)
 
 	type args struct {
@@ -347,7 +347,7 @@ func TestShardStateTransition(t *testing.T) {
 	require.NoError(t, bs.UpdateValidatorAtIndex(pIdx, &ethpb.Validator{PublicKey: priv.PublicKey().Marshal()}))
 	goodSig, err := helpers.ComputeDomainAndSign(bs, 0, goodBlock, params.BeaconConfig().DomainShardProposal, priv)
 	require.NoError(t, err)
-	r, err := ssz.HashTreeRoot(goodBlock)
+	r, err := goodBlock.HashTreeRoot()
 	require.NoError(t, err)
 
 	type args struct {

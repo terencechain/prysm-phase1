@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
-	"github.com/prysmaticlabs/go-ssz"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/blocks"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
 	"github.com/prysmaticlabs/prysm/beacon-chain/state"
@@ -98,7 +97,7 @@ func (s *Service) ReceiveShardBlock(ctx context.Context, block *ethpb.SignedShar
 	if err := s.beaconDB.SaveShardBlock(ctx, block); err != nil {
 		return err
 	}
-	sbr, err := ssz.HashTreeRoot(block.Message)
+	sbr, err := block.Message.HashTreeRoot()
 	if err != nil {
 		return err
 	}

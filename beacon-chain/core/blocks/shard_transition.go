@@ -69,7 +69,7 @@ func ProcessShardBlock(shardState *ethpb.ShardState, shardBlock *ethpb.ShardBloc
 	shardState.GasPrice = helpers.UpdatedGasPrice(shardState.GasPrice, uint64(len(shardBlock.Body)))
 
 	if len(shardBlock.Body) != 0 {
-		root, err := ssz.HashTreeRoot(shardBlock)
+		root, err := shardBlock.HashTreeRoot()
 		if err != nil {
 			return nil, err
 		}
@@ -509,9 +509,9 @@ func shardBlockProposersAndHeaders(
 				Shard:            shard,
 				Slot:             slot,
 				ProposerIndex:    proposerIndex,
-				BodyRoot:         transition.ShardDataRoots[i],
+				BodyRoot:        bytesutil.PadTo(transition.ShardDataRoots[i], 32),
 			}
-			shardParentRoot, err = ssz.HashTreeRoot(shardBlockHeader)
+			shardParentRoot, err = shardBlockHeader.HashTreeRoot()
 			if err != nil {
 				return nil, nil, err
 			}

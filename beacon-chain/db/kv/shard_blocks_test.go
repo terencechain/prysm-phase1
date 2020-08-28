@@ -5,20 +5,17 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
-	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
-	"github.com/prysmaticlabs/go-ssz"
+	"github.com/prysmaticlabs/prysm/shared/bytesutil"
+	"github.com/prysmaticlabs/prysm/shared/testutil"
 )
 
 func TestStore_ShardBlocksCRUD(t *testing.T) {
 	db := setupDB(t)
 	ctx := context.Background()
-	block := &ethpb.SignedShardBlock{
-		Message: &ethpb.ShardBlock{
-			Slot:            20,
-			ShardParentRoot: []byte{1, 2, 3},
-		},
-	}
-	blockRoot, err := ssz.HashTreeRoot(block.Message)
+	block := testutil.NewShardblock()
+	block.Message.Slot = 20
+	block.Message.ShardParentRoot = bytesutil.PadTo([]byte{1, 2, 3}, 32)
+	blockRoot, err := block.Message.HashTreeRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,18 +44,15 @@ func TestStore_ShardBlocksCRUD(t *testing.T) {
 func TestStore_HeadShardBlock(t *testing.T) {
 	db := setupDB(t)
 	ctx := context.Background()
-	headblock := &ethpb.SignedShardBlock{
-		Message: &ethpb.ShardBlock{
-			Slot:            100,
-			ShardParentRoot: []byte{10, 20, 30},
-		},
-	}
-	blockRoot, err := ssz.HashTreeRoot(headblock.Message)
+	headBlock := testutil.NewShardblock()
+	headBlock.Message.Slot = 100
+	headBlock.Message.ShardParentRoot = bytesutil.PadTo([]byte{10, 20, 33}, 32)
+	blockRoot, err := headBlock.Message.HashTreeRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
 	shard := uint64(63)
-	if err := db.SaveShardBlock(ctx, headblock); err != nil {
+	if err := db.SaveShardBlock(ctx, headBlock); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.SaveHeadShardBlockRoot(ctx, shard, blockRoot); err != nil {
@@ -68,21 +62,17 @@ func TestStore_HeadShardBlock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !proto.Equal(headblock, retrievedBlock) {
-		t.Errorf("Wanted %v, received %v", headblock, retrievedBlock)
+	if !proto.Equal(headBlock, retrievedBlock) {
+		t.Errorf("Wanted %v, received %v", headBlock, retrievedBlock)
 	}
 }
 
 func TestStore_GenesisShardBlock(t *testing.T) {
 	db := setupDB(t)
 	ctx := context.Background()
-	genesisBlock := &ethpb.SignedShardBlock{
-		Message: &ethpb.ShardBlock{
-			Slot:            0,
-			ShardParentRoot: []byte{1, 2, 3},
-		},
-	}
-	blockRoot, err := ssz.HashTreeRoot(genesisBlock.Message)
+	genesisBlock := testutil.NewShardblock()
+	genesisBlock.Message.Body = []byte{1, 2, 3}
+	blockRoot, err := genesisBlock.Message.HashTreeRoot()
 	if err != nil {
 		t.Fatal(err)
 	}

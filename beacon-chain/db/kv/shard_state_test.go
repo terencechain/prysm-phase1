@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
-	"github.com/prysmaticlabs/go-ssz"
+	"github.com/prysmaticlabs/prysm/shared/testutil"
 	"gopkg.in/d4l3k/messagediff.v1"
 )
 
@@ -48,14 +48,10 @@ func TestHeadShardState_CanSaveRetrieve(t *testing.T) {
 	db := setupDB(t)
 
 	st := &ethpb.ShardState{Slot: 100}
-	headBlock := &ethpb.SignedShardBlock{
-		Message: &ethpb.ShardBlock{
-			Shard:           5,
-			Slot:            100,
-			ShardParentRoot: []byte{10, 20, 30},
-		},
-	}
-	headRoot, err := ssz.HashTreeRoot(headBlock.Message)
+	headBlock := testutil.NewShardblock()
+	headBlock.Message.Shard = 5
+	headBlock.Message.Slot = 100
+	headRoot, err := headBlock.Message.HashTreeRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,13 +85,11 @@ func TestHeadShardState_CanSaveRetrieve(t *testing.T) {
 func TestGenesisShardState_CanSaveRetrieve(t *testing.T) {
 	db := setupDB(t)
 
-	st := &ethpb.ShardState{GasPrice: 1}
-	genesisBlk := &ethpb.SignedShardBlock{
-		Message: &ethpb.ShardBlock{
-			Shard: 3,
-		},
-	}
-	genesisRoot, err := ssz.HashTreeRoot(genesisBlk.Message)
+	st := testutil.NewShardState()
+	st.GasPrice = 1
+	genesisBlk := testutil.NewShardblock()
+	genesisBlk.Message.Shard = 5
+	genesisRoot, err := genesisBlk.Message.HashTreeRoot()
 	if err != nil {
 		t.Fatal(err)
 	}

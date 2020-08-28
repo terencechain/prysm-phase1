@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
-	"github.com/prysmaticlabs/go-ssz"
 	bolt "go.etcd.io/bbolt"
 	"go.opencensus.io/trace"
 )
@@ -71,7 +70,7 @@ func (k *Store) HasShardBlock(ctx context.Context, blockRoot [32]byte) bool {
 func (k *Store) SaveShardBlock(ctx context.Context, signed *ethpb.SignedShardBlock) error {
 	ctx, span := trace.StartSpan(ctx, "BeaconDB.SaveShardBlock")
 	defer span.End()
-	blockRoot, err := ssz.HashTreeRoot(signed.Message)
+	blockRoot, err := signed.Message.HashTreeRoot()
 	if err != nil {
 		return err
 	}
