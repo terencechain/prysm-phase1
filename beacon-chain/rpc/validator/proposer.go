@@ -12,6 +12,7 @@ import (
 	fastssz "github.com/ferranbt/fastssz"
 	"github.com/pkg/errors"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
+	"github.com/prysmaticlabs/go-bitfield"
 	"github.com/prysmaticlabs/prysm/beacon-chain/cache/depositcache"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/blocks"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/feed"
@@ -137,6 +138,8 @@ func (vs *Server) GetBlock(ctx context.Context, req *ethpb.BlockRequest) (*ethpb
 			AttesterSlashings: vs.SlashingsPool.PendingAttesterSlashings(ctx, head),
 			VoluntaryExits:    vs.ExitPool.PendingExits(head, req.Slot),
 			Graffiti:          graffiti[:],
+			LightClientBits: bitfield.Bitlist{0b1},
+			LightClientSignature: make([]byte, 96),
 		},
 	}
 

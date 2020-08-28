@@ -69,6 +69,8 @@ func TestServer_GetAttestationInclusionSlot(t *testing.T) {
 			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 			BeaconBlockRoot: make([]byte, 32),
 			Slot:            1,
+			ShardHeadRoot:       make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
 		},
 		AggregationBits: bitfield.Bitlist{0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		Signature:       make([]byte, 96),

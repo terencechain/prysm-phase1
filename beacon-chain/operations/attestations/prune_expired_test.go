@@ -36,6 +36,8 @@ func TestPruneExpired_Ticker(t *testing.T) {
 			Epoch: 0,
 			Root:  make([]byte, 32),
 		},
+		ShardHeadRoot:make([]byte, 32),
+		ShardTransitionRoot: make([]byte, 32),
 	}
 
 	ad2 := &ethpb.AttestationData{
@@ -50,6 +52,8 @@ func TestPruneExpired_Ticker(t *testing.T) {
 			Epoch: 0,
 			Root:  make([]byte, 32),
 		},
+		ShardHeadRoot:make([]byte, 32),
+		ShardTransitionRoot: make([]byte, 32),
 	}
 
 	atts := []*ethpb.Attestation{
@@ -119,6 +123,8 @@ func TestPruneExpired_PruneExpiredAtts(t *testing.T) {
 			Epoch: 0,
 			Root:  make([]byte, 32),
 		},
+		ShardHeadRoot:make([]byte, 32),
+		ShardTransitionRoot: make([]byte, 32),
 	}
 
 	ad2 := &ethpb.AttestationData{
@@ -133,6 +139,8 @@ func TestPruneExpired_PruneExpiredAtts(t *testing.T) {
 			Epoch: 0,
 			Root:  make([]byte, 32),
 		},
+		ShardHeadRoot:make([]byte, 32),
+		ShardTransitionRoot: make([]byte, 32),
 	}
 
 	att1 := &ethpb.Attestation{Data: ad1, AggregationBits: bitfield.Bitlist{0b1101}}

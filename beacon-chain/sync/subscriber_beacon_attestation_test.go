@@ -79,6 +79,8 @@ func TestService_committeeIndexBeaconAttestationSubscriber_ValidMessage(t *testi
 			BeaconBlockRoot: root[:],
 			Target:          &eth.Checkpoint{Root: make([]byte, 32)},
 			Source:          &eth.Checkpoint{Root: make([]byte, 32)},
+			ShardHeadRoot:       make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
 		},
 		AggregationBits: bitfield.Bitlist{0b0101},
 		Signature:       make([]byte, 96),

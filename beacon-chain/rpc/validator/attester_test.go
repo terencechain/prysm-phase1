@@ -71,6 +71,8 @@ func TestProposeAttestation_OK(t *testing.T) {
 			BeaconBlockRoot: root[:],
 			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 			Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+			ShardHeadRoot:make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
 		},
 	}
 	_, err = attesterServer.ProposeAttestation(context.Background(), req)
@@ -94,6 +96,8 @@ func TestProposeAttestation_IncorrectSignature(t *testing.T) {
 			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 			Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 			BeaconBlockRoot: make([]byte, 32),
+			ShardHeadRoot:make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}

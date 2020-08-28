@@ -81,6 +81,8 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: validBlockRoot[:],
 					CommitteeIndex:  0,
 					Slot:            1,
@@ -100,6 +102,8 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: validBlockRoot[:],
 					CommitteeIndex:  0,
 					Slot:            1,
@@ -116,6 +120,8 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: invalidRoot[:],
 					CommitteeIndex:  0,
 					Slot:            1,
@@ -133,6 +139,8 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: validBlockRoot[:],
 					CommitteeIndex:  2,
 					Slot:            1,
@@ -149,6 +157,8 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1011},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: validBlockRoot[:],
 					CommitteeIndex:  1,
 					Slot:            1,
@@ -165,6 +175,8 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: bytesutil.PadTo([]byte("missing"), 32),
 					CommitteeIndex:  1,
 					Slot:            1,
@@ -181,6 +193,8 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: validBlockRoot[:],
 					CommitteeIndex:  1,
 					Slot:            1,
@@ -289,6 +303,8 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: validBlockRoot[:],
 					CommitteeIndex:  0,
 					Slot:            1,
@@ -308,6 +324,8 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: validBlockRoot[:],
 					CommitteeIndex:  0,
 					Slot:            1,
@@ -324,6 +342,8 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: invalidRoot[:],
 					CommitteeIndex:  0,
 					Slot:            1,
@@ -341,6 +361,8 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: validBlockRoot[:],
 					CommitteeIndex:  2,
 					Slot:            1,
@@ -357,6 +379,8 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1011},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: validBlockRoot[:],
 					CommitteeIndex:  1,
 					Slot:            1,
@@ -373,6 +397,8 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: bytesutil.PadTo([]byte("missing"), 32),
 					CommitteeIndex:  1,
 					Slot:            1,
@@ -389,6 +415,8 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 			msg: &ethpb.Attestation{
 				AggregationBits: bitfield.Bitlist{0b1010},
 				Data: &ethpb.AttestationData{
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 					BeaconBlockRoot: validBlockRoot[:],
 					CommitteeIndex:  1,
 					Slot:            1,

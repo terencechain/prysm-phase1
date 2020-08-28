@@ -23,11 +23,15 @@ func TestSlashableAttestationData_CanSlash(t *testing.T) {
 		Target:          &ethpb.Checkpoint{Epoch: 1, Root: make([]byte, 32)},
 		Source:          &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte{'A'}, 32)},
 		BeaconBlockRoot: make([]byte, 32),
+		ShardTransitionRoot: make([]byte, 32),
+		ShardHeadRoot: make([]byte, 32),
 	}
 	att2 := &ethpb.AttestationData{
 		Target:          &ethpb.Checkpoint{Epoch: 1, Root: make([]byte, 32)},
 		Source:          &ethpb.Checkpoint{Root: bytesutil.PadTo([]byte{'B'}, 32)},
 		BeaconBlockRoot: make([]byte, 32),
+		ShardTransitionRoot: make([]byte, 32),
+		ShardHeadRoot: make([]byte, 32),
 	}
 	assert.Equal(t, true, blocks.IsSlashableAttestationData(att1, att2), "Atts should have been slashable")
 	att1.Target.Epoch = 4
@@ -44,6 +48,8 @@ func TestProcessAttesterSlashings_DataNotSlashable(t *testing.T) {
 					Source:          &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
 					Target:          &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
 					BeaconBlockRoot: make([]byte, 32),
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 				},
 				Signature: make([]byte, 96),
 			},
@@ -52,6 +58,8 @@ func TestProcessAttesterSlashings_DataNotSlashable(t *testing.T) {
 					Source:          &ethpb.Checkpoint{Epoch: 1, Root: make([]byte, 32)},
 					Target:          &ethpb.Checkpoint{Epoch: 1, Root: make([]byte, 32)},
 					BeaconBlockRoot: make([]byte, 32),
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 				},
 				Signature: make([]byte, 96),
 			},
@@ -92,6 +100,8 @@ func TestProcessAttesterSlashings_IndexedAttestationFailedToVerify(t *testing.T)
 					Source:          &ethpb.Checkpoint{Epoch: 1, Root: make([]byte, 32)},
 					Target:          &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
 					BeaconBlockRoot: make([]byte, 32),
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 				},
 				AttestingIndices: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee+1),
 				Signature:        make([]byte, 96),
@@ -101,6 +111,8 @@ func TestProcessAttesterSlashings_IndexedAttestationFailedToVerify(t *testing.T)
 					Source:          &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
 					Target:          &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
 					BeaconBlockRoot: make([]byte, 32),
+					ShardTransitionRoot: make([]byte, 32),
+					ShardHeadRoot: make([]byte, 32),
 				},
 				AttestingIndices: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee+1),
 				Signature:        make([]byte, 96),
@@ -130,6 +142,8 @@ func TestProcessAttesterSlashings_AppliesCorrectStatus(t *testing.T) {
 			Source:          &ethpb.Checkpoint{Epoch: 1, Root: make([]byte, 32)},
 			Target:          &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
 			BeaconBlockRoot: make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
+			ShardHeadRoot: make([]byte, 32),
 		},
 		AttestingIndices: []uint64{0, 1},
 	}
@@ -147,6 +161,8 @@ func TestProcessAttesterSlashings_AppliesCorrectStatus(t *testing.T) {
 			Source:          &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
 			Target:          &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
 			BeaconBlockRoot: make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
+			ShardHeadRoot: make([]byte, 32),
 		},
 		AttestingIndices: []uint64{0, 1},
 	}

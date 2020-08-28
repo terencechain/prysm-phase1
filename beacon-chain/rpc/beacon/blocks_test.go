@@ -10,6 +10,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
+	"github.com/prysmaticlabs/go-bitfield"
 	chainMock "github.com/prysmaticlabs/prysm/beacon-chain/blockchain/testing"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/feed"
 	blockfeed "github.com/prysmaticlabs/prysm/beacon-chain/core/feed/block"
@@ -196,6 +197,7 @@ func TestServer_ListBlocks_Pagination(t *testing.T) {
 								BlockHash:   make([]byte, 32),
 								DepositRoot: make([]byte, 32),
 							},
+							LightClientBits: bitfield.Bitlist{0b1},
 							LightClientSignature: make([]byte, 96),
 						},
 						Slot: 5}},
@@ -219,6 +221,7 @@ func TestServer_ListBlocks_Pagination(t *testing.T) {
 								BlockHash:   make([]byte, 32),
 								DepositRoot: make([]byte, 32),
 							},
+							LightClientBits: bitfield.Bitlist{0b1},
 							LightClientSignature: make([]byte, 96),
 						},
 						Slot: 6}},
@@ -238,6 +241,7 @@ func TestServer_ListBlocks_Pagination(t *testing.T) {
 								BlockHash:   make([]byte, 32),
 								DepositRoot: make([]byte, 32),
 							},
+							LightClientBits: bitfield.Bitlist{0b1},
 							LightClientSignature: make([]byte, 96),
 						},
 						Slot: 6}},

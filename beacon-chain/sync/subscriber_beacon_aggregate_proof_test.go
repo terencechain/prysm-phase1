@@ -26,6 +26,7 @@ func TestBeaconAggregateProofSubscriber_CanSaveAggregatedAttestation(t *testing.
 		Message: &ethpb.AggregateAttestationAndProof{
 			Aggregate: &ethpb.Attestation{
 				Data: &ethpb.AttestationData{
+					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					BeaconBlockRoot: make([]byte, 32),
@@ -53,6 +54,7 @@ func TestBeaconAggregateProofSubscriber_CanSaveUnaggregatedAttestation(t *testin
 		Message: &ethpb.AggregateAttestationAndProof{
 			Aggregate: &ethpb.Attestation{
 				Data: &ethpb.AttestationData{
+					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
 					Target: &ethpb.Checkpoint{
 						Root: make([]byte, 32),
 					},

@@ -174,6 +174,8 @@ func TestService_BroadcastAttestation(t *testing.T) {
 				Epoch: 0,
 				Root:  make([]byte, 32),
 			},
+			ShardHeadRoot:       make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}
@@ -354,6 +356,8 @@ func TestService_BroadcastAttestationWithDiscoveryAttempts(t *testing.T) {
 				Epoch: 0,
 				Root:  make([]byte, 32),
 			},
+			ShardHeadRoot:       make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}

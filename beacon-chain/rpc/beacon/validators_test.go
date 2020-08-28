@@ -1368,6 +1368,8 @@ func TestServer_GetValidatorParticipation_PrevEpoch(t *testing.T) {
 	atts := []*pbp2p.PendingAttestation{{
 		Data: &ethpb.AttestationData{
 			BeaconBlockRoot: make([]byte, 32),
+			ShardHeadRoot: make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
 			Source: &ethpb.Checkpoint{
 				Root: make([]byte, 32),
 			},

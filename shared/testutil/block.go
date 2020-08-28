@@ -73,6 +73,8 @@ func NewAttestation() *ethpb.Attestation {
 			Target: &ethpb.Checkpoint{
 				Root: make([]byte, 32),
 			},
+			ShardHeadRoot:       make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}
@@ -187,6 +189,8 @@ func GenerateFullBlock(
 			Deposits:          newDeposits,
 			ShardTransitions:  make([]*ethpb.ShardTransition, 0), // TODO(0): Generate shard transition data.
 			Graffiti:          make([]byte, 32),
+			LightClientBits: bitfield.Bitlist{0b1},
+			LightClientSignature: make([]byte, 96),
 		},
 	}
 	if err := bState.SetSlot(currentSlot); err != nil {
@@ -284,6 +288,8 @@ func GenerateAttesterSlashingForValidator(
 				Epoch: currentEpoch + 1,
 				Root:  params.BeaconConfig().ZeroHash[:],
 			},
+			ShardHeadRoot:       make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
 		},
 		AttestingIndices: []uint64{idx},
 	}
@@ -306,6 +312,8 @@ func GenerateAttesterSlashingForValidator(
 				Epoch: currentEpoch,
 				Root:  params.BeaconConfig().ZeroHash[:],
 			},
+			ShardHeadRoot:       make([]byte, 32),
+			ShardTransitionRoot: make([]byte, 32),
 		},
 		AttestingIndices: []uint64{idx},
 	}
