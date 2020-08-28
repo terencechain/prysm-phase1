@@ -169,6 +169,7 @@ func ProcessChunkChallengeResponse(ctx context.Context, state *state.BeaconState
 		leaf[:],
 		int(c.ChallengeIndex),
 		response.Branch,
+		params.BeaconConfig().DepositContractTreeDepth, // TODO(0): Double check correctness.
 	); !ok {
 		return nil, errors.New("deposit merkle branch of deposit root did not verify")
 	}

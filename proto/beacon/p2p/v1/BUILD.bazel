@@ -31,10 +31,12 @@ ssz_gen_marshal(
         "ENRForkID",
         "MetaData",
         "Fork",
+        "ForkData",
         "HistoricalBatch",
         "Status",
         "BeaconState",
         "CustodyChunkChallengeRecord",
+        "SigningData",
     ],
 )
 
