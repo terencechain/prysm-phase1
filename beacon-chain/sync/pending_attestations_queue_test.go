@@ -75,7 +75,7 @@ func TestProcessPendingAtts_HasBlockSaveUnAggregatedAtt(t *testing.T) {
 			Signature:       bls.RandKey().Sign([]byte("foo")).Marshal(),
 			AggregationBits: bitfield.Bitlist{0x02},
 			Data: &ethpb.AttestationData{
-				ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+				ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 				Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 				BeaconBlockRoot: make([]byte, 32),
@@ -122,7 +122,7 @@ func TestProcessPendingAtts_NoBroadcastWithBadSignature(t *testing.T) {
 			Signature:       bls.RandKey().Sign([]byte("foo")).Marshal(),
 			AggregationBits: bitfield.Bitlist{0x02},
 			Data: &ethpb.AttestationData{
-				ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+				ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 				Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 				BeaconBlockRoot: make([]byte, 32),
@@ -172,11 +172,11 @@ func TestProcessPendingAtts_HasBlockSaveAggregatedAtt(t *testing.T) {
 	aggBits.SetBitAt(1, true)
 	att := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			BeaconBlockRoot: root[:],
-			Source:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
-			Target:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			BeaconBlockRoot:     root[:],
+			Source:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			Target:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
 			ShardTransitionRoot: make([]byte, 32),
-			ShardHeadRoot: make([]byte, 32),
+			ShardHeadRoot:       make([]byte, 32),
 		},
 		AggregationBits: aggBits,
 	}
@@ -255,15 +255,15 @@ func TestValidatePendingAtts_CanPruneOldAtts(t *testing.T) {
 		s.savePendingAtt(&ethpb.SignedAggregateAttestationAndProof{
 			Message: &ethpb.AggregateAttestationAndProof{
 				Aggregate: &ethpb.Attestation{
-					Data: &ethpb.AttestationData{Slot: uint64(i), ShardTransitionRoot: make([]byte, 32), ShardHeadRoot: make([]byte, 32),BeaconBlockRoot: r1[:]}}}})
+					Data: &ethpb.AttestationData{Slot: uint64(i), ShardTransitionRoot: make([]byte, 32), ShardHeadRoot: make([]byte, 32), BeaconBlockRoot: r1[:]}}}})
 		s.savePendingAtt(&ethpb.SignedAggregateAttestationAndProof{
 			Message: &ethpb.AggregateAttestationAndProof{
 				Aggregate: &ethpb.Attestation{
-					Data: &ethpb.AttestationData{Slot: uint64(i), ShardTransitionRoot: make([]byte, 32), ShardHeadRoot: make([]byte, 32),BeaconBlockRoot: r2[:]}}}})
+					Data: &ethpb.AttestationData{Slot: uint64(i), ShardTransitionRoot: make([]byte, 32), ShardHeadRoot: make([]byte, 32), BeaconBlockRoot: r2[:]}}}})
 		s.savePendingAtt(&ethpb.SignedAggregateAttestationAndProof{
 			Message: &ethpb.AggregateAttestationAndProof{
 				Aggregate: &ethpb.Attestation{
-					Data: &ethpb.AttestationData{Slot: uint64(i), ShardTransitionRoot: make([]byte, 32), ShardHeadRoot: make([]byte, 32),BeaconBlockRoot: r3[:]}}}})
+					Data: &ethpb.AttestationData{Slot: uint64(i), ShardTransitionRoot: make([]byte, 32), ShardHeadRoot: make([]byte, 32), BeaconBlockRoot: r3[:]}}}})
 	}
 
 	assert.Equal(t, 100, len(s.blkRootToPendingAtts[r1]), "Did not save pending atts")

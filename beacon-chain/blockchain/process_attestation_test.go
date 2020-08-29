@@ -274,7 +274,6 @@ func TestStore_SaveCheckpointState(t *testing.T) {
 	service, err := NewService(ctx, cfg)
 	require.NoError(t, err)
 
-
 	s := testutil.NewBeaconState()
 	err = s.SetFinalizedCheckpoint(&ethpb.Checkpoint{Root: bytesutil.PadTo([]byte{'A'}, 32)})
 	require.NoError(t, err)
@@ -286,10 +285,7 @@ func TestStore_SaveCheckpointState(t *testing.T) {
 	require.NoError(t, err)
 	err = s.SetBalances([]uint64{0})
 	require.NoError(t, err)
-    lc :=  &ethpb.CompactCommittee{
-	PubKeys:           filledByteSlice2D(params.BeaconConfig().MaxValidatorsPerCommittee, uint64(params.BeaconConfig().BLSPubkeyLength)),
-	CompactValidators: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee),
-	}
+	lc := &ethpb.CompactCommittee{PubKeys: [][]byte{}}
 	require.NoError(t, s.SetCurrentLightCommittee(lc))
 	require.NoError(t, s.SetNextLightCommittee(lc))
 	r := [32]byte{'g'}

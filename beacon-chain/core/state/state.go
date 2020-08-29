@@ -14,7 +14,6 @@ import (
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/beacon-chain/state/stateutil"
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
-	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/trieutil"
 )
@@ -196,8 +195,8 @@ func OptimizedGenesisBeaconState(genesisTime uint64, preState *stateTrie.BeaconS
 			DepositRoot: make([]byte, 32),
 			BlockHash:   make([]byte, 32),
 		},
-		Graffiti: make([]byte, 32),
-		LightClientBits: bitfield.Bitlist{0b1},
+		Graffiti:             make([]byte, 32),
+		LightClientBits:      bitfield.Bitlist{0b1},
 		LightClientSignature: make([]byte, 96),
 	}).HashTreeRoot()
 	if err != nil {
@@ -219,18 +218,8 @@ func OptimizedGenesisBeaconState(genesisTime uint64, preState *stateTrie.BeaconS
 		}
 	}
 	state.ShardStates = shardStates
-	var pubKeys [][]byte
-	for i := uint64(0); i < params.BeaconConfig().MaxValidatorsPerCommittee; i++ {
-		pubKeys = append(pubKeys, bytesutil.PadTo([]byte{}, params.BeaconConfig().BLSPubkeyLength))
-	}
-	state.CurrentLightCommittee = &ethpb.CompactCommittee{
-		PubKeys:           pubKeys,
-		CompactValidators: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee),
-	}
-	state.NextLightCommittee = &ethpb.CompactCommittee{
-		PubKeys:           bytesutil.Copy2dBytes(pubKeys),
-		CompactValidators: make([]uint64, params.BeaconConfig().MaxValidatorsPerCommittee),
-	}
+	state.CurrentLightCommittee = &ethpb.CompactCommittee{PubKeys: [][]byte{}}
+	state.NextLightCommittee = &ethpb.CompactCommittee{PubKeys: [][]byte{}}
 	custodyRecords := make([]*pb.CustodyChunkChallengeRecord, params.BeaconConfig().MaxCustodyChunkChallengeRecords)
 	for i := 0; i < len(custodyRecords); i++ {
 		custodyRecords[i] = &pb.CustodyChunkChallengeRecord{

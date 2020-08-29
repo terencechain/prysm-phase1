@@ -23,7 +23,7 @@ func TestAttestationDataRoot_EqualGeneric(t *testing.T) {
 			Epoch: 9,
 		},
 		ShardTransitionRoot: make([]byte, 32),
-		ShardHeadRoot: make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 	}
 	genericHtr, err := attData.HashTreeRoot()
 	require.NoError(t, err)
@@ -49,7 +49,7 @@ func BenchmarkAttestationDataRoot(b *testing.B) {
 			Epoch: 9,
 		},
 		ShardTransitionRoot: make([]byte, 32),
-		ShardHeadRoot: make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 	}
 	b.Run("generic", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {

@@ -68,10 +68,10 @@ func TestProposeAttestation_OK(t *testing.T) {
 	req := &ethpb.Attestation{
 		Signature: sig.Marshal(),
 		Data: &ethpb.AttestationData{
-			BeaconBlockRoot: root[:],
-			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-			Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-			ShardHeadRoot:make([]byte, 32),
+			BeaconBlockRoot:     root[:],
+			Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+			Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+			ShardHeadRoot:       make([]byte, 32),
 			ShardTransitionRoot: make([]byte, 32),
 		},
 	}
@@ -93,10 +93,10 @@ func TestProposeAttestation_IncorrectSignature(t *testing.T) {
 
 	req := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-			Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-			BeaconBlockRoot: make([]byte, 32),
-			ShardHeadRoot:make([]byte, 32),
+			Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+			Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+			BeaconBlockRoot:     make([]byte, 32),
+			ShardHeadRoot:       make([]byte, 32),
 			ShardTransitionRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),

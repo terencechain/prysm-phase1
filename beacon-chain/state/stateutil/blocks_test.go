@@ -38,7 +38,7 @@ func TestBlockBodyRoot_NilIsSameAsEmpty(t *testing.T) {
 			DepositCount: 0,
 			DepositRoot:  make([]byte, 32),
 		},
-		LightClientBits: bitfield.Bitlist{0b1},
+		LightClientBits:      bitfield.Bitlist{0b1},
 		LightClientSignature: make([]byte, 96),
 	}).HashTreeRoot()
 	require.NoError(t, err)

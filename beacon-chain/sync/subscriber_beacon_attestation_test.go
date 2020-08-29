@@ -75,10 +75,10 @@ func TestService_committeeIndexBeaconAttestationSubscriber_ValidMessage(t *testi
 
 	att := &eth.Attestation{
 		Data: &eth.AttestationData{
-			Slot:            0,
-			BeaconBlockRoot: root[:],
-			Target:          &eth.Checkpoint{Root: make([]byte, 32)},
-			Source:          &eth.Checkpoint{Root: make([]byte, 32)},
+			Slot:                0,
+			BeaconBlockRoot:     root[:],
+			Target:              &eth.Checkpoint{Root: make([]byte, 32)},
+			Source:              &eth.Checkpoint{Root: make([]byte, 32)},
 			ShardHeadRoot:       make([]byte, 32),
 			ShardTransitionRoot: make([]byte, 32),
 		},

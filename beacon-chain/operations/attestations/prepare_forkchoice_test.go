@@ -25,86 +25,86 @@ func TestBatchAttestations_Multiple(t *testing.T) {
 
 	unaggregatedAtts := []*ethpb.Attestation{
 		{Data: &ethpb.AttestationData{
-			Slot:            2,
-			BeaconBlockRoot: mockRoot[:],
-			ShardHeadRoot: mockRoot[:],
+			Slot:                2,
+			BeaconBlockRoot:     mockRoot[:],
+			ShardHeadRoot:       mockRoot[:],
 			ShardTransitionRoot: mockRoot[:],
-			Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-			Target:          &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100100}, Signature: sig.Marshal()},
+			Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+			Target:              &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100100}, Signature: sig.Marshal()},
 		{Data: &ethpb.AttestationData{
-			Slot:            1,
-			BeaconBlockRoot: mockRoot[:],
-			ShardHeadRoot: mockRoot[:],
+			Slot:                1,
+			BeaconBlockRoot:     mockRoot[:],
+			ShardHeadRoot:       mockRoot[:],
 			ShardTransitionRoot: mockRoot[:],
-			Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-			Target:          &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b101000}, Signature: sig.Marshal()},
+			Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+			Target:              &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b101000}, Signature: sig.Marshal()},
 		{Data: &ethpb.AttestationData{
-			Slot:            0,
-			BeaconBlockRoot: mockRoot[:],
-			ShardHeadRoot: mockRoot[:],
+			Slot:                0,
+			BeaconBlockRoot:     mockRoot[:],
+			ShardHeadRoot:       mockRoot[:],
 			ShardTransitionRoot: mockRoot[:],
-			Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-			Target:          &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100010}, Signature: sig.Marshal()},
+			Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+			Target:              &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100010}, Signature: sig.Marshal()},
 	}
 	aggregatedAtts := []*ethpb.Attestation{
 		{Data: &ethpb.AttestationData{
-			Slot:            2,
-			BeaconBlockRoot: mockRoot[:],
-			ShardHeadRoot: mockRoot[:],
+			Slot:                2,
+			BeaconBlockRoot:     mockRoot[:],
+			ShardHeadRoot:       mockRoot[:],
 			ShardTransitionRoot: mockRoot[:],
-			Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-			Target:          &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b111000}, Signature: sig.Marshal()},
+			Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+			Target:              &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b111000}, Signature: sig.Marshal()},
 		{Data: &ethpb.AttestationData{
-			Slot:            1,
-			BeaconBlockRoot: mockRoot[:],
-			ShardHeadRoot: mockRoot[:],
+			Slot:                1,
+			BeaconBlockRoot:     mockRoot[:],
+			ShardHeadRoot:       mockRoot[:],
 			ShardTransitionRoot: mockRoot[:],
-			Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-			Target:          &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100011}, Signature: sig.Marshal()},
+			Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+			Target:              &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100011}, Signature: sig.Marshal()},
 		{Data: &ethpb.AttestationData{
-			Slot:            0,
-			BeaconBlockRoot: mockRoot[:],
-			ShardHeadRoot: mockRoot[:],
+			Slot:                0,
+			BeaconBlockRoot:     mockRoot[:],
+			ShardHeadRoot:       mockRoot[:],
 			ShardTransitionRoot: mockRoot[:],
-			Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-			Target:          &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b110001}, Signature: sig.Marshal()},
+			Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+			Target:              &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b110001}, Signature: sig.Marshal()},
 	}
 	blockAtts := []*ethpb.Attestation{
 		{Data: &ethpb.AttestationData{
-			Slot:            2,
-			BeaconBlockRoot: mockRoot[:],
-			ShardHeadRoot: mockRoot[:],
+			Slot:                2,
+			BeaconBlockRoot:     mockRoot[:],
+			ShardHeadRoot:       mockRoot[:],
 			ShardTransitionRoot: mockRoot[:],
-			Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-			Target:          &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100001}, Signature: sig.Marshal()},
+			Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+			Target:              &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100001}, Signature: sig.Marshal()},
 		{Data: &ethpb.AttestationData{
-			Slot:            1,
-			BeaconBlockRoot: mockRoot[:],
-			ShardHeadRoot: mockRoot[:],
+			Slot:                1,
+			BeaconBlockRoot:     mockRoot[:],
+			ShardHeadRoot:       mockRoot[:],
 			ShardTransitionRoot: mockRoot[:],
-			Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-			Target:          &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100100}, Signature: sig.Marshal()},
+			Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+			Target:              &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100100}, Signature: sig.Marshal()},
 		{Data: &ethpb.AttestationData{
-			Slot:            0,
-			BeaconBlockRoot: mockRoot[:],
-			ShardHeadRoot: mockRoot[:],
+			Slot:                0,
+			BeaconBlockRoot:     mockRoot[:],
+			ShardHeadRoot:       mockRoot[:],
 			ShardTransitionRoot: mockRoot[:],
-			Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-			Target:          &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100100}, Signature: sig.Marshal()},
+			Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+			Target:              &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100100}, Signature: sig.Marshal()},
 		{Data: &ethpb.AttestationData{
-			Slot:            2,
-			BeaconBlockRoot: mockRoot[:],
-			ShardHeadRoot: mockRoot[:],
+			Slot:                2,
+			BeaconBlockRoot:     mockRoot[:],
+			ShardHeadRoot:       mockRoot[:],
 			ShardTransitionRoot: mockRoot[:],
-			Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-			Target:          &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b111000}, Signature: sig.Marshal()}, // Duplicated
+			Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+			Target:              &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b111000}, Signature: sig.Marshal()}, // Duplicated
 		{Data: &ethpb.AttestationData{
-			Slot:            1,
-			BeaconBlockRoot: mockRoot[:],
-			ShardHeadRoot: mockRoot[:],
+			Slot:                1,
+			BeaconBlockRoot:     mockRoot[:],
+			ShardHeadRoot:       mockRoot[:],
 			ShardTransitionRoot: mockRoot[:],
-			Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-			Target:          &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100011}, Signature: sig.Marshal()}, // Duplicated
+			Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+			Target:              &ethpb.Checkpoint{Root: mockRoot[:]}}, AggregationBits: bitfield.Bitlist{0b100011}, Signature: sig.Marshal()}, // Duplicated
 	}
 	require.NoError(t, s.pool.SaveUnaggregatedAttestations(unaggregatedAtts))
 	require.NoError(t, s.pool.SaveAggregatedAttestations(aggregatedAtts))
@@ -141,10 +141,10 @@ func TestBatchAttestations_Single(t *testing.T) {
 	sig := sk.Sign([]byte("dummy_test_data"))
 	mockRoot := [32]byte{}
 	d := &ethpb.AttestationData{
-		BeaconBlockRoot: mockRoot[:],
-		Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-		Target:          &ethpb.Checkpoint{Root: mockRoot[:]},
-		ShardHeadRoot: mockRoot[:],
+		BeaconBlockRoot:     mockRoot[:],
+		Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+		Target:              &ethpb.Checkpoint{Root: mockRoot[:]},
+		ShardHeadRoot:       mockRoot[:],
 		ShardTransitionRoot: mockRoot[:],
 	}
 
@@ -184,11 +184,11 @@ func TestAggregateAndSaveForkChoiceAtts_Single(t *testing.T) {
 	sig := sk.Sign([]byte("dummy_test_data"))
 	mockRoot := [32]byte{}
 	d := &ethpb.AttestationData{
-		BeaconBlockRoot: mockRoot[:],
-		ShardHeadRoot: mockRoot[:],
+		BeaconBlockRoot:     mockRoot[:],
+		ShardHeadRoot:       mockRoot[:],
 		ShardTransitionRoot: mockRoot[:],
-		Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-		Target:          &ethpb.Checkpoint{Root: mockRoot[:]},
+		Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+		Target:              &ethpb.Checkpoint{Root: mockRoot[:]},
 	}
 
 	atts := []*ethpb.Attestation{
@@ -209,11 +209,11 @@ func TestAggregateAndSaveForkChoiceAtts_Multiple(t *testing.T) {
 	sig := sk.Sign([]byte("dummy_test_data"))
 	mockRoot := [32]byte{}
 	d := &ethpb.AttestationData{
-		BeaconBlockRoot: mockRoot[:],
-		ShardHeadRoot: mockRoot[:],
+		BeaconBlockRoot:     mockRoot[:],
+		ShardHeadRoot:       mockRoot[:],
 		ShardTransitionRoot: mockRoot[:],
-		Source:          &ethpb.Checkpoint{Root: mockRoot[:]},
-		Target:          &ethpb.Checkpoint{Root: mockRoot[:]},
+		Source:              &ethpb.Checkpoint{Root: mockRoot[:]},
+		Target:              &ethpb.Checkpoint{Root: mockRoot[:]},
 	}
 	d1, ok := proto.Clone(d).(*ethpb.AttestationData)
 	require.Equal(t, true, ok, "Entity is not of type *ethpb.AttestationData")

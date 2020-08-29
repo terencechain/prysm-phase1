@@ -55,9 +55,11 @@ func setupValidProposerSlashing(t *testing.T) (*ethpb.ProposerSlashing, *stateTr
 		Slashings:   make([]uint64, params.BeaconConfig().EpochsPerSlashingsVector),
 		RandaoMixes: make([][]byte, params.BeaconConfig().EpochsPerHistoricalVector),
 
-		StateRoots:        make([][]byte, params.BeaconConfig().SlotsPerHistoricalRoot),
-		BlockRoots:        make([][]byte, params.BeaconConfig().SlotsPerHistoricalRoot),
-		LatestBlockHeader: &ethpb.BeaconBlockHeader{},
+		StateRoots:            make([][]byte, params.BeaconConfig().SlotsPerHistoricalRoot),
+		BlockRoots:            make([][]byte, params.BeaconConfig().SlotsPerHistoricalRoot),
+		LatestBlockHeader:     &ethpb.BeaconBlockHeader{},
+		CurrentLightCommittee: &ethpb.CompactCommittee{PubKeys: [][]byte{}},
+		NextLightCommittee:    &ethpb.CompactCommittee{PubKeys: [][]byte{}},
 	})
 	require.NoError(t, err)
 

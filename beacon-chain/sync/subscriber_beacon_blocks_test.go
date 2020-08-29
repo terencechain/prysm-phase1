@@ -21,11 +21,11 @@ func TestDeleteAttsInPool(t *testing.T) {
 		attPool: attestations.NewPool(),
 	}
 	data := &ethpb.AttestationData{
-		BeaconBlockRoot: make([]byte, 32),
-		Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-		Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+		BeaconBlockRoot:     make([]byte, 32),
+		Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+		Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
 		ShardTransitionRoot: make([]byte, 32),
-		ShardHeadRoot: make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 	}
 	att1 := &ethpb.Attestation{AggregationBits: bitfield.Bitlist{0b1101}, Data: data, Signature: make([]byte, 96)}
 	att2 := &ethpb.Attestation{AggregationBits: bitfield.Bitlist{0b1110}, Data: data, Signature: make([]byte, 96)}
@@ -49,11 +49,11 @@ func TestService_beaconBlockSubscriber(t *testing.T) {
 		{
 			AggregationBits: bitfield.Bitlist{0b00011111},
 			Data: &ethpb.AttestationData{
-				BeaconBlockRoot: make([]byte, 32),
-				Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-				Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+				BeaconBlockRoot:     make([]byte, 32),
+				Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+				Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
 				ShardTransitionRoot: make([]byte, 32),
-				ShardHeadRoot: make([]byte, 32),
+				ShardHeadRoot:       make([]byte, 32),
 			},
 			Signature: make([]byte, 96),
 		},
@@ -61,11 +61,11 @@ func TestService_beaconBlockSubscriber(t *testing.T) {
 		{
 			AggregationBits: bitfield.Bitlist{0b00010001},
 			Data: &ethpb.AttestationData{
-				BeaconBlockRoot: make([]byte, 32),
-				Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-				Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+				BeaconBlockRoot:     make([]byte, 32),
+				Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+				Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
 				ShardTransitionRoot: make([]byte, 32),
-				ShardHeadRoot: make([]byte, 32),
+				ShardHeadRoot:       make([]byte, 32),
 			},
 			Signature: make([]byte, 96),
 		},

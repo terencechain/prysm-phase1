@@ -53,7 +53,7 @@ func NewBeaconBlock() *ethpb.SignedBeaconBlock {
 					BlockHash:   make([]byte, 32),
 				},
 				Graffiti:             make([]byte, 32),
-				LightClientBits: bitfield.Bitlist{0b1},
+				LightClientBits:      bitfield.Bitlist{0b1},
 				LightClientSignature: make([]byte, 96),
 			},
 		},
@@ -65,8 +65,8 @@ func NewBeaconBlock() *ethpb.SignedBeaconBlock {
 func NewShardblock() *ethpb.SignedShardBlock {
 	return &ethpb.SignedShardBlock{
 		Message: &ethpb.ShardBlock{
-			ShardParentRoot:      make([]byte, 32),
-			BeaconParentRoot:     make([]byte, 32),
+			ShardParentRoot:  make([]byte, 32),
+			BeaconParentRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}
@@ -191,16 +191,16 @@ func GenerateFullBlock(
 		ParentRoot:    parentRoot[:],
 		ProposerIndex: idx,
 		Body: &ethpb.BeaconBlockBody{
-			Eth1Data:          eth1Data,
-			RandaoReveal:      reveal,
-			ProposerSlashings: pSlashings,
-			AttesterSlashings: aSlashings,
-			Attestations:      atts,
-			VoluntaryExits:    exits,
-			Deposits:          newDeposits,
-			ShardTransitions:  make([]*ethpb.ShardTransition, 0), // TODO(0): Generate shard transition data.
-			Graffiti:          make([]byte, 32),
-			LightClientBits: bitfield.Bitlist{0b1},
+			Eth1Data:             eth1Data,
+			RandaoReveal:         reveal,
+			ProposerSlashings:    pSlashings,
+			AttesterSlashings:    aSlashings,
+			Attestations:         atts,
+			VoluntaryExits:       exits,
+			Deposits:             newDeposits,
+			ShardTransitions:     make([]*ethpb.ShardTransition, 0), // TODO(0): Generate shard transition data.
+			Graffiti:             make([]byte, 32),
+			LightClientBits:      bitfield.Bitlist{0b1},
 			LightClientSignature: make([]byte, 96),
 		},
 	}

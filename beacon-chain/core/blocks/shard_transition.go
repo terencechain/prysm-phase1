@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
-	"github.com/prysmaticlabs/go-ssz"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/epoch"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
@@ -361,7 +360,7 @@ func processCrosslinkForShard(bs *stateTrie.BeaconState, attestations []*ethpb.A
 }
 
 func verifyAttTransitionRoot(transition *ethpb.ShardTransition, tRoot [32]byte) error {
-	r, err := ssz.HashTreeRoot(transition)
+	r, err := transition.HashTreeRoot()
 	if err != nil {
 		return err
 	}
@@ -509,7 +508,7 @@ func shardBlockProposersAndHeaders(
 				Shard:            shard,
 				Slot:             slot,
 				ProposerIndex:    proposerIndex,
-				BodyRoot:        bytesutil.PadTo(transition.ShardDataRoots[i], 32),
+				BodyRoot:         bytesutil.PadTo(transition.ShardDataRoots[i], 32),
 			}
 			shardParentRoot, err = shardBlockHeader.HashTreeRoot()
 			if err != nil {

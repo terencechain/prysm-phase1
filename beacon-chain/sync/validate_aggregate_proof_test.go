@@ -86,11 +86,11 @@ func TestVerifySelection_NotAnAggregator(t *testing.T) {
 
 	sig := privKeys[0].Sign([]byte{'A'})
 	data := &ethpb.AttestationData{
-		BeaconBlockRoot: make([]byte, 32),
-		Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-		Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+		BeaconBlockRoot:     make([]byte, 32),
+		Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+		Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
 		ShardTransitionRoot: make([]byte, 32),
-		ShardHeadRoot: make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 	}
 
 	wanted := "validator is not an aggregator for slot"
@@ -104,11 +104,11 @@ func TestVerifySelection_BadSignature(t *testing.T) {
 
 	sig := privKeys[0].Sign([]byte{'A'})
 	data := &ethpb.AttestationData{
-		BeaconBlockRoot: make([]byte, 32),
-		Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-		Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+		BeaconBlockRoot:     make([]byte, 32),
+		Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+		Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
 		ShardTransitionRoot: make([]byte, 32),
-		ShardHeadRoot: make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 	}
 
 	wanted := "signature did not verify"
@@ -121,11 +121,11 @@ func TestVerifySelection_CanVerify(t *testing.T) {
 	beaconState, privKeys := testutil.DeterministicGenesisState(t, validators)
 
 	data := &ethpb.AttestationData{
-		BeaconBlockRoot: make([]byte, 32),
-		Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-		Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+		BeaconBlockRoot:     make([]byte, 32),
+		Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+		Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
 		ShardTransitionRoot: make([]byte, 32),
-		ShardHeadRoot: make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 	}
 	sig, err := helpers.ComputeDomainAndSign(beaconState, 0, data.Slot, params.BeaconConfig().DomainSelectionProof, privKeys[0])
 	require.NoError(t, err)
@@ -138,11 +138,11 @@ func TestValidateAggregateAndProof_NoBlock(t *testing.T) {
 
 	att := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			Source:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
-			Target:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
-			BeaconBlockRoot: make([]byte, 32),
+			Source:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			Target:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			BeaconBlockRoot:     make([]byte, 32),
 			ShardTransitionRoot: make([]byte, 32),
-			ShardHeadRoot: make([]byte, 32),
+			ShardHeadRoot:       make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}
@@ -205,12 +205,12 @@ func TestValidateAggregateAndProof_NotWithinSlotRange(t *testing.T) {
 	aggBits.SetBitAt(0, true)
 	att := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			Slot:            1,
-			BeaconBlockRoot: root[:],
-			Source:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
-			Target:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			Slot:                1,
+			BeaconBlockRoot:     root[:],
+			Source:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			Target:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
 			ShardTransitionRoot: make([]byte, 32),
-			ShardHeadRoot: make([]byte, 32),
+			ShardHeadRoot:       make([]byte, 32),
 		},
 		AggregationBits: aggBits,
 		Signature:       make([]byte, 96),
@@ -293,12 +293,12 @@ func TestValidateAggregateAndProof_ExistedInPool(t *testing.T) {
 	aggBits.SetBitAt(0, true)
 	att := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			Slot:            1,
-			BeaconBlockRoot: root[:],
-			Source:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
-			Target:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			Slot:                1,
+			BeaconBlockRoot:     root[:],
+			Source:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			Target:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
 			ShardTransitionRoot: make([]byte, 32),
-			ShardHeadRoot: make([]byte, 32),
+			ShardHeadRoot:       make([]byte, 32),
 		},
 		AggregationBits: aggBits,
 		Signature:       make([]byte, 96),
@@ -366,11 +366,11 @@ func TestValidateAggregateAndProof_CanValidate(t *testing.T) {
 	aggBits.SetBitAt(0, true)
 	att := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			BeaconBlockRoot: root[:],
-			Source:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
-			Target:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			BeaconBlockRoot:     root[:],
+			Source:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			Target:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
 			ShardTransitionRoot: make([]byte, 32),
-			ShardHeadRoot: make([]byte, 32),
+			ShardHeadRoot:       make([]byte, 32),
 		},
 		AggregationBits: aggBits,
 	}
@@ -459,11 +459,11 @@ func TestValidateAggregateAndProofUseCheckptCache_CanValidate(t *testing.T) {
 	aggBits.SetBitAt(0, true)
 	att := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			BeaconBlockRoot: root[:],
-			Source:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
-			Target:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			BeaconBlockRoot:     root[:],
+			Source:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			Target:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
 			ShardTransitionRoot: make([]byte, 32),
-			ShardHeadRoot: make([]byte, 32),
+			ShardHeadRoot:       make([]byte, 32),
 		},
 		AggregationBits: aggBits,
 	}
@@ -549,11 +549,11 @@ func TestVerifyIndexInCommittee_SeenAggregatorEpoch(t *testing.T) {
 	aggBits.SetBitAt(0, true)
 	att := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			BeaconBlockRoot: root[:],
-			Source:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
-			Target:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			BeaconBlockRoot:     root[:],
+			Source:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			Target:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
 			ShardTransitionRoot: make([]byte, 32),
-			ShardHeadRoot: make([]byte, 32),
+			ShardHeadRoot:       make([]byte, 32),
 		},
 		AggregationBits: aggBits,
 	}
@@ -660,11 +660,11 @@ func TestValidateAggregateAndProof_BadBlock(t *testing.T) {
 	aggBits.SetBitAt(0, true)
 	att := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			BeaconBlockRoot: root[:],
-			Source:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
-			Target:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			BeaconBlockRoot:     root[:],
+			Source:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+			Target:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
 			ShardTransitionRoot: make([]byte, 32),
-			ShardHeadRoot: make([]byte, 32),
+			ShardHeadRoot:       make([]byte, 32),
 		},
 		AggregationBits: aggBits,
 	}

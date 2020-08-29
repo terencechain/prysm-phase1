@@ -36,7 +36,7 @@ func TestPruneExpired_Ticker(t *testing.T) {
 			Epoch: 0,
 			Root:  make([]byte, 32),
 		},
-		ShardHeadRoot:make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 		ShardTransitionRoot: make([]byte, 32),
 	}
 
@@ -52,7 +52,7 @@ func TestPruneExpired_Ticker(t *testing.T) {
 			Epoch: 0,
 			Root:  make([]byte, 32),
 		},
-		ShardHeadRoot:make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 		ShardTransitionRoot: make([]byte, 32),
 	}
 
@@ -123,7 +123,7 @@ func TestPruneExpired_PruneExpiredAtts(t *testing.T) {
 			Epoch: 0,
 			Root:  make([]byte, 32),
 		},
-		ShardHeadRoot:make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 		ShardTransitionRoot: make([]byte, 32),
 	}
 
@@ -139,7 +139,7 @@ func TestPruneExpired_PruneExpiredAtts(t *testing.T) {
 			Epoch: 0,
 			Root:  make([]byte, 32),
 		},
-		ShardHeadRoot:make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 		ShardTransitionRoot: make([]byte, 32),
 	}
 

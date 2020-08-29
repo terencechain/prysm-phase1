@@ -92,7 +92,7 @@ func ProcessChunkChallenge(ctx context.Context, state *state.BeaconState, challe
 	}
 
 	// Verify the shard transition is correct.
-	str, err := ssz.HashTreeRoot(challenge.ShardTransition)
+	str, err := challenge.ShardTransition.HashTreeRoot()
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +307,7 @@ func ProcessSignedCustodySlashing(ctx context.Context, state *state.BeaconState,
 	}
 
 	// Verify the shard transition is attested by attestation.
-	str, err := ssz.HashTreeRoot(c.ShardTransition)
+	str, err := c.ShardTransition.HashTreeRoot()
 	if err != nil {
 		return nil, err
 	}

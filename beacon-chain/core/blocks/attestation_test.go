@@ -27,9 +27,9 @@ func TestProcessAttestations_InclusionDelayFailure(t *testing.T) {
 	attestations := []*ethpb.Attestation{
 		{
 			Data: &ethpb.AttestationData{
-				Target: &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
-				Slot:   5,
-				ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+				Target:        &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
+				Slot:          5,
+				ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 			},
 		},
 	}
@@ -213,7 +213,7 @@ func TestProcessAttestations_OK(t *testing.T) {
 			Source:          &ethpb.Checkpoint{Epoch: 0, Root: mockRoot[:]},
 			Target:          &ethpb.Checkpoint{Epoch: 0, Root: mockRoot[:]},
 			BeaconBlockRoot: make([]byte, 32),
-			ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+			ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 		},
 		AggregationBits: aggBits,
 		Signature:       make([]byte, 96),
@@ -250,11 +250,11 @@ func TestProcessAttestations_OK(t *testing.T) {
 func TestProcessAggregatedAttestation_OverlappingBits(t *testing.T) {
 	beaconState, privKeys := testutil.DeterministicGenesisState(t, 100)
 	data := &ethpb.AttestationData{
-		Source:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
-		Target:          &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
-		BeaconBlockRoot: make([]byte, 32),
+		Source:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+		Target:              &ethpb.Checkpoint{Epoch: 0, Root: bytesutil.PadTo([]byte("hello-world"), 32)},
+		BeaconBlockRoot:     make([]byte, 32),
 		ShardTransitionRoot: make([]byte, 32),
-		ShardHeadRoot: make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 	}
 	aggBits1 := bitfield.NewBitlist(4)
 	aggBits1.SetBitAt(0, true)
@@ -317,11 +317,11 @@ func TestProcessAggregatedAttestation_NoOverlappingBits(t *testing.T) {
 	var mockRoot [32]byte
 	copy(mockRoot[:], "hello-world")
 	data := &ethpb.AttestationData{
-		Source:          &ethpb.Checkpoint{Epoch: 0, Root: mockRoot[:]},
-		Target:          &ethpb.Checkpoint{Epoch: 0, Root: mockRoot[:]},
-		BeaconBlockRoot: make([]byte, 32),
+		Source:              &ethpb.Checkpoint{Epoch: 0, Root: mockRoot[:]},
+		Target:              &ethpb.Checkpoint{Epoch: 0, Root: mockRoot[:]},
+		BeaconBlockRoot:     make([]byte, 32),
 		ShardTransitionRoot: make([]byte, 32),
-		ShardHeadRoot: make([]byte, 32),
+		ShardHeadRoot:       make([]byte, 32),
 	}
 	aggBits1 := bitfield.NewBitlist(9)
 	aggBits1.SetBitAt(0, true)
@@ -391,9 +391,9 @@ func TestProcessAttestationsNoVerify_IncorrectSlotTargetEpoch(t *testing.T) {
 
 	att := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			Slot:   params.BeaconConfig().SlotsPerEpoch,
-			Target: &ethpb.Checkpoint{Root: make([]byte, 32)},
-			ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+			Slot:          params.BeaconConfig().SlotsPerEpoch,
+			Target:        &ethpb.Checkpoint{Root: make([]byte, 32)},
+			ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 		},
 	}
 	wanted := fmt.Sprintf("data slot is not in the same epoch as target %d != %d", helpers.SlotToEpoch(att.Data.Slot), att.Data.Target.Epoch)
@@ -412,9 +412,9 @@ func TestProcessAttestationsNoVerify_OK(t *testing.T) {
 	copy(mockRoot[:], "hello-world")
 	att := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			Source: &ethpb.Checkpoint{Epoch: 0, Root: mockRoot[:]},
-			Target: &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
-			ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+			Source:        &ethpb.Checkpoint{Epoch: 0, Root: mockRoot[:]},
+			Target:        &ethpb.Checkpoint{Epoch: 0, Root: make([]byte, 32)},
+			ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 		},
 		AggregationBits: aggBits,
 	}
@@ -552,7 +552,7 @@ func TestVerifyIndexedAttestation_OK(t *testing.T) {
 					Root: make([]byte, 32),
 				},
 				BeaconBlockRoot: make([]byte, 32),
-				ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+				ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 			},
 			AttestingIndices: []uint64{1},
 			Signature:        make([]byte, 96),
@@ -567,7 +567,7 @@ func TestVerifyIndexedAttestation_OK(t *testing.T) {
 					Root: make([]byte, 32),
 				},
 				BeaconBlockRoot: make([]byte, 32),
-				ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+				ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 			},
 			AttestingIndices: []uint64{47, 99, 101},
 			Signature:        make([]byte, 96),
@@ -582,7 +582,7 @@ func TestVerifyIndexedAttestation_OK(t *testing.T) {
 					Root: make([]byte, 32),
 				},
 				BeaconBlockRoot: make([]byte, 32),
-				ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+				ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 			},
 			AttestingIndices: []uint64{21, 72},
 			Signature:        make([]byte, 96),
@@ -597,7 +597,7 @@ func TestVerifyIndexedAttestation_OK(t *testing.T) {
 					Root: make([]byte, 32),
 				},
 				BeaconBlockRoot: make([]byte, 32),
-				ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+				ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 			},
 			AttestingIndices: []uint64{100, 121, 122},
 			Signature:        make([]byte, 96),
@@ -712,7 +712,7 @@ func TestVerifyAttestations_VerifiesMultipleAttestations(t *testing.T) {
 			BeaconBlockRoot: make([]byte, 32),
 			Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-			ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+			ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}
@@ -737,7 +737,7 @@ func TestVerifyAttestations_VerifiesMultipleAttestations(t *testing.T) {
 			BeaconBlockRoot: make([]byte, 32),
 			Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-			ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+			ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}
@@ -787,7 +787,7 @@ func TestVerifyAttestations_HandlesPlannedFork(t *testing.T) {
 			BeaconBlockRoot: make([]byte, 32),
 			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 			Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-			ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+			ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}
@@ -812,7 +812,7 @@ func TestVerifyAttestations_HandlesPlannedFork(t *testing.T) {
 			BeaconBlockRoot: make([]byte, 32),
 			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 			Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-			ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+			ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}
@@ -857,7 +857,7 @@ func TestRetrieveAttestationSignatureSet_VerifiesMultipleAttestations(t *testing
 			BeaconBlockRoot: make([]byte, 32),
 			Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-			ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+			ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}
@@ -882,7 +882,7 @@ func TestRetrieveAttestationSignatureSet_VerifiesMultipleAttestations(t *testing
 			BeaconBlockRoot: make([]byte, 32),
 			Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-			ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+			ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 		},
 		Signature: make([]byte, 96),
 	}
@@ -919,7 +919,7 @@ func TestVerifyAttestationForShard(t *testing.T) {
 				bs: &pb.BeaconState{Slot: 1, BlockRoots: [][]byte{bytesutil.PadTo([]byte{'a'}, 32)}},
 				att: &ethpb.Attestation{Data: &ethpb.AttestationData{
 					BeaconBlockRoot: bytesutil.PadTo([]byte{'a'}, 32),
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				}},
 			},
 		},
@@ -929,8 +929,8 @@ func TestVerifyAttestationForShard(t *testing.T) {
 				bs: &pb.BeaconState{Slot: 1, BlockRoots: [][]byte{bytesutil.PadTo([]byte{'a'}, 32)}},
 				att: &ethpb.Attestation{Data: &ethpb.AttestationData{
 					BeaconBlockRoot: bytesutil.PadTo([]byte{'a'}, 32),
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
-					Shard:           1,
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
+					Shard: 1,
 				}},
 			},
 			error:   true,
@@ -942,7 +942,7 @@ func TestVerifyAttestationForShard(t *testing.T) {
 				bs: &pb.BeaconState{Slot: 1, BlockRoots: [][]byte{bytesutil.PadTo([]byte{'a'}, 32)}},
 				att: &ethpb.Attestation{Data: &ethpb.AttestationData{
 					BeaconBlockRoot: bytesutil.PadTo([]byte{'b'}, 32),
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				}},
 			},
 			error:   true,

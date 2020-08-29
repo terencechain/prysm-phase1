@@ -157,4 +157,3 @@ func (c *BeaconChainConfig) Copy() *BeaconChainConfig {
 	}
 	return &config
 }
-

@@ -65,10 +65,10 @@ func TestServer_GetAttestationInclusionSlot(t *testing.T) {
 
 	a := &ethpb.Attestation{
 		Data: &ethpb.AttestationData{
-			Target:          &ethpb.Checkpoint{Root: tr[:]},
-			Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-			BeaconBlockRoot: make([]byte, 32),
-			Slot:            1,
+			Target:              &ethpb.Checkpoint{Root: tr[:]},
+			Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+			BeaconBlockRoot:     make([]byte, 32),
+			Slot:                1,
 			ShardHeadRoot:       make([]byte, 32),
 			ShardTransitionRoot: make([]byte, 32),
 		},

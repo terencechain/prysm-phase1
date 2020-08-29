@@ -237,7 +237,7 @@ func Test_VerifyShardBlockSignature(t *testing.T) {
 	require.NoError(t, err)
 	priv := bls.RandKey()
 	require.NoError(t, bs.UpdateValidatorAtIndex(0, &ethpb.Validator{PublicKey: priv.PublicKey().Marshal()}))
-	sb := &ethpb.SignedShardBlock{Message: &ethpb.ShardBlock{ProposerIndex: 0, ShardParentRoot: make([]byte,32), BeaconParentRoot:make([]byte,32)}, Signature:make([]byte,96)}
+	sb := &ethpb.SignedShardBlock{Message: &ethpb.ShardBlock{ProposerIndex: 0, ShardParentRoot: make([]byte, 32), BeaconParentRoot: make([]byte, 32)}, Signature: make([]byte, 96)}
 	sb.Signature, err = helpers.ComputeDomainAndSign(bs, 0, sb.Message, params.BeaconConfig().DomainShardProposal, priv)
 	require.NoError(t, err)
 
@@ -280,7 +280,7 @@ func Test_VerifyShardBlockSignature(t *testing.T) {
 }
 
 func TestProcessShardBlock(t *testing.T) {
-	sb := &ethpb.ShardBlock{Slot: 100, Body: bytesutil.PadTo([]byte{'a'},32), ShardParentRoot: make([]byte, 32), BeaconParentRoot: make([]byte,32)}
+	sb := &ethpb.ShardBlock{Slot: 100, Body: bytesutil.PadTo([]byte{'a'}, 32), ShardParentRoot: make([]byte, 32), BeaconParentRoot: make([]byte, 32)}
 	r, err := sb.HashTreeRoot()
 	require.NoError(t, err)
 
@@ -341,7 +341,7 @@ func TestShardStateTransition(t *testing.T) {
 	pIdx, err := helpers.ShardProposerIndex(bs, 1, 0)
 	require.NoError(t, err)
 	goodBlock := &ethpb.ShardBlock{
-		Slot: 1, ProposerIndex: pIdx, Body: make([]byte, 1), BeaconParentRoot: hr[:], ShardParentRoot: bytesutil.PadTo([]byte{'a'},32),
+		Slot: 1, ProposerIndex: pIdx, Body: make([]byte, 1), BeaconParentRoot: hr[:], ShardParentRoot: bytesutil.PadTo([]byte{'a'}, 32),
 	}
 	priv := bls.RandKey()
 	require.NoError(t, bs.UpdateValidatorAtIndex(pIdx, &ethpb.Validator{PublicKey: priv.PublicKey().Marshal()}))
@@ -365,7 +365,7 @@ func TestShardStateTransition(t *testing.T) {
 		{
 			name: "Can't verify shard block message",
 			args: args{
-				shardState: &ethpb.ShardState{LatestBlockRoot: bytesutil.PadTo([]byte{'a'},32)},
+				shardState: &ethpb.ShardState{LatestBlockRoot: bytesutil.PadTo([]byte{'a'}, 32)},
 				block:      &ethpb.SignedShardBlock{Message: &ethpb.ShardBlock{}},
 				bps:        bs,
 			},
@@ -375,7 +375,7 @@ func TestShardStateTransition(t *testing.T) {
 		{
 			name: "Can't verify shard block signature",
 			args: args{
-				shardState: &ethpb.ShardState{LatestBlockRoot: bytesutil.PadTo([]byte{'a'},32)},
+				shardState: &ethpb.ShardState{LatestBlockRoot: bytesutil.PadTo([]byte{'a'}, 32)},
 				block:      &ethpb.SignedShardBlock{Message: goodBlock},
 				bps:        bs.Copy(),
 			},
@@ -385,7 +385,7 @@ func TestShardStateTransition(t *testing.T) {
 		{
 			name: "Can process shard transition",
 			args: args{
-				shardState: &ethpb.ShardState{LatestBlockRoot: bytesutil.PadTo([]byte{'a'},32)},
+				shardState: &ethpb.ShardState{LatestBlockRoot: bytesutil.PadTo([]byte{'a'}, 32)},
 				block:      &ethpb.SignedShardBlock{Message: goodBlock, Signature: goodSig},
 				bps:        bs.Copy(),
 			},
@@ -446,8 +446,8 @@ func TestVerifyAttShardHeadRoot(t *testing.T) {
 }
 
 func TestVerifyAttTransitionRoot(t *testing.T) {
-	st := &ethpb.ShardTransition{StartSlot: 999}
-	r, err := ssz.HashTreeRoot(st)
+	st := &ethpb.ShardTransition{StartSlot: 999, ProposerSignatureAggregate: make([]byte, 96)}
+	r, err := st.HashTreeRoot()
 	require.NoError(t, err)
 	require.NoError(t, verifyAttTransitionRoot(st, r))
 	require.ErrorContains(t, "transition root missmatch", verifyAttTransitionRoot(st, [32]byte{'a'}))
@@ -547,10 +547,11 @@ func Test_ProcessCrosslink(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, bs.SetSlot(3))
 	st := &ethpb.ShardTransition{
-		StartSlot:         1,
-		ShardBlockLengths: []uint64{1000, 2000},
-		ShardDataRoots:    [][]byte{bytesutil.PadTo([]byte{'d'},32), bytesutil.PadTo([]byte{'e'},32)},
-		ShardStates:       []*ethpb.ShardState{{Slot: 1, GasPrice: 767}, {Slot: 2, GasPrice: 672}},
+		StartSlot:                  1,
+		ShardBlockLengths:          []uint64{1000, 2000},
+		ShardDataRoots:             [][]byte{bytesutil.PadTo([]byte{'d'}, 32), bytesutil.PadTo([]byte{'e'}, 32)},
+		ShardStates:                []*ethpb.ShardState{{Slot: 1, GasPrice: 767, LatestBlockRoot: make([]byte, 32)}, {Slot: 2, GasPrice: 672, LatestBlockRoot: make([]byte, 32)}},
+		ProposerSignatureAggregate: make([]byte, 96),
 	}
 	headers, indices, err := shardBlockProposersAndHeaders(bs, st, helpers.ShardOffSetSlots(bs, 3), 3)
 	require.NoError(t, err)
@@ -570,7 +571,7 @@ func Test_ProcessCrosslink(t *testing.T) {
 	as := bls.AggregateSignatures(sigs)
 	st.ProposerSignatureAggregate = as.Marshal()
 
-	tr, err := ssz.HashTreeRoot(st)
+	tr, err := st.HashTreeRoot()
 	require.NoError(t, err)
 	atts := []*ethpb.Attestation{
 		{
@@ -578,6 +579,7 @@ func Test_ProcessCrosslink(t *testing.T) {
 			Data: &ethpb.AttestationData{
 				Slot:                2,
 				ShardTransitionRoot: tr[:],
+				ShardHeadRoot:       make([]byte, 32),
 			},
 		},
 	}
@@ -604,10 +606,11 @@ func Test_ProcessCrosslinkForShard(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, bs.SetSlot(3))
 	transition := &ethpb.ShardTransition{
-		StartSlot:         1,
-		ShardBlockLengths: []uint64{1000, 2000},
-		ShardDataRoots:    [][]byte{bytesutil.PadTo([]byte{'d'},32), bytesutil.PadTo([]byte{'e'},32)},
-		ShardStates:       []*ethpb.ShardState{{Slot: 1, GasPrice: 767}, {Slot: 2, GasPrice: 672}},
+		StartSlot:                  1,
+		ShardBlockLengths:          []uint64{1000, 2000},
+		ShardDataRoots:             [][]byte{bytesutil.PadTo([]byte{'d'}, 32), bytesutil.PadTo([]byte{'e'}, 32)},
+		ShardStates:                []*ethpb.ShardState{{Slot: 1, GasPrice: 767, LatestBlockRoot: make([]byte, 32)}, {Slot: 2, GasPrice: 672, LatestBlockRoot: make([]byte, 32)}},
+		ProposerSignatureAggregate: make([]byte, 96),
 	}
 	headers, indices, err := shardBlockProposersAndHeaders(bs, transition, helpers.ShardOffSetSlots(bs, 3), 3)
 	require.NoError(t, err)
@@ -627,13 +630,14 @@ func Test_ProcessCrosslinkForShard(t *testing.T) {
 	as := bls.AggregateSignatures(sigs)
 	transition.ProposerSignatureAggregate = as.Marshal()
 
-	tr, err := ssz.HashTreeRoot(transition)
+	tr, err := transition.HashTreeRoot()
 	require.NoError(t, err)
 	atts := []*ethpb.Attestation{
 		{
 			AggregationBits: bitfield.Bitlist{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 			Data: &ethpb.AttestationData{
 				ShardTransitionRoot: tr[:],
+				ShardHeadRoot:       make([]byte, 32),
 			},
 		},
 	}
@@ -649,7 +653,7 @@ func Test_ApplyShardTransition(t *testing.T) {
 	transition := &ethpb.ShardTransition{
 		StartSlot:         1,
 		ShardBlockLengths: []uint64{1000, 2000},
-		ShardDataRoots:    [][]byte{bytesutil.PadTo([]byte{'d'},32), bytesutil.PadTo([]byte{'e'},32)},
+		ShardDataRoots:    [][]byte{bytesutil.PadTo([]byte{'d'}, 32), bytesutil.PadTo([]byte{'e'}, 32)},
 		ShardStates:       []*ethpb.ShardState{{Slot: 1, GasPrice: 767}, {Slot: 2, GasPrice: 672}},
 	}
 	headers, indices, err := shardBlockProposersAndHeaders(bs, transition, helpers.ShardOffSetSlots(bs, 0), 0)
@@ -726,7 +730,7 @@ func Test_ShardBlockProposersAndHeaders(t *testing.T) {
 	transition := &ethpb.ShardTransition{
 		StartSlot:         0,
 		ShardBlockLengths: []uint64{1000, 2000},
-		ShardDataRoots:    [][]byte{bytesutil.PadTo([]byte{'d'},32), bytesutil.PadTo([]byte{'e'},32)},
+		ShardDataRoots:    [][]byte{bytesutil.PadTo([]byte{'d'}, 32), bytesutil.PadTo([]byte{'e'}, 32)},
 		ShardStates:       []*ethpb.ShardState{{Slot: 1, GasPrice: 767}, {Slot: 2, GasPrice: 672}},
 	}
 	headers, indices, err := shardBlockProposersAndHeaders(bs, transition, offSets, 0)
@@ -754,8 +758,8 @@ func Test_VerifyProposerSignature(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, bs.UpdateValidatorAtIndex(0, &ethpb.Validator{PublicKey: priv1.PublicKey().Marshal()}))
 	require.NoError(t, bs.UpdateValidatorAtIndex(1, &ethpb.Validator{PublicKey: priv2.PublicKey().Marshal()}))
-	h1 := &ethpb.ShardBlockHeader{Slot: 1, ShardParentRoot:make([]byte,32), BeaconParentRoot:make([]byte,32), BodyRoot:make([]byte,32)}
-	h2 := &ethpb.ShardBlockHeader{Slot: 2, ShardParentRoot:make([]byte,32), BeaconParentRoot:make([]byte,32), BodyRoot:make([]byte,32)}
+	h1 := &ethpb.ShardBlockHeader{Slot: 1, ShardParentRoot: make([]byte, 32), BeaconParentRoot: make([]byte, 32), BodyRoot: make([]byte, 32)}
+	h2 := &ethpb.ShardBlockHeader{Slot: 2, ShardParentRoot: make([]byte, 32), BeaconParentRoot: make([]byte, 32), BodyRoot: make([]byte, 32)}
 	s1, err := helpers.ComputeDomainAndSign(bs, 0, h1, params.BeaconConfig().DomainShardProposal, priv1)
 	require.NoError(t, err)
 	s2, err := helpers.ComputeDomainAndSign(bs, 0, h2, params.BeaconConfig().DomainShardProposal, priv2)

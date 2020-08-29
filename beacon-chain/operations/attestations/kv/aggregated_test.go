@@ -18,14 +18,14 @@ func TestKV_Aggregated_AggregateUnaggregatedAttestations(t *testing.T) {
 	priv := bls.RandKey()
 	sig1 := priv.Sign([]byte{'a'})
 	sig2 := priv.Sign([]byte{'b'})
-	att1 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1001}, Signature: sig1.Marshal()}
-	att2 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1010}, Signature: sig1.Marshal()}
-	att3 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1100}, Signature: sig1.Marshal()}
-	att4 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1001}, Signature: sig2.Marshal()}
-	att5 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1001}, Signature: sig1.Marshal()}
-	att6 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1010}, Signature: sig1.Marshal()}
-	att7 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1100}, Signature: sig1.Marshal()}
-	att8 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1001}, Signature: sig2.Marshal()}
+	att1 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1001}, Signature: sig1.Marshal()}
+	att2 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1010}, Signature: sig1.Marshal()}
+	att3 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1100}, Signature: sig1.Marshal()}
+	att4 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1001}, Signature: sig2.Marshal()}
+	att5 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1001}, Signature: sig1.Marshal()}
+	att6 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1010}, Signature: sig1.Marshal()}
+	att7 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1100}, Signature: sig1.Marshal()}
+	att8 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1001}, Signature: sig2.Marshal()}
 	atts := []*ethpb.Attestation{att1, att2, att3, att4, att5, att6, att7, att8}
 	require.NoError(t, cache.SaveUnaggregatedAttestations(atts))
 	require.NoError(t, cache.AggregateUnaggregatedAttestations())
@@ -53,11 +53,11 @@ func TestKV_Aggregated_SaveAggregatedAttestation(t *testing.T) {
 			name: "not aggregated",
 			att: &ethpb.Attestation{
 				Data: &ethpb.AttestationData{
-					BeaconBlockRoot: make([]byte, 32),
-					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32),
-					ShardTransitionRoot:make([]byte, 32),
+					BeaconBlockRoot:     make([]byte, 32),
+					Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+					Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+					ShardHeadRoot:       make([]byte, 32),
+					ShardTransitionRoot: make([]byte, 32),
 				}, AggregationBits: bitfield.Bitlist{0b10100}},
 			wantErrString: "attestation is not aggregated",
 		},
@@ -75,12 +75,12 @@ func TestKV_Aggregated_SaveAggregatedAttestation(t *testing.T) {
 			name: "already seen",
 			att: &ethpb.Attestation{
 				Data: &ethpb.AttestationData{
-					Slot:            100,
-					BeaconBlockRoot: make([]byte, 32),
-					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32),
-					ShardTransitionRoot:make([]byte, 32),
+					Slot:                100,
+					BeaconBlockRoot:     make([]byte, 32),
+					Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+					Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+					ShardHeadRoot:       make([]byte, 32),
+					ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b11101001},
 				Signature:       make([]byte, 96),
@@ -91,12 +91,12 @@ func TestKV_Aggregated_SaveAggregatedAttestation(t *testing.T) {
 			name: "normal save",
 			att: &ethpb.Attestation{
 				Data: &ethpb.AttestationData{
-					Slot:            1,
-					BeaconBlockRoot: make([]byte, 32),
-					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32),
-					ShardTransitionRoot:make([]byte, 32),
+					Slot:                1,
+					BeaconBlockRoot:     make([]byte, 32),
+					Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+					Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+					ShardHeadRoot:       make([]byte, 32),
+					ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1101},
 				Signature:       make([]byte, 96),
@@ -105,10 +105,10 @@ func TestKV_Aggregated_SaveAggregatedAttestation(t *testing.T) {
 		},
 	}
 	r, err := hashFn(&ethpb.AttestationData{
-		Slot:            100,
-		Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-		Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-		BeaconBlockRoot: make([]byte, 32),
+		Slot:                100,
+		Source:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+		Target:              &ethpb.Checkpoint{Root: make([]byte, 32)},
+		BeaconBlockRoot:     make([]byte, 32),
 		ShardHeadRoot:       make([]byte, 32),
 		ShardTransitionRoot: make([]byte, 32),
 	})
@@ -142,9 +142,9 @@ func TestKV_Aggregated_SaveAggregatedAttestations(t *testing.T) {
 		{
 			name: "no duplicates",
 			atts: []*ethpb.Attestation{
-				{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}},
+				{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}},
 					AggregationBits: bitfield.Bitlist{0b1101}},
-				{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}},
+				{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}},
 					AggregationBits: bitfield.Bitlist{0b1101}},
 			},
 			count: 1,
@@ -170,9 +170,9 @@ func TestKV_Aggregated_SaveAggregatedAttestations(t *testing.T) {
 func TestKV_Aggregated_AggregatedAttestations(t *testing.T) {
 	cache := NewAttCaches()
 
-	att1 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
-	att2 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
-	att3 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 3, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
+	att1 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
+	att2 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
+	att3 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 3, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
 	atts := []*ethpb.Attestation{att1, att2, att3}
 
 	for _, att := range atts {
@@ -190,13 +190,13 @@ func TestKV_Aggregated_DeleteAggregatedAttestation(t *testing.T) {
 	t.Run("nil attestation", func(t *testing.T) {
 		cache := NewAttCaches()
 		assert.NoError(t, cache.DeleteAggregatedAttestation(nil))
-		att := &ethpb.Attestation{AggregationBits: bitfield.Bitlist{0b10101}, Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}}
+		att := &ethpb.Attestation{AggregationBits: bitfield.Bitlist{0b10101}, Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}}
 		assert.NoError(t, cache.DeleteAggregatedAttestation(att))
 	})
 
 	t.Run("non aggregated attestation", func(t *testing.T) {
 		cache := NewAttCaches()
-		att := &ethpb.Attestation{AggregationBits: bitfield.Bitlist{0b1001}, Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}}
+		att := &ethpb.Attestation{AggregationBits: bitfield.Bitlist{0b1001}, Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}}
 		err := cache.DeleteAggregatedAttestation(att)
 		assert.ErrorContains(t, "attestation is not aggregated", err)
 	})
@@ -216,16 +216,16 @@ func TestKV_Aggregated_DeleteAggregatedAttestation(t *testing.T) {
 
 	t.Run("nonexistent attestation", func(t *testing.T) {
 		cache := NewAttCaches()
-		att := &ethpb.Attestation{AggregationBits: bitfield.Bitlist{0b1111}, Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}}
+		att := &ethpb.Attestation{AggregationBits: bitfield.Bitlist{0b1111}, Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}}
 		assert.NoError(t, cache.DeleteAggregatedAttestation(att))
 	})
 
 	t.Run("non-filtered deletion", func(t *testing.T) {
 		cache := NewAttCaches()
-		att1 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
-		att2 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
-		att3 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 3, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
-		att4 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 3, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b10101}}
+		att1 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
+		att2 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
+		att3 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 3, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
+		att4 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 3, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b10101}}
 		atts := []*ethpb.Attestation{att1, att2, att3, att4}
 		require.NoError(t, cache.SaveAggregatedAttestations(atts))
 		require.NoError(t, cache.DeleteAggregatedAttestation(att1))
@@ -238,10 +238,10 @@ func TestKV_Aggregated_DeleteAggregatedAttestation(t *testing.T) {
 
 	t.Run("filtered deletion", func(t *testing.T) {
 		cache := NewAttCaches()
-		att1 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b110101}}
-		att2 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b110111}}
-		att3 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b110100}}
-		att4 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b110101}}
+		att1 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b110101}}
+		att2 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b110111}}
+		att3 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b110100}}
+		att4 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 2, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b110101}}
 		atts := []*ethpb.Attestation{att1, att2, att3, att4}
 		require.NoError(t, cache.SaveAggregatedAttestations(atts))
 
@@ -277,7 +277,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 			},
 			want: false,
@@ -290,7 +290,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1111}},
 			want: false,
@@ -303,7 +303,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1001}},
 			want: false,
@@ -316,7 +316,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1111}},
 			},
@@ -326,7 +326,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1111}},
 			want: true,
@@ -339,7 +339,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1111}},
 			},
@@ -349,7 +349,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1110}},
 			want: true,
@@ -362,7 +362,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1110}},
 			},
@@ -372,7 +372,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1111}},
 			want: false,
@@ -386,7 +386,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 						BeaconBlockRoot: make([]byte, 32),
 						Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 						Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-						ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+						ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 					},
 					AggregationBits: bitfield.Bitlist{0b1111000},
 				},
@@ -396,7 +396,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 						BeaconBlockRoot: make([]byte, 32),
 						Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 						Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-						ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+						ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 					},
 					AggregationBits: bitfield.Bitlist{0b1100111},
 				},
@@ -407,7 +407,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1100000}},
 			want: true,
@@ -421,7 +421,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 						BeaconBlockRoot: make([]byte, 32),
 						Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 						Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-						ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+						ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 					},
 					AggregationBits: bitfield.Bitlist{0b1111000},
 				},
@@ -431,7 +431,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 						BeaconBlockRoot: make([]byte, 32),
 						Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 						Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-						ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+						ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 					},
 					AggregationBits: bitfield.Bitlist{0b1100111},
 				},
@@ -442,7 +442,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1111111}},
 			want: false,
@@ -456,7 +456,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 						BeaconBlockRoot: make([]byte, 32),
 						Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 						Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-						ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+						ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 					},
 					AggregationBits: bitfield.Bitlist{0b1111000},
 				},
@@ -466,7 +466,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 						BeaconBlockRoot: make([]byte, 32),
 						Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 						Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-						ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+						ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 					},
 					AggregationBits: bitfield.Bitlist{0b1100111},
 				},
@@ -477,7 +477,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1111111}},
 			want: false,
@@ -491,7 +491,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 						BeaconBlockRoot: make([]byte, 32),
 						Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 						Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-						ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+						ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 					},
 					AggregationBits: bitfield.Bitlist{0b1111000},
 				},
@@ -502,7 +502,7 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 					BeaconBlockRoot: make([]byte, 32),
 					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
 					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
-					ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),
+					ShardHeadRoot:   make([]byte, 32), ShardTransitionRoot: make([]byte, 32),
 				},
 				AggregationBits: bitfield.Bitlist{0b1111},
 			},
@@ -537,8 +537,8 @@ func TestKV_Aggregated_HasAggregatedAttestation(t *testing.T) {
 func TestKV_Aggregated_DuplicateAggregatedAttestations(t *testing.T) {
 	cache := NewAttCaches()
 
-	att1 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101},}
-	att2 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot:make([]byte, 32), ShardTransitionRoot:make([]byte, 32),Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1111}}
+	att1 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1101}}
+	att2 := &ethpb.Attestation{Data: &ethpb.AttestationData{ShardHeadRoot: make([]byte, 32), ShardTransitionRoot: make([]byte, 32), Slot: 1, BeaconBlockRoot: make([]byte, 32), Target: &ethpb.Checkpoint{Root: make([]byte, 32)}, Source: &ethpb.Checkpoint{Root: make([]byte, 32)}}, AggregationBits: bitfield.Bitlist{0b1111}}
 	atts := []*ethpb.Attestation{att1, att2}
 
 	for _, att := range atts {
