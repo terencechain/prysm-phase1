@@ -14,7 +14,7 @@ func (b *BeaconState) MarshalSSZ() ([]byte, error) {
 // MarshalSSZTo ssz marshals the BeaconState object to a target array
 func (b *BeaconState) MarshalSSZTo(buf []byte) (dst []byte, err error) {
 	dst = buf
-	offset := int(2916781)
+	offset := int(2687413)
 
 	// Field (0) 'GenesisTime'
 	dst = ssz.MarshalUint64(dst, b.GenesisTime)
@@ -176,21 +176,19 @@ func (b *BeaconState) MarshalSSZTo(buf []byte) (dst []byte, err error) {
 	dst = ssz.WriteOffset(dst, offset)
 	offset += len(b.OnlineCountdown) * 8
 
-	// Field (24) 'CurrentLightCommittee'
+	// Offset (24) 'CurrentLightCommittee'
+	dst = ssz.WriteOffset(dst, offset)
 	if b.CurrentLightCommittee == nil {
 		b.CurrentLightCommittee = new(v1alpha1.CompactCommittee)
 	}
-	if dst, err = b.CurrentLightCommittee.MarshalSSZTo(dst); err != nil {
-		return
-	}
+	offset += b.CurrentLightCommittee.SizeSSZ()
 
-	// Field (25) 'NextLightCommittee'
+	// Offset (25) 'NextLightCommittee'
+	dst = ssz.WriteOffset(dst, offset)
 	if b.NextLightCommittee == nil {
 		b.NextLightCommittee = new(v1alpha1.CompactCommittee)
 	}
-	if dst, err = b.NextLightCommittee.MarshalSSZTo(dst); err != nil {
-		return
-	}
+	offset += b.NextLightCommittee.SizeSSZ()
 
 	// Offset (26) 'CustodyChunkChallengeRecords'
 	dst = ssz.WriteOffset(dst, offset)
@@ -299,6 +297,16 @@ func (b *BeaconState) MarshalSSZTo(buf []byte) (dst []byte, err error) {
 		dst = ssz.MarshalUint64(dst, b.OnlineCountdown[ii])
 	}
 
+	// Field (24) 'CurrentLightCommittee'
+	if dst, err = b.CurrentLightCommittee.MarshalSSZTo(dst); err != nil {
+		return
+	}
+
+	// Field (25) 'NextLightCommittee'
+	if dst, err = b.NextLightCommittee.MarshalSSZTo(dst); err != nil {
+		return
+	}
+
 	// Field (26) 'CustodyChunkChallengeRecords'
 	if len(b.CustodyChunkChallengeRecords) > 16 {
 		err = ssz.ErrListTooBig
@@ -317,12 +325,12 @@ func (b *BeaconState) MarshalSSZTo(buf []byte) (dst []byte, err error) {
 func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 	var err error
 	size := uint64(len(buf))
-	if size < 2916781 {
+	if size < 2687413 {
 		return ssz.ErrSize
 	}
 
 	tail := buf
-	var o7, o9, o11, o12, o15, o16, o22, o23, o26 uint64
+	var o7, o9, o11, o12, o15, o16, o22, o23, o24, o25, o26 uint64
 
 	// Field (0) 'GenesisTime'
 	b.GenesisTime = ssz.UnmarshallUint64(buf[0:8])
@@ -469,29 +477,23 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 		return ssz.ErrOffset
 	}
 
-	// Field (24) 'CurrentLightCommittee'
-	if b.CurrentLightCommittee == nil {
-		b.CurrentLightCommittee = new(v1alpha1.CompactCommittee)
-	}
-	if err = b.CurrentLightCommittee.UnmarshalSSZ(buf[2687393:2802081]); err != nil {
-		return err
+	// Offset (24) 'CurrentLightCommittee'
+	if o24 = ssz.ReadOffset(buf[2687393:2687397]); o24 > size || o23 > o24 {
+		return ssz.ErrOffset
 	}
 
-	// Field (25) 'NextLightCommittee'
-	if b.NextLightCommittee == nil {
-		b.NextLightCommittee = new(v1alpha1.CompactCommittee)
-	}
-	if err = b.NextLightCommittee.UnmarshalSSZ(buf[2802081:2916769]); err != nil {
-		return err
+	// Offset (25) 'NextLightCommittee'
+	if o25 = ssz.ReadOffset(buf[2687397:2687401]); o25 > size || o24 > o25 {
+		return ssz.ErrOffset
 	}
 
 	// Offset (26) 'CustodyChunkChallengeRecords'
-	if o26 = ssz.ReadOffset(buf[2916769:2916773]); o26 > size || o23 > o26 {
+	if o26 = ssz.ReadOffset(buf[2687401:2687405]); o26 > size || o25 > o26 {
 		return ssz.ErrOffset
 	}
 
 	// Field (27) 'CustodyChunkChallengeIndex'
-	b.CustodyChunkChallengeIndex = ssz.UnmarshallUint64(buf[2916773:2916781])
+	b.CustodyChunkChallengeIndex = ssz.UnmarshallUint64(buf[2687405:2687413])
 
 	// Field (7) 'HistoricalRoots'
 	{
@@ -622,7 +624,7 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 
 	// Field (23) 'OnlineCountdown'
 	{
-		buf = tail[o23:o26]
+		buf = tail[o23:o24]
 		num, err := ssz.DivideInt2(len(buf), 8, 1099511627776)
 		if err != nil {
 			return err
@@ -630,6 +632,28 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 		b.OnlineCountdown = ssz.ExtendUint64(b.OnlineCountdown, num)
 		for ii := 0; ii < num; ii++ {
 			b.OnlineCountdown[ii] = ssz.UnmarshallUint64(buf[ii*8 : (ii+1)*8])
+		}
+	}
+
+	// Field (24) 'CurrentLightCommittee'
+	{
+		buf = tail[o24:o25]
+		if b.CurrentLightCommittee == nil {
+			b.CurrentLightCommittee = new(v1alpha1.CompactCommittee)
+		}
+		if err = b.CurrentLightCommittee.UnmarshalSSZ(buf); err != nil {
+			return err
+		}
+	}
+
+	// Field (25) 'NextLightCommittee'
+	{
+		buf = tail[o25:o26]
+		if b.NextLightCommittee == nil {
+			b.NextLightCommittee = new(v1alpha1.CompactCommittee)
+		}
+		if err = b.NextLightCommittee.UnmarshalSSZ(buf); err != nil {
+			return err
 		}
 	}
 
@@ -655,7 +679,7 @@ func (b *BeaconState) UnmarshalSSZ(buf []byte) error {
 
 // SizeSSZ returns the ssz encoded size in bytes for the BeaconState object
 func (b *BeaconState) SizeSSZ() (size int) {
-	size = 2916781
+	size = 2687413
 
 	// Field (7) 'HistoricalRoots'
 	size += len(b.HistoricalRoots) * 32
@@ -686,6 +710,18 @@ func (b *BeaconState) SizeSSZ() (size int) {
 
 	// Field (23) 'OnlineCountdown'
 	size += len(b.OnlineCountdown) * 8
+
+	// Field (24) 'CurrentLightCommittee'
+	if b.CurrentLightCommittee == nil {
+		b.CurrentLightCommittee = new(v1alpha1.CompactCommittee)
+	}
+	size += b.CurrentLightCommittee.SizeSSZ()
+
+	// Field (25) 'NextLightCommittee'
+	if b.NextLightCommittee == nil {
+		b.NextLightCommittee = new(v1alpha1.CompactCommittee)
+	}
+	size += b.NextLightCommittee.SizeSSZ()
 
 	// Field (26) 'CustodyChunkChallengeRecords'
 	size += len(b.CustodyChunkChallengeRecords) * 72
@@ -1781,111 +1817,6 @@ func (b *BeaconBlocksByRangeRequest) HashTreeRootWith(hh *ssz.Hasher) (err error
 
 	// Field (2) 'Step'
 	hh.PutUint64(b.Step)
-
-	hh.Merkleize(indx)
-	return
-}
-
-// MarshalSSZ ssz marshals the BeaconBlocksByRootRequest object
-func (b *BeaconBlocksByRootRequest) MarshalSSZ() ([]byte, error) {
-	return ssz.MarshalSSZ(b)
-}
-
-// MarshalSSZTo ssz marshals the BeaconBlocksByRootRequest object to a target array
-func (b *BeaconBlocksByRootRequest) MarshalSSZTo(buf []byte) (dst []byte, err error) {
-	dst = buf
-	offset := int(4)
-
-	// Offset (0) 'BlockRoots'
-	dst = ssz.WriteOffset(dst, offset)
-	offset += len(b.BlockRoots) * 32
-
-	// Field (0) 'BlockRoots'
-	if len(b.BlockRoots) > 1024 {
-		err = ssz.ErrListTooBig
-		return
-	}
-	for ii := 0; ii < len(b.BlockRoots); ii++ {
-		if len(b.BlockRoots[ii]) != 32 {
-			err = ssz.ErrBytesLength
-			return
-		}
-		dst = append(dst, b.BlockRoots[ii]...)
-	}
-
-	return
-}
-
-// UnmarshalSSZ ssz unmarshals the BeaconBlocksByRootRequest object
-func (b *BeaconBlocksByRootRequest) UnmarshalSSZ(buf []byte) error {
-	var err error
-	size := uint64(len(buf))
-	if size < 4 {
-		return ssz.ErrSize
-	}
-
-	tail := buf
-	var o0 uint64
-
-	// Offset (0) 'BlockRoots'
-	if o0 = ssz.ReadOffset(buf[0:4]); o0 > size {
-		return ssz.ErrOffset
-	}
-
-	// Field (0) 'BlockRoots'
-	{
-		buf = tail[o0:]
-		num, err := ssz.DivideInt2(len(buf), 32, 1024)
-		if err != nil {
-			return err
-		}
-		b.BlockRoots = make([][]byte, num)
-		for ii := 0; ii < num; ii++ {
-			if cap(b.BlockRoots[ii]) == 0 {
-				b.BlockRoots[ii] = make([]byte, 0, len(buf[ii*32:(ii+1)*32]))
-			}
-			b.BlockRoots[ii] = append(b.BlockRoots[ii], buf[ii*32:(ii+1)*32]...)
-		}
-	}
-	return err
-}
-
-// SizeSSZ returns the ssz encoded size in bytes for the BeaconBlocksByRootRequest object
-func (b *BeaconBlocksByRootRequest) SizeSSZ() (size int) {
-	size = 4
-
-	// Field (0) 'BlockRoots'
-	size += len(b.BlockRoots) * 32
-
-	return
-}
-
-// HashTreeRoot ssz hashes the BeaconBlocksByRootRequest object
-func (b *BeaconBlocksByRootRequest) HashTreeRoot() ([32]byte, error) {
-	return ssz.HashWithDefaultHasher(b)
-}
-
-// HashTreeRootWith ssz hashes the BeaconBlocksByRootRequest object with a hasher
-func (b *BeaconBlocksByRootRequest) HashTreeRootWith(hh *ssz.Hasher) (err error) {
-	indx := hh.Index()
-
-	// Field (0) 'BlockRoots'
-	{
-		if len(b.BlockRoots) > 1024 {
-			err = ssz.ErrListTooBig
-			return
-		}
-		subIndx := hh.Index()
-		for _, i := range b.BlockRoots {
-			if len(i) != 32 {
-				err = ssz.ErrBytesLength
-				return
-			}
-			hh.Append(i)
-		}
-		numItems := uint64(len(b.BlockRoots))
-		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(1024, numItems, 32))
-	}
 
 	hh.Merkleize(indx)
 	return

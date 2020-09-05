@@ -52,7 +52,6 @@ type Flags struct {
 	CheckHeadState                             bool // CheckHeadState checks the current headstate before retrieving the desired state from the db.
 	EnableNoise                                bool // EnableNoise enables the beacon node to use NOISE instead of SECIO when performing a handshake with another peer.
 	DontPruneStateStartUp                      bool // DontPruneStateStartUp disables pruning state upon beacon node start up.
-	NewStateMgmt                               bool // NewStateMgmt enables the new state mgmt service.
 	WaitForSynced                              bool // WaitForSynced uses WaitForSynced in validator startup to ensure it can communicate with the beacon node as soon as possible.
 	ReduceAttesterStateCopy                    bool // ReduceAttesterStateCopy reduces head state copies for attester rpc.
 	Phase1                                     bool // Phase1 starts beacon node in phase 1 mode.
@@ -202,11 +201,6 @@ func ConfigureBeaconChain(ctx *cli.Context) {
 	if ctx.Bool(dontPruneStateStartUp.Name) {
 		log.Warn("Not enabling state pruning upon start up")
 		cfg.DontPruneStateStartUp = true
-	}
-	cfg.NewStateMgmt = true
-	if ctx.Bool(disableNewStateMgmt.Name) {
-		log.Warn("Disabling new state management service")
-		cfg.NewStateMgmt = false
 	}
 	if ctx.Bool(disableBroadcastSlashingFlag.Name) {
 		log.Warn("Disabling slashing broadcasting to p2p network")

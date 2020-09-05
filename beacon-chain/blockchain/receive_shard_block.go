@@ -71,7 +71,10 @@ func (s *Service) ReceiveShardBlock(ctx context.Context, block *ethpb.SignedShar
 		return errors.New("shard block slot is less than finalized slot")
 	}
 
-	fSlot := helpers.StartSlot(s.finalizedCheckpt.Epoch)
+	fSlot, err := helpers.StartSlot(s.finalizedCheckpt.Epoch)
+	if err != nil {
+		return err
+	}
 	aRoot, err := s.ancestor(ctx, bpr[:], fSlot)
 	if err != nil {
 		return err

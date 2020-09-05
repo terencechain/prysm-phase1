@@ -1,8 +1,10 @@
 package helpers
 
 import (
+	"errors"
 	"fmt"
 	"math"
+	"math/bits"
 	"time"
 
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
@@ -10,20 +12,9 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/roughtime"
 )
 
-// PrevSlot returns previous slot, with an exception in slot 0 to prevent underflow.
-//
-// Spec code:
-// def compute_previous_slot(slot: Slot) -> Slot:
-//    if slot > 0:
-//        return Slot(slot - 1)
-//    else:
-//        return Slot(0)
-func PrevSlot(slot uint64) uint64 {
-	if slot > 0 {
-		return slot - 1
-	}
-	return 0
-}
+// MaxSlotBuffer specifies the max buffer given to slots from
+// incoming objects. (24 mins with mainnet spec)
+const MaxSlotBuffer = uint64(1 << 7)
 
 // SlotToEpoch returns the epoch number of the input slot.
 //
@@ -83,9 +74,13 @@ func NextEpoch(state *stateTrie.BeaconState) uint64 {
 //    """
 //    Return the start slot of ``epoch``.
 //    """
-//    return Slot(epoch * SLOTS_PER_EPOCH
-func StartSlot(epoch uint64) uint64 {
-	return epoch * params.BeaconConfig().SlotsPerEpoch
+//    return Slot(epoch * SLOTS_PER_EPOCH)
+func StartSlot(epoch uint64) (uint64, error) {
+	overflows, slot := bits.Mul64(epoch, params.BeaconConfig().SlotsPerEpoch)
+	if overflows > 0 {
+		return slot, errors.New("start slot calculation overflows")
+	}
+	return slot, nil
 }
 
 // IsEpochStart returns true if the given slot number is an epoch starting slot
@@ -102,7 +97,7 @@ func IsEpochEnd(slot uint64) bool {
 
 // SlotsSinceEpochStarts returns number of slots since the start of the epoch.
 func SlotsSinceEpochStarts(slot uint64) uint64 {
-	return slot - StartSlot(SlotToEpoch(slot))
+	return slot % params.BeaconConfig().SlotsPerEpoch
 }
 
 // VerifySlotTime validates the input slot is not from the future.
@@ -111,6 +106,14 @@ func VerifySlotTime(genesisTime uint64, slot uint64, timeTolerance time.Duration
 	if err != nil {
 		return err
 	}
+
+	maxPossibleSlot := CurrentSlot(genesisTime) + MaxSlotBuffer
+	// Defensive check to ensure that we only process slots up to a hard limit
+	// from our local clock.
+	if slot > maxPossibleSlot {
+		return fmt.Errorf("slot %d > %d which exceeds max allowed value relative to the local clock", slot, maxPossibleSlot)
+	}
+
 	currentTime := roughtime.Now()
 	diff := slotTime.Sub(currentTime)
 
@@ -122,7 +125,7 @@ func VerifySlotTime(genesisTime uint64, slot uint64, timeTolerance time.Duration
 
 // SlotToTime takes the given slot and genesis time to determine the start time of the slot.
 func SlotToTime(genesisTimeSec uint64, slot uint64) (time.Time, error) {
-	if slot >= math.MaxInt64 {
+	if slot >= math.MaxInt64/params.BeaconConfig().SecondsPerSlot {
 		return time.Unix(0, 0), fmt.Errorf("slot (%d) is in the far distant future", slot)
 	}
 	timeSinceGenesis := slot * params.BeaconConfig().SecondsPerSlot
@@ -132,6 +135,17 @@ func SlotToTime(genesisTimeSec uint64, slot uint64) (time.Time, error) {
 // SlotsSince computes the number of time slots that have occurred since the given timestamp.
 func SlotsSince(time time.Time) uint64 {
 	return uint64(roughtime.Since(time).Seconds()) / params.BeaconConfig().SecondsPerSlot
+}
+
+// CurrentSlot returns the current slot as determined by the local clock and
+// provided genesis time.
+func CurrentSlot(genesisTimeSec uint64) uint64 {
+	now := roughtime.Now().Unix()
+	genesis := int64(genesisTimeSec)
+	if now < genesis {
+		return 0
+	}
+	return uint64(now-genesis) / params.BeaconConfig().SecondsPerSlot
 }
 
 // GenesisTime prioritizes to return the genesis time in config unless the config
@@ -150,6 +164,21 @@ func RoundUpToNearestEpoch(slot uint64) uint64 {
 		slot += params.BeaconConfig().SlotsPerEpoch
 	}
 	return slot
+}
+
+// PrevSlot returns previous slot, with an exception in slot 0 to prevent underflow.
+//
+// Spec code:
+// def compute_previous_slot(slot: Slot) -> Slot:
+//    if slot > 0:
+//        return Slot(slot - 1)
+//    else:
+//        return Slot(0)
+func PrevSlot(slot uint64) uint64 {
+	if slot > 0 {
+		return slot - 1
+	}
+	return 0
 }
 
 // ComputeSourceEpoch returns epoch at the start of the previous period.

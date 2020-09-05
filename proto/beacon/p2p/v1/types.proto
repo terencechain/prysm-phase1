@@ -105,13 +105,6 @@ message ForkData {
   bytes genesis_validators_root = 2 [(gogoproto.moretags) = "ssz-size:\"32\""];
 }
 
-message SignedAggregateAndProof {
-  // The aggregated and proof from the aggregator.
-  ethereum.eth.v1alpha1.AggregateAttestationAndProof message = 1;
-  // The signature of the aggregator signing the aggregated and proof object.
-  bytes signature = 2 [(gogoproto.moretags) = "ssz-size:\"96\""];
-}
-
 // Custody objects.
 message CustodyChunkChallenge{
   uint64 responder_index = 1;

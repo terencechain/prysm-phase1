@@ -346,8 +346,6 @@ func TestValidateAggregateAndProof_ExistedInPool(t *testing.T) {
 }
 
 func TestValidateAggregateAndProof_CanValidate(t *testing.T) {
-	resetCfg := featureconfig.InitWithReset(&featureconfig.Flags{NewStateMgmt: true})
-	defer resetCfg()
 
 	db, _ := dbtest.SetupDB(t)
 	p := p2ptest.NewTestP2P(t)
@@ -641,8 +639,6 @@ func TestVerifyIndexInCommittee_SeenAggregatorEpoch(t *testing.T) {
 }
 
 func TestValidateAggregateAndProof_BadBlock(t *testing.T) {
-	resetCfg := featureconfig.InitWithReset(&featureconfig.Flags{NewStateMgmt: true})
-	defer resetCfg()
 
 	db, _ := dbtest.SetupDB(t)
 	p := p2ptest.NewTestP2P(t)

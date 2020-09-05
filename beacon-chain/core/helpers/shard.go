@@ -241,7 +241,10 @@ func ActiveShardCount() uint64 {
 //        )
 func StartShard(beaconState *s.BeaconState, slot uint64) (uint64, error) {
 	currentEpoch := CurrentEpoch(beaconState)
-	currentEpochStartSlot := StartSlot(currentEpoch)
+	currentEpochStartSlot, err := StartSlot(currentEpoch)
+	if err != nil {
+		return 0, err
+	}
 	activeShardCount := ActiveShardCount()
 	if slot == currentEpochStartSlot {
 		return beaconState.CurrentEpochStartShard(), nil

@@ -113,10 +113,6 @@ var (
 		Name:  "dont-prune-state-start-up",
 		Usage: "Don't prune historical states upon start up",
 	}
-	disableNewStateMgmt = &cli.BoolFlag{
-		Name:  "disable-new-state-mgmt",
-		Usage: "This disables the usage of state mgmt service across Prysm",
-	}
 	waitForSyncedFlag = &cli.BoolFlag{
 		Name:  "wait-for-synced",
 		Usage: "Uses WaitForSynced for validator startup, to ensure a validator is able to communicate with the beacon node as quick as possible",
@@ -544,6 +540,11 @@ var (
 		Usage:  deprecatedUsage,
 		Hidden: true,
 	}
+	deprecatedNewStateMgmtFlag = &cli.BoolFlag{
+		Name:   "disable-new-state-mgmt",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
 )
 
 var deprecatedFlags = []cli.Flag{
@@ -616,6 +617,7 @@ var deprecatedFlags = []cli.Flag{
 	deprecatedCustomGenesisDelay,
 	deprecatedNewBeaconStateLocks,
 	deprectedForceMaxCoverAttestationAggregation,
+	deprecatedNewStateMgmtFlag,
 }
 
 // ValidatorFlags contains a list of all the feature flags that apply to the validator client.
@@ -660,7 +662,6 @@ var BeaconChainFlags = append(deprecatedFlags, []cli.Flag{
 	dontPruneStateStartUp,
 	disableBroadcastSlashingFlag,
 	waitForSyncedFlag,
-	disableNewStateMgmt,
 	disableReduceAttesterStateCopy,
 	disableGRPCConnectionLogging,
 	phase1,
