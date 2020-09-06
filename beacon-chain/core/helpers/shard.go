@@ -55,14 +55,15 @@ func ShardFromCommitteeIndex(beaconState *s.BeaconState, slot uint64, committeeI
 }
 
 // UpdatedGasPrice returns the updated gas price based on the EIP 1599 formulas.
-// Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
-// def compute_updated_gasprice(prev_gasprice: Gwei, length: uint8) -> Gwei:
-//    if length > TARGET_SHARD_BLOCK_SIZE:
-//        delta = (prev_gasprice * (length - TARGET_SHARD_BLOCK_SIZE)
+//
+// Spec code:
+// def compute_updated_gasprice(prev_gasprice: Gwei, shard_block_length: uint64) -> Gwei:
+//    if shard_block_length > TARGET_SHARD_BLOCK_SIZE:
+//        delta = (prev_gasprice * (shard_block_length - TARGET_SHARD_BLOCK_SIZE)
 //                 // TARGET_SHARD_BLOCK_SIZE // GASPRICE_ADJUSTMENT_COEFFICIENT)
 //        return min(prev_gasprice + delta, MAX_GASPRICE)
 //    else:
-//        delta = (prev_gasprice * (TARGET_SHARD_BLOCK_SIZE - length)
+//        delta = (prev_gasprice * (TARGET_SHARD_BLOCK_SIZE - shard_block_length)
 //                 // TARGET_SHARD_BLOCK_SIZE // GASPRICE_ADJUSTMENT_COEFFICIENT)
 //        return max(prev_gasprice, MIN_GASPRICE + delta) - delta
 func UpdatedGasPrice(prevGasPrice uint64, shardBlockLength uint64) uint64 {
@@ -167,24 +168,6 @@ func ShardFromAttestation(beaconState *s.BeaconState, attestation *ethpb.Attesta
 func ShardOffSetSlots(beaconState *s.BeaconState, shard uint64) []uint64 {
 	currentShardSlot := beaconState.ShardStateAtIndex(shard).Slot
 	return ComputeOffsetSlots(currentShardSlot, beaconState.Slot())
-}
-
-// ComputeOffsetSlots returns the offset slot given the start slot and the end slot.
-// Spec code (https://github.com/ethereum/eth2.0-specs/blob/7a770186b5ba576bf14ce496dc2b0381d169840e/specs/phase1/beacon-chain.md):
-// def compute_offset_slots(start_slot: Slot, end_slot: Slot) -> Sequence[Slot]:
-//    return [Slot(start_slot + x) for x in SHARD_BLOCK_OFFSETS if start_slot + x < end_slot]
-func ComputeOffsetSlots(startSlot uint64, endSlot uint64) []uint64 {
-	shardBlockOffsets := params.BeaconConfig().ShardBlockOffsets
-	filteredShardBlockOffsets := make([]uint64, 0, len(shardBlockOffsets))
-
-	for _, offset := range shardBlockOffsets {
-		s := startSlot + offset
-		if s < endSlot {
-			filteredShardBlockOffsets = append(filteredShardBlockOffsets, s)
-		}
-	}
-
-	return filteredShardBlockOffsets
 }
 
 // IsEmptyShardTransition returns true if the shard transition is empty.

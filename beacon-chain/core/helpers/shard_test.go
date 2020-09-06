@@ -213,52 +213,6 @@ func TestShardOffSetSlots(t *testing.T) {
 	}
 }
 
-func TestComputeOffsetSlot(t *testing.T) {
-	tests := []struct {
-		startSlot   uint64
-		endSlot     uint64
-		offsetSlots []uint64
-	}{
-		{
-			startSlot:   0,
-			endSlot:     0,
-			offsetSlots: []uint64{},
-		},
-		{
-			startSlot:   0,
-			endSlot:     1,
-			offsetSlots: []uint64{},
-		},
-		{
-			startSlot:   0,
-			endSlot:     2,
-			offsetSlots: []uint64{1},
-		},
-		{
-			startSlot:   0,
-			endSlot:     100,
-			offsetSlots: []uint64{1, 2, 3, 5, 8, 13, 21, 34, 55, 89},
-		},
-		{
-			startSlot:   50,
-			endSlot:     100,
-			offsetSlots: []uint64{51, 52, 53, 55, 58, 63, 71, 84},
-		},
-		{
-			startSlot:   90,
-			endSlot:     100,
-			offsetSlots: []uint64{91, 92, 93, 95, 98},
-		},
-	}
-
-	for _, tt := range tests {
-		offsetSlots := ComputeOffsetSlots(tt.startSlot, tt.endSlot)
-		if !reflect.DeepEqual(offsetSlots, tt.offsetSlots) {
-			t.Errorf("offset slot was not an expected value. Wanted: %v, got: %v", tt.offsetSlots, offsetSlots)
-		}
-	}
-}
-
 func TestIsEmptyShardTransition(t *testing.T) {
 	tests := []struct {
 		transition *ethpb.ShardTransition

@@ -187,6 +187,45 @@ func PrevSlot(slot uint64) uint64 {
 	return 0
 }
 
+// ComputeOffsetSlots returns the offset slot given the start slot and the end slot.
+//
+// Spec code:
+// def compute_offset_slots(start_slot: Slot, end_slot: Slot) -> Sequence[Slot]:
+//    """
+//    Return the offset slots for shard blocks up to a particular `end_slot`,
+//    assuming the most recent shard state was at slot `start_slot`
+//    """
+//    return [slot for slot in compute_admissible_slots(start_slot) if slot < end_slot]
+func ComputeOffsetSlots(startSlot uint64, endSlot uint64) []uint64 {
+	slots := make([]uint64, 0, len(params.BeaconConfig().ShardBlockOffsets))
+	aSlots := ComputeAdmissibleSlots(startSlot)
+	for _, s := range aSlots {
+		if s >= endSlot {
+			break
+		}
+		slots = append(slots, s)
+	}
+
+	return slots
+}
+
+// ComputeAdmissibleSlots returns the admissible slots.
+//
+// Spec code:
+// def compute_admissible_slots(start_slot: Slot) -> Sequence[Slot]:
+//    """
+//    Return the admissible slots for shard blocks, assuming the most recent shard state
+//    was at slot `start_slot`
+//    """
+//    return [Slot(start_slot + x) for x in SHARD_BLOCK_OFFSETS]
+func ComputeAdmissibleSlots(slot uint64) []uint64 {
+	slots := make([]uint64, len(params.BeaconConfig().ShardBlockOffsets))
+	for i := 0; i < len(slots); i++ {
+		slots[i] =  slot + params.BeaconConfig().ShardBlockOffsets[i]
+	}
+	return slots
+}
+
 // ComputeSourceEpoch returns epoch at the start of the previous period.
 // This is used to facilitate computing shard proposer committees and light client committees.
 //

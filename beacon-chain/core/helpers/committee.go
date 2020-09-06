@@ -26,7 +26,6 @@ var committeeCache = cache.NewCommitteesCache()
 // cheaper computation, instead of retrieving head state, one can retrieve the validator
 // count.
 //
-//
 // Spec pseudocode definition:
 //   def get_committee_count_per_slot(state: BeaconState, epoch: Epoch) -> uint64:
 //    """

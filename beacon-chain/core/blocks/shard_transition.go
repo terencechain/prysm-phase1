@@ -575,6 +575,11 @@ func isWinningAttestation(pendingAttestation *pb.PendingAttestation, slot uint64
 	return sameSlot && sameCommittee && sameRoot
 }
 
+// isCandidateForAttestationData returns true if the attestation data matches shard transition candidate.
+func isCandidateForAttestationData(c *ethpb.ShardTransition, data *ethpb.AttestationData) bool {
+	return true
+}
+
 // This validates shard block contents.
 //
 // Spec code:
