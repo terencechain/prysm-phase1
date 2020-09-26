@@ -126,7 +126,7 @@ func CopyProposerSlashings(slashings []*ethpb.ProposerSlashing) []*ethpb.Propose
 	for i, att := range slashings {
 		newSlashings[i] = CopyProposerSlashing(att)
 	}
-	return newSlashings[:]
+	return newSlashings
 }
 
 // CopyProposerSlashing copies the provided ProposerSlashing.
@@ -162,9 +162,9 @@ func CopyBeaconBlockHeader(header *ethpb.BeaconBlockHeader) *ethpb.BeaconBlockHe
 	return &ethpb.BeaconBlockHeader{
 		Slot:          header.Slot,
 		ProposerIndex: header.ProposerIndex,
-		ParentRoot:    parentRoot[:],
-		StateRoot:     stateRoot[:],
-		BodyRoot:      bodyRoot[:],
+		ParentRoot:    parentRoot,
+		StateRoot:     stateRoot,
+		BodyRoot:      bodyRoot,
 	}
 }
 
@@ -190,10 +190,10 @@ func CopyIndexedAttestation(indexedAtt *ethpb.IndexedAttestation) *ethpb.Indexed
 		return nil
 	} else if indexedAtt.AttestingIndices != nil {
 		indices = make([]uint64, len(indexedAtt.AttestingIndices))
-		copy(indices[:], indexedAtt.AttestingIndices)
+		copy(indices, indexedAtt.AttestingIndices)
 	}
 	return &ethpb.IndexedAttestation{
-		AttestingIndices: indices[:],
+		AttestingIndices: indices,
 		Data:             CopyAttestationData(indexedAtt.Data),
 		Signature:        bytesutil.SafeCopyBytes(indexedAtt.Signature),
 	}
@@ -208,7 +208,7 @@ func CopyAttestations(attestations []*ethpb.Attestation) []*ethpb.Attestation {
 	for i, att := range attestations {
 		newAttestations[i] = CopyAttestation(att)
 	}
-	return newAttestations[:]
+	return newAttestations
 }
 
 // CopyDeposits copies the provided deposit array.
@@ -220,7 +220,7 @@ func CopyDeposits(deposits []*ethpb.Deposit) []*ethpb.Deposit {
 	for i, dep := range deposits {
 		newDeposits[i] = CopyDeposit(dep)
 	}
-	return newDeposits[:]
+	return newDeposits
 }
 
 // CopyDeposit copies the provided deposit.
@@ -256,7 +256,7 @@ func CopySignedVoluntaryExits(exits []*ethpb.SignedVoluntaryExit) []*ethpb.Signe
 	for i, exit := range exits {
 		newExits[i] = CopySignedVoluntaryExit(exit)
 	}
-	return newExits[:]
+	return newExits
 }
 
 // CopySignedVoluntaryExit copies the provided SignedVoluntaryExit.
@@ -280,7 +280,7 @@ func CopyValidator(val *ethpb.Validator) *ethpb.Validator {
 	withdrawalCreds := make([]byte, len(val.WithdrawalCredentials))
 	copy(withdrawalCreds, val.WithdrawalCredentials)
 	return &ethpb.Validator{
-		PublicKey:                  pubKey[:],
+		PublicKey:                  pubKey,
 		WithdrawalCredentials:      withdrawalCreds,
 		EffectiveBalance:           val.EffectiveBalance,
 		Slashed:                    val.Slashed,

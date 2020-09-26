@@ -79,7 +79,7 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 		{
 			name: "valid attestation signature",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -98,9 +98,30 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 			want:                      true,
 		},
 		{
+			name: "bad target epoch",
+			msg: &ethpb.Attestation{
+				AggregationBits: bitfield.Bitlist{0b101},
+				Data: &ethpb.AttestationData{
+					ShardHeadRoot: make([]byte, 32),
+					ShardTransitionRoot: make([]byte, 32),
+					BeaconBlockRoot: validBlockRoot[:],
+					CommitteeIndex:  0,
+					Slot:            1,
+					Target: &ethpb.Checkpoint{
+						Epoch: 10,
+						Root:  validBlockRoot[:],
+					},
+					Source: &ethpb.Checkpoint{Root: make([]byte, 32)},
+				},
+			},
+			topic:                     fmt.Sprintf("/eth2/%x/beacon_attestation_1", digest),
+			validAttestationSignature: true,
+			want:                      false,
+		},
+		{
 			name: "already seen",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -118,7 +139,7 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 		{
 			name: "invalid beacon block",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -133,11 +154,28 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 			validAttestationSignature: true,
 			want:                      false,
 		},
-
+		{
+			name: "committee index exceeds committee length",
+			msg: &ethpb.Attestation{
+				AggregationBits: bitfield.Bitlist{0b101},
+				Data: &ethpb.AttestationData{
+					ShardHeadRoot: make([]byte, 32),
+					ShardTransitionRoot: make([]byte, 32),
+					BeaconBlockRoot: validBlockRoot[:],
+					CommitteeIndex:  4,
+					Slot:            1,
+					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+				},
+			},
+			topic:                     fmt.Sprintf("/eth2/%x/beacon_attestation_2", digest),
+			validAttestationSignature: true,
+			want:                      false,
+		},
 		{
 			name: "wrong committee index",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -173,7 +211,7 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 		{
 			name: "missing block",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -191,7 +229,7 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 		{
 			name: "invalid attestation",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -210,6 +248,7 @@ func TestService_validateCommitteeIndexBeaconAttestation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			helpers.ClearCache()
 			chain.ValidAttestation = tt.validAttestationSignature
 			if tt.validAttestationSignature {
 				com, err := helpers.BeaconCommitteeFromState(savedState, tt.msg.Data.Slot, tt.msg.Data.CommitteeIndex)
@@ -301,7 +340,7 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 		{
 			name: "valid attestation signature",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -320,9 +359,30 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 			want:                      true,
 		},
 		{
+			name: "bad target epoch",
+			msg: &ethpb.Attestation{
+				AggregationBits: bitfield.Bitlist{0b101},
+				Data: &ethpb.AttestationData{
+					ShardHeadRoot: make([]byte, 32),
+					ShardTransitionRoot: make([]byte, 32),
+					BeaconBlockRoot: validBlockRoot[:],
+					CommitteeIndex:  0,
+					Slot:            1,
+					Target: &ethpb.Checkpoint{
+						Epoch: 10,
+						Root:  validBlockRoot[:],
+					},
+					Source: &ethpb.Checkpoint{Root: make([]byte, 32)},
+				},
+			},
+			topic:                     fmt.Sprintf("/eth2/%x/beacon_attestation_1", digest),
+			validAttestationSignature: true,
+			want:                      false,
+		},
+		{
 			name: "already seen",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -340,7 +400,7 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 		{
 			name: "invalid beacon block",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -355,11 +415,28 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 			validAttestationSignature: true,
 			want:                      false,
 		},
-
+		{
+			name: "committee index exceeds committee length",
+			msg: &ethpb.Attestation{
+				AggregationBits: bitfield.Bitlist{0b101},
+				Data: &ethpb.AttestationData{
+					ShardHeadRoot: make([]byte, 32),
+					ShardTransitionRoot: make([]byte, 32),
+					BeaconBlockRoot: validBlockRoot[:],
+					CommitteeIndex:  4,
+					Slot:            1,
+					Target:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+					Source:          &ethpb.Checkpoint{Root: make([]byte, 32)},
+				},
+			},
+			topic:                     fmt.Sprintf("/eth2/%x/beacon_attestation_2", digest),
+			validAttestationSignature: true,
+			want:                      false,
+		},
 		{
 			name: "wrong committee index",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -377,7 +454,7 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 		{
 			name: "already aggregated",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1011},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -395,7 +472,7 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 		{
 			name: "missing block",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),
@@ -413,7 +490,7 @@ func TestService_validateCommitteeIndexBeaconAttestationUseCheckptCache(t *testi
 		{
 			name: "invalid attestation",
 			msg: &ethpb.Attestation{
-				AggregationBits: bitfield.Bitlist{0b1010},
+				AggregationBits: bitfield.Bitlist{0b101},
 				Data: &ethpb.AttestationData{
 					ShardTransitionRoot: make([]byte, 32),
 					ShardHeadRoot:       make([]byte, 32),

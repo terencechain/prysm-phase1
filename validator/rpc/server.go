@@ -13,7 +13,7 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/event"
 	"github.com/prysmaticlabs/prysm/shared/rand"
 	"github.com/prysmaticlabs/prysm/shared/traceutil"
-	accountsv2 "github.com/prysmaticlabs/prysm/validator/accounts/v2"
+	v2 "github.com/prysmaticlabs/prysm/validator/accounts/v2/wallet"
 	"github.com/prysmaticlabs/prysm/validator/client"
 	"github.com/prysmaticlabs/prysm/validator/db"
 	v2keymanager "github.com/prysmaticlabs/prysm/validator/keymanager/v2"
@@ -39,6 +39,7 @@ type Config struct {
 	ValDB                 db.Database
 	ValidatorService      *client.ValidatorService
 	SyncChecker           client.SyncChecker
+	GenesisFetcher        client.GenesisFetcher
 	WalletInitializedFeed *event.Feed
 	NodeGatewayEndpoint   string
 }
@@ -59,7 +60,8 @@ type Server struct {
 	jwtKey                []byte
 	validatorService      *client.ValidatorService
 	syncChecker           client.SyncChecker
-	wallet                *accountsv2.Wallet
+	genesisFetcher        client.GenesisFetcher
+	wallet                *v2.Wallet
 	walletInitializedFeed *event.Feed
 	walletInitialized     bool
 	nodeGatewayEndpoint   string
@@ -78,6 +80,7 @@ func NewServer(ctx context.Context, cfg *Config) *Server {
 		valDB:                 cfg.ValDB,
 		validatorService:      cfg.ValidatorService,
 		syncChecker:           cfg.SyncChecker,
+		genesisFetcher:        cfg.GenesisFetcher,
 		walletInitializedFeed: cfg.WalletInitializedFeed,
 		walletInitialized:     false,
 		nodeGatewayEndpoint:   cfg.NodeGatewayEndpoint,

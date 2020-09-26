@@ -501,9 +501,9 @@ func shardBlockProposersAndHeaders(
 				return nil, nil, err
 			}
 			spr := make([]byte, 32)
-			copy(spr[:], shardParentRoot[:])
+			copy(spr, shardParentRoot[:])
 			shardBlockHeader := &ethpb.ShardBlockHeader{
-				ShardParentRoot:  spr[:], // TODO(0): We should verify here
+				ShardParentRoot:  spr, // TODO(0): We should verify here
 				BeaconParentRoot: beaconParentRoot,
 				Shard:            shard,
 				Slot:             slot,

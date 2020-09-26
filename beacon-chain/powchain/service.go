@@ -32,7 +32,7 @@ import (
 	protodb "github.com/prysmaticlabs/prysm/proto/beacon/db"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
-	"github.com/prysmaticlabs/prysm/shared/roughtime"
+	"github.com/prysmaticlabs/prysm/shared/timeutils"
 	"github.com/prysmaticlabs/prysm/shared/trieutil"
 	"github.com/sirupsen/logrus"
 )
@@ -59,6 +59,9 @@ var backOffPeriod = 6 * time.Second
 
 // Amount of times before we log the status of the eth1 dial attempt.
 var logThreshold = 20
+
+// period to log chainstart related information
+var logPeriod = 1 * time.Minute
 
 // ChainStartFetcher retrieves information pertaining to the chain start event
 // of the beacon chain for usage across various services.
@@ -135,7 +138,6 @@ type Service struct {
 	headerCache             *headerCache // cache to store block hash/block height.
 	latestEth1Data          *protodb.LatestETH1Data
 	depositContractCaller   *contracts.DepositContractCaller
-	depositRoot             []byte
 	depositTrie             *trieutil.SparseMerkleTrie
 	chainStartData          *protodb.ChainStartData
 	beaconDB                db.HeadAccessDatabase // Circular dep if using HeadFetcher.
@@ -327,7 +329,7 @@ func (s *Service) AreAllDepositsProcessed() (bool, error) {
 		return false, errors.Wrap(err, "could not get deposit count")
 	}
 	count := bytesutil.FromBytes8(countByte)
-	deposits := s.depositCache.AllDeposits(context.TODO(), nil)
+	deposits := s.depositCache.AllDeposits(s.ctx, nil)
 	if count != uint64(len(deposits)) {
 		return false, nil
 	}
@@ -369,6 +371,10 @@ func (s *Service) connectToPowChain() error {
 	depositContractCaller, err := contracts.NewDepositContractCaller(s.depositContractAddress, httpClient)
 	if err != nil {
 		return errors.Wrap(err, "could not create deposit contract caller")
+	}
+
+	if httpClient == nil || rpcClient == nil || depositContractCaller == nil {
+		return errors.New("eth1 client is nil")
 	}
 
 	s.initializeConnection(httpClient, rpcClient, depositContractCaller)
@@ -442,6 +448,7 @@ func (s *Service) waitForConnection() {
 		logCounter++
 	}
 	ticker := time.NewTicker(backOffPeriod)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
@@ -460,12 +467,10 @@ func (s *Service) waitForConnection() {
 				log.WithFields(logrus.Fields{
 					"endpoint": s.httpEndpoint,
 				}).Info("Connected to eth1 proof-of-work chain")
-				ticker.Stop()
 				return
 			}
 			log.Debug("Eth1 node is currently syncing")
 		case <-s.ctx.Done():
-			ticker.Stop()
 			log.Debug("Received cancelled context,closing existing powchain service")
 			return
 		}
@@ -492,17 +497,6 @@ func (s *Service) retryETH1Node(err error) {
 	s.waitForConnection()
 	// Reset run error in the event of a successful connection.
 	s.runError = nil
-}
-
-// initDataFromContract calls the deposit contract and finds the deposit count
-// and deposit root.
-func (s *Service) initDataFromContract() error {
-	root, err := s.depositContractCaller.GetDepositRoot(&bind.CallOpts{})
-	if err != nil {
-		return errors.Wrap(err, "could not retrieve deposit root")
-	}
-	s.depositRoot = root[:]
-	return nil
 }
 
 func (s *Service) initDepositCaches(ctx context.Context, ctrs []*protodb.DepositContainer) error {
@@ -607,16 +601,17 @@ func safelyHandlePanic() {
 
 func (s *Service) handleETH1FollowDistance() {
 	defer safelyHandlePanic()
+	ctx := s.ctx
 
 	// use a 5 minutes timeout for block time, because the max mining time is 278 sec (block 7208027)
 	// (analyzed the time of the block from 2018-09-01 to 2019-02-13)
-	fiveMinutesTimeout := roughtime.Now().Add(-5 * time.Minute)
+	fiveMinutesTimeout := timeutils.Now().Add(-5 * time.Minute)
 	// check that web3 client is syncing
 	if time.Unix(int64(s.latestEth1Data.BlockTime), 0).Before(fiveMinutesTimeout) {
 		log.Warn("eth1 client is not syncing")
 	}
 	if !s.chainStartData.Chainstarted {
-		if err := s.checkBlockNumberForChainStart(context.Background(), big.NewInt(int64(s.latestEth1Data.LastRequestedBlock))); err != nil {
+		if err := s.checkBlockNumberForChainStart(ctx, big.NewInt(int64(s.latestEth1Data.LastRequestedBlock))); err != nil {
 			s.runError = err
 			log.Error(err)
 			return
@@ -628,7 +623,7 @@ func (s *Service) handleETH1FollowDistance() {
 	if s.latestEth1Data.LastRequestedBlock == s.latestEth1Data.BlockHeight {
 		return
 	}
-	if err := s.requestBatchedLogs(context.Background()); err != nil {
+	if err := s.requestBatchedLogs(ctx); err != nil {
 		s.runError = err
 		log.Error(err)
 		return
@@ -647,14 +642,9 @@ func (s *Service) initPOWService() {
 		case <-s.ctx.Done():
 			return
 		default:
-			err := s.initDataFromContract()
-			if err != nil {
-				log.Errorf("Unable to retrieve data from deposit contract %v", err)
-				s.retryETH1Node(err)
-				continue
-			}
+			ctx := s.ctx
 
-			header, err := s.eth1DataFetcher.HeaderByNumber(context.Background(), nil)
+			header, err := s.eth1DataFetcher.HeaderByNumber(ctx, nil)
 			if err != nil {
 				log.Errorf("Unable to retrieve latest ETH1.0 chain header: %v", err)
 				s.retryETH1Node(err)
@@ -665,7 +655,7 @@ func (s *Service) initPOWService() {
 			s.latestEth1Data.BlockHash = header.Hash().Bytes()
 			s.latestEth1Data.BlockTime = header.Time
 
-			if err := s.processPastLogs(context.Background()); err != nil {
+			if err := s.processPastLogs(ctx); err != nil {
 				log.Errorf("Unable to process past logs %v", err)
 				s.retryETH1Node(err)
 				continue
@@ -681,6 +671,9 @@ func (s *Service) run(done <-chan struct{}) {
 	s.runError = nil
 
 	s.initPOWService()
+
+	chainstartTicker := time.NewTicker(logPeriod)
+	defer chainstartTicker.Stop()
 
 	for {
 		select {
@@ -699,6 +692,38 @@ func (s *Service) run(done <-chan struct{}) {
 			}
 			s.processBlockHeader(head)
 			s.handleETH1FollowDistance()
+		case <-chainstartTicker.C:
+			if s.chainStartData.Chainstarted {
+				chainstartTicker.Stop()
+				continue
+			}
+			s.logTillChainStart()
 		}
 	}
+}
+
+// logs the current thresholds required to hit chainstart every minute.
+func (s *Service) logTillChainStart() {
+	if s.chainStartData.Chainstarted {
+		return
+	}
+	_, blockTime, err := s.retrieveBlockHashAndTime(s.ctx, big.NewInt(int64(s.latestEth1Data.LastRequestedBlock)))
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	valCount, genesisTime := s.currentCountAndTime(blockTime)
+	valNeeded := uint64(0)
+	if valCount < params.BeaconConfig().MinGenesisActiveValidatorCount {
+		valNeeded = params.BeaconConfig().MinGenesisActiveValidatorCount - valCount
+	}
+	secondsLeft := uint64(0)
+	if genesisTime < params.BeaconConfig().MinGenesisTime {
+		secondsLeft = params.BeaconConfig().MinGenesisTime - genesisTime
+	}
+
+	log.WithFields(logrus.Fields{
+		"Extra validators needed":   valNeeded,
+		"Time till minimum genesis": fmt.Sprintf("%s", time.Duration(secondsLeft)*time.Second),
+	}).Infof("Currently waiting for chainstart")
 }

@@ -8,20 +8,12 @@ import (
 	eth "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	mock "github.com/prysmaticlabs/prysm/beacon-chain/blockchain/testing"
 	dbtest "github.com/prysmaticlabs/prysm/beacon-chain/db/testing"
-	"github.com/prysmaticlabs/prysm/beacon-chain/flags"
 	p2pt "github.com/prysmaticlabs/prysm/beacon-chain/p2p/testing"
-	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/sliceutil"
 	"github.com/prysmaticlabs/prysm/shared/testutil"
 	"github.com/prysmaticlabs/prysm/shared/testutil/assert"
 	"github.com/prysmaticlabs/prysm/shared/testutil/require"
 )
-
-func TestConstants(t *testing.T) {
-	if params.BeaconConfig().MaxPeersToSync*flags.Get().BlockBatchLimit > 1000 {
-		t.Fatal("rpc rejects requests over 1000 range slots")
-	}
-}
 
 func TestService_roundRobinSync(t *testing.T) {
 	tests := []struct {
@@ -298,6 +290,7 @@ func TestService_roundRobinSync(t *testing.T) {
 				},
 			} // no-op mock
 			s := &Service{
+				ctx:          context.Background(),
 				chain:        mc,
 				p2p:          p,
 				db:           beaconDB,
@@ -329,7 +322,7 @@ func TestService_processBlock(t *testing.T) {
 	err = beaconDB.SaveBlock(context.Background(), genesisBlk)
 	require.NoError(t, err)
 	st := testutil.NewBeaconState()
-	s := NewInitialSync(&Config{
+	s := NewService(context.Background(), &Config{
 		P2P: p2pt.NewTestP2P(t),
 		DB:  beaconDB,
 		Chain: &mock.ChainService{
@@ -388,7 +381,7 @@ func TestService_processBlockBatch(t *testing.T) {
 	err = beaconDB.SaveBlock(context.Background(), genesisBlk)
 	require.NoError(t, err)
 	st := testutil.NewBeaconState()
-	s := NewInitialSync(&Config{
+	s := NewService(context.Background(), &Config{
 		P2P: p2pt.NewTestP2P(t),
 		DB:  beaconDB,
 		Chain: &mock.ChainService{
@@ -527,6 +520,7 @@ func TestService_blockProviderScoring(t *testing.T) {
 		},
 	} // no-op mock
 	s := &Service{
+		ctx:          context.Background(),
 		chain:        mc,
 		p2p:          p,
 		db:           beaconDB,

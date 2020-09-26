@@ -15,6 +15,11 @@ var (
 		Name:  "onyx",
 		Usage: "This defines the flag through which we can run on the Onyx Prysm Testnet",
 	}
+	// SpadinaTestnet flag for the multiclient eth2 devnet.
+	SpadinaTestnet = &cli.BoolFlag{
+		Name:  "spadina",
+		Usage: "This defines the flag through which we can run on the Spadina Multiclient Testnet",
+	}
 	devModeFlag = &cli.BoolFlag{
 		Name:  "dev",
 		Usage: "Enable experimental features still in development. These features may not be stable.",
@@ -137,17 +142,21 @@ var (
 		Name:  "disable-new-beacon-state-locks",
 		Usage: "Disable new beacon state locking",
 	}
-	batchBlockVerify = &cli.BoolFlag{
-		Name:  "batch-block-verify",
-		Usage: "When enabled we will perform full signature verification of blocks in batches instead of singularly.",
+	disableBatchBlockVerify = &cli.BoolFlag{
+		Name:  "disable-batch-block-verify",
+		Usage: "Disable full signature verification of blocks in batches instead of singularly.",
 	}
 	initSyncVerbose = &cli.BoolFlag{
 		Name:  "init-sync-verbose",
 		Usage: "Enable logging every processed block during initial syncing.",
 	}
-	enableFinalizedDepositsCache = &cli.BoolFlag{
-		Name:  "enable-finalized-deposits-cache",
-		Usage: "Enables utilization of cached finalized deposits",
+	enableBlst = &cli.BoolFlag{
+		Name:  "blst",
+		Usage: "Enable new BLS library, blst, from Supranational",
+	}
+	disableFinalizedDepositsCache = &cli.BoolFlag{
+		Name:  "disable-finalized-deposits-cache",
+		Usage: "Disables utilization of cached finalized deposits",
 	}
 	enableEth1DataMajorityVote = &cli.BoolFlag{
 		Name:  "enable-eth1-data-majority-vote",
@@ -165,10 +174,6 @@ var (
 		Name:  "enable-peer-scorer",
 		Usage: "Enable experimental P2P peer scorer",
 	}
-	enableRoughtime = &cli.BoolFlag{
-		Name:  "enable-roughtime",
-		Usage: "Enables periodic roughtime syncs.",
-	}
 	checkPtInfoCache = &cli.BoolFlag{
 		Name:  "use-check-point-cache",
 		Usage: "Enables check point info caching",
@@ -178,8 +183,6 @@ var (
 // devModeFlags holds list of flags that are set when development mode is on.
 var devModeFlags = []cli.Flag{
 	checkPtInfoCache,
-	batchBlockVerify,
-	enableFinalizedDepositsCache,
 	enableEth1DataMajorityVote,
 	enableAttBroadcastDiscoveryAttempts,
 	enablePeerScorer,
@@ -550,6 +553,21 @@ var (
 		Usage:  deprecatedUsage,
 		Hidden: true,
 	}
+	deprecatedEnableFinalizedDepositsCache = &cli.BoolFlag{
+		Name:   "enable-finalized-deposits-cache",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
+	deprecatedBatchBlockVerify = &cli.BoolFlag{
+		Name:   "batch-block-verify",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
+	deprecatedEnableRoughtime = &cli.BoolFlag{
+		Name:   "enable-roughtime",
+		Usage:  deprecatedUsage,
+		Hidden: true,
+	}
 )
 
 var deprecatedFlags = []cli.Flag{
@@ -625,6 +643,9 @@ var deprecatedFlags = []cli.Flag{
 	deprecatedNewStateMgmtFlag,
 	deprecatedSlasherProviderFlag,
 	deprecatedEnableSlasherFlag,
+	deprecatedEnableFinalizedDepositsCache,
+	deprecatedBatchBlockVerify,
+	deprecatedEnableRoughtime,
 }
 
 // ValidatorFlags contains a list of all the feature flags that apply to the validator client.
@@ -635,7 +656,9 @@ var ValidatorFlags = append(deprecatedFlags, []cli.Flag{
 	waitForSyncedFlag,
 	AltonaTestnet,
 	OnyxTestnet,
+	SpadinaTestnet,
 	disableAccountsV2,
+	enableBlst,
 }...)
 
 // SlasherFlags contains a list of all the feature flags that apply to the slasher client.
@@ -675,13 +698,14 @@ var BeaconChainFlags = append(deprecatedFlags, []cli.Flag{
 	disableNewBeaconStateLocks,
 	AltonaTestnet,
 	OnyxTestnet,
-	batchBlockVerify,
+	SpadinaTestnet,
+	disableBatchBlockVerify,
 	initSyncVerbose,
-	enableFinalizedDepositsCache,
+	disableFinalizedDepositsCache,
+	enableBlst,
 	enableEth1DataMajorityVote,
 	enableAttBroadcastDiscoveryAttempts,
 	enablePeerScorer,
-	enableRoughtime,
 	checkPtInfoCache,
 }...)
 
@@ -692,7 +716,6 @@ var E2EBeaconChainFlags = []string{
 	"--check-head-state",
 	"--attestation-aggregation-strategy=max_cover",
 	"--dev",
-	"--enable-finalized-deposits-cache",
 	"--enable-eth1-data-majority-vote",
 	"--use-check-point-cache",
 }

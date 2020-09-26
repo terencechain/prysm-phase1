@@ -560,9 +560,9 @@ func TestGetAttCheckptInfo(t *testing.T) {
 	require.DeepEqual(t, wanted, cached)
 }
 
-func filledByteSlice2D(len, innerLen uint64) [][]byte {
-	b := make([][]byte, len)
-	for i := uint64(0); i < len; i++ {
+func filledByteSlice2D(l, innerLen uint64) [][]byte {
+	b := make([][]byte, l)
+	for i := uint64(0); i < l; i++ {
 		b[i] = make([]byte, innerLen)
 	}
 	return b

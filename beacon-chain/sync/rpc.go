@@ -11,7 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/prysmaticlabs/prysm/beacon-chain/p2p"
 	"github.com/prysmaticlabs/prysm/shared/params"
-	"github.com/prysmaticlabs/prysm/shared/roughtime"
+	"github.com/prysmaticlabs/prysm/shared/timeutils"
 	"github.com/prysmaticlabs/prysm/shared/traceutil"
 	"go.opencensus.io/trace"
 )
@@ -62,7 +62,7 @@ func (s *Service) registerRPC(baseTopic string, handle rpcHandler) {
 	topic := baseTopic + s.p2p.Encoding().ProtocolSuffix()
 	log := log.WithField("topic", topic)
 	s.p2p.SetStreamHandler(topic, func(stream network.Stream) {
-		ctx, cancel := context.WithTimeout(context.Background(), ttfbTimeout)
+		ctx, cancel := context.WithTimeout(s.ctx, ttfbTimeout)
 		defer cancel()
 		defer func() {
 			if err := helpers.FullClose(stream); err != nil && err.Error() != mux.ErrReset.Error() {
@@ -75,7 +75,7 @@ func (s *Service) registerRPC(baseTopic string, handle rpcHandler) {
 		span.AddAttributes(trace.StringAttribute("peer", stream.Conn().RemotePeer().Pretty()))
 		log := log.WithField("peer", stream.Conn().RemotePeer().Pretty())
 
-		if err := stream.SetReadDeadline(roughtime.Now().Add(ttfbTimeout)); err != nil {
+		if err := stream.SetReadDeadline(timeutils.Now().Add(ttfbTimeout)); err != nil {
 			log.WithError(err).Debug("Could not set stream read deadline")
 			return
 		}

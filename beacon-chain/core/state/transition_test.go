@@ -391,7 +391,7 @@ func createFullBlockWithOperations(t *testing.T) (*beaconstate.BeaconState,
 		},
 	}
 	validators := beaconState.Validators()
-	validators[proposerSlashIdx].PublicKey = privKeys[proposerSlashIdx].PublicKey().Marshal()[:]
+	validators[proposerSlashIdx].PublicKey = privKeys[proposerSlashIdx].PublicKey().Marshal()
 	require.NoError(t, beaconState.SetValidators(validators))
 
 	mockRoot2 := [32]byte{'A'}
@@ -413,7 +413,7 @@ func createFullBlockWithOperations(t *testing.T) (*beaconstate.BeaconState,
 	sig0 := privKeys[0].Sign(hashTreeRoot[:])
 	sig1 := privKeys[1].Sign(hashTreeRoot[:])
 	aggregateSig := bls.AggregateSignatures([]bls.Signature{sig0, sig1})
-	att1.Signature = aggregateSig.Marshal()[:]
+	att1.Signature = aggregateSig.Marshal()
 
 	mockRoot3 := [32]byte{'B'}
 	att2 := &ethpb.IndexedAttestation{
@@ -433,7 +433,7 @@ func createFullBlockWithOperations(t *testing.T) (*beaconstate.BeaconState,
 	sig0 = privKeys[0].Sign(hashTreeRoot[:])
 	sig1 = privKeys[1].Sign(hashTreeRoot[:])
 	aggregateSig = bls.AggregateSignatures([]bls.Signature{sig0, sig1})
-	att2.Signature = aggregateSig.Marshal()[:]
+	att2.Signature = aggregateSig.Marshal()
 
 	attesterSlashings := []*ethpb.AttesterSlashing{
 		{
@@ -476,7 +476,7 @@ func createFullBlockWithOperations(t *testing.T) (*beaconstate.BeaconState,
 		sig := privKeys[indice].Sign(hashTreeRoot[:])
 		sigs[i] = sig
 	}
-	blockAtt.Signature = bls.AggregateSignatures(sigs).Marshal()[:]
+	blockAtt.Signature = bls.AggregateSignatures(sigs).Marshal()
 
 	exit := &ethpb.SignedVoluntaryExit{
 		Exit: &ethpb.VoluntaryExit{
@@ -800,7 +800,7 @@ func TestProcessBlk_AttsBasedOnValidatorCount(t *testing.T) {
 			sig := privKeys[indice].Sign(hashTreeRoot[:])
 			sigs[i] = sig
 		}
-		att.Signature = bls.AggregateSignatures(sigs).Marshal()[:]
+		att.Signature = bls.AggregateSignatures(sigs).Marshal()
 		atts[i] = att
 	}
 

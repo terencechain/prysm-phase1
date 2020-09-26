@@ -23,12 +23,11 @@ var processPendingAttsPeriod = slotutil.DivideSlotBy(2 /* twice per slot */)
 
 // This processes pending attestation queues on every `processPendingAttsPeriod`.
 func (s *Service) processPendingAttsQueue() {
-	ctx := context.Background()
 	// Prevents multiple queue processing goroutines (invoked by RunEvery) from contending for data.
 	mutex := new(sync.Mutex)
 	runutil.RunEvery(s.ctx, processPendingAttsPeriod, func() {
 		mutex.Lock()
-		if err := s.processPendingAtts(ctx); err != nil {
+		if err := s.processPendingAtts(s.ctx); err != nil {
 			log.WithError(err).Debugf("Could not process pending attestation: %v", err)
 		}
 		mutex.Unlock()
@@ -141,6 +140,13 @@ func (s *Service) savePendingAtt(att *ethpb.SignedAggregateAttestationAndProof) 
 	if !ok {
 		s.blkRootToPendingAtts[root] = []*ethpb.SignedAggregateAttestationAndProof{att}
 		return
+	}
+
+	// Skip if the attestation from the same aggregator already exists in the pending queue.
+	for _, a := range s.blkRootToPendingAtts[root] {
+		if a.Message.AggregatorIndex == att.Message.AggregatorIndex {
+			return
+		}
 	}
 
 	s.blkRootToPendingAtts[root] = append(s.blkRootToPendingAtts[root], att)

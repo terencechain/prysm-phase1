@@ -9,12 +9,28 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/prysmaticlabs/prysm/shared/bls"
 	"github.com/prysmaticlabs/prysm/shared/bls/iface"
+	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/shared/testutil"
 	"github.com/prysmaticlabs/prysm/shared/testutil/require"
 )
 
 func TestAggregateYaml(t *testing.T) {
+<<<<<<< HEAD
 	t.Skip("Skipping for phase 1")
+=======
+	flags := &featureconfig.Flags{}
+	reset := featureconfig.InitWithReset(flags)
+	t.Run("herumi", testAggregateYaml)
+	reset()
+
+	flags.EnableBlst = true
+	reset = featureconfig.InitWithReset(flags)
+	t.Run("blst", testAggregateYaml)
+	reset()
+}
+
+func testAggregateYaml(t *testing.T) {
+>>>>>>> upstream/master
 	testFolders, testFolderPath := testutil.TestFolders(t, "general", "bls/aggregate/small")
 
 	for _, folder := range testFolders {

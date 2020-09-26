@@ -26,7 +26,7 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/testutil"
 	"github.com/prysmaticlabs/prysm/shared/testutil/assert"
 	"github.com/prysmaticlabs/prysm/shared/testutil/require"
-)
+)git
 
 func TestServer_ListBlocks_NoResults(t *testing.T) {
 	db, _ := dbTest.SetupDB(t)
@@ -615,3 +615,4 @@ func TestServer_StreamBlocks_OnHeadUpdated(t *testing.T) {
 	}
 	<-exitRoutine
 }
+

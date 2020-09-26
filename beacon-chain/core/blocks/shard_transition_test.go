@@ -588,7 +588,7 @@ func Test_ProcessCrosslink(t *testing.T) {
 		Data: &ethpb.AttestationData{
 			Slot:                a.Data.Slot,
 			CommitteeIndex:      a.Data.CommitteeIndex,
-			ShardTransitionRoot: a.Data.ShardTransitionRoot[:],
+			ShardTransitionRoot: a.Data.ShardTransitionRoot,
 		}}}))
 	shard, err := helpers.ShardFromCommitteeIndex(bs, a.Data.Slot, a.Data.CommitteeIndex)
 	require.NoError(t, err)

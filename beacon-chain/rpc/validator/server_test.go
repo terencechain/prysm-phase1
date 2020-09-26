@@ -69,7 +69,7 @@ func TestWaitForActivation_ContextClosed(t *testing.T) {
 	require.NoError(t, err, "Could not get signing root")
 
 	ctx, cancel := context.WithCancel(context.Background())
-	depositCache, err := depositcache.NewDepositCache()
+	depositCache, err := depositcache.New()
 	require.NoError(t, err)
 
 	vs := &Server{
@@ -112,8 +112,8 @@ func TestWaitForActivation_ValidatorOriginallyExists(t *testing.T) {
 	priv1 := bls.RandKey()
 	priv2 := bls.RandKey()
 
-	pubKey1 := priv1.PublicKey().Marshal()[:]
-	pubKey2 := priv2.PublicKey().Marshal()[:]
+	pubKey1 := priv1.PublicKey().Marshal()
+	pubKey2 := priv2.PublicKey().Marshal()
 
 	beaconState := &pbp2p.BeaconState{
 		Slot: 4000,
@@ -138,14 +138,14 @@ func TestWaitForActivation_ValidatorOriginallyExists(t *testing.T) {
 	require.NoError(t, err)
 	signingRoot, err := helpers.ComputeSigningRoot(depData, domain)
 	require.NoError(t, err)
-	depData.Signature = priv1.Sign(signingRoot[:]).Marshal()[:]
+	depData.Signature = priv1.Sign(signingRoot[:]).Marshal()
 
 	deposit := &ethpb.Deposit{
 		Data: depData,
 	}
 	depositTrie, err := trieutil.NewTrie(int(params.BeaconConfig().DepositContractTreeDepth))
 	require.NoError(t, err, "Could not setup deposit trie")
-	depositCache, err := depositcache.NewDepositCache()
+	depositCache, err := depositcache.New()
 	require.NoError(t, err)
 
 	depositCache.InsertDeposit(ctx, deposit, 10 /*blockNum*/, 0, depositTrie.Root())
@@ -200,9 +200,9 @@ func TestWaitForActivation_MultipleStatuses(t *testing.T) {
 	priv2 := bls.RandKey()
 	priv3 := bls.RandKey()
 
-	pubKey1 := priv1.PublicKey().Marshal()[:]
-	pubKey2 := priv2.PublicKey().Marshal()[:]
-	pubKey3 := priv3.PublicKey().Marshal()[:]
+	pubKey1 := priv1.PublicKey().Marshal()
+	pubKey2 := priv2.PublicKey().Marshal()
+	pubKey3 := priv3.PublicKey().Marshal()
 
 	beaconState := &pbp2p.BeaconState{
 		Slot: 4000,
@@ -300,6 +300,7 @@ func TestWaitForChainStart_ContextClosed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStream := mock.NewMockBeaconNodeValidator_WaitForChainStartServer(ctrl)
+	mockStream.EXPECT().Context().Return(ctx)
 	go func(tt *testing.T) {
 		err := Server.WaitForChainStart(&ptypes.Empty{}, mockStream)
 		assert.ErrorContains(tt, "Context canceled", err)
@@ -337,6 +338,7 @@ func TestWaitForChainStart_AlreadyStarted(t *testing.T) {
 			GenesisTime: uint64(time.Unix(0, 0).Unix()),
 		},
 	).Return(nil)
+	mockStream.EXPECT().Context().Return(context.Background())
 	assert.NoError(t, Server.WaitForChainStart(&ptypes.Empty{}, mockStream), "Could not call RPC method")
 }
 
@@ -359,6 +361,7 @@ func TestWaitForChainStart_HeadStateDoesNotExist(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStream := mock.NewMockBeaconNodeValidator_WaitForChainStartServer(ctrl)
+	mockStream.EXPECT().Context().Return(context.Background())
 
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
@@ -402,6 +405,7 @@ func TestWaitForChainStart_NotStartedThenLogFired(t *testing.T) {
 			GenesisTime: uint64(time.Unix(0, 0).Unix()),
 		},
 	).Return(nil)
+	mockStream.EXPECT().Context().Return(context.Background())
 	go func(tt *testing.T) {
 		assert.NoError(tt, Server.WaitForChainStart(&ptypes.Empty{}, mockStream))
 		<-exitRoutine
@@ -441,6 +445,7 @@ func TestWaitForSynced_ContextClosed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStream := mock.NewMockBeaconNodeValidator_WaitForSyncedServer(ctrl)
+	mockStream.EXPECT().Context().Return(context.Background())
 	go func(tt *testing.T) {
 		err := Server.WaitForSynced(&ptypes.Empty{}, mockStream)
 		assert.ErrorContains(tt, "Context canceled", err)
@@ -479,6 +484,7 @@ func TestWaitForSynced_AlreadySynced(t *testing.T) {
 			GenesisTime: uint64(time.Unix(0, 0).Unix()),
 		},
 	).Return(nil)
+	mockStream.EXPECT().Context().Return(context.Background())
 	assert.NoError(t, Server.WaitForSynced(&ptypes.Empty{}, mockStream), "Could not call RPC method")
 }
 
@@ -506,6 +512,7 @@ func TestWaitForSynced_NotStartedThenLogFired(t *testing.T) {
 			GenesisTime: uint64(time.Unix(0, 0).Unix()),
 		},
 	).Return(nil)
+	mockStream.EXPECT().Context().Return(context.Background())
 	go func(tt *testing.T) {
 		assert.NoError(tt, Server.WaitForSynced(&ptypes.Empty{}, mockStream), "Could not call RPC method")
 		<-exitRoutine

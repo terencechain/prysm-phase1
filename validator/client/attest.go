@@ -16,8 +16,8 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/shared/hashutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
-	"github.com/prysmaticlabs/prysm/shared/roughtime"
 	"github.com/prysmaticlabs/prysm/shared/slotutil"
+	"github.com/prysmaticlabs/prysm/shared/timeutils"
 	keymanager "github.com/prysmaticlabs/prysm/validator/keymanager/v1"
 	"github.com/sirupsen/logrus"
 	"go.opencensus.io/trace"
@@ -188,7 +188,7 @@ func (v *validator) signAtt(ctx context.Context, pubKey [48]byte, data *ethpb.At
 		if protectingKeymanager, supported := v.keyManager.(keymanager.ProtectingKeyManager); supported {
 			sig, err = protectingKeymanager.SignAttestation(pubKey, bytesutil.ToBytes32(domain.SignatureDomain), data)
 		} else {
-			sig, err = v.keyManager.Sign(pubKey, root)
+			sig, err = v.keyManager.Sign(ctx, pubKey, root)
 		}
 	}
 	if err != nil {
@@ -226,5 +226,5 @@ func (v *validator) waitToSlotOneThird(ctx context.Context, slot uint64) {
 	delay := slotutil.DivideSlotBy(3 /* a third of the slot duration */)
 	startTime := slotutil.SlotStartTime(v.genesisTime, slot)
 	finalTime := startTime.Add(delay)
-	time.Sleep(roughtime.Until(finalTime))
+	time.Sleep(timeutils.Until(finalTime))
 }

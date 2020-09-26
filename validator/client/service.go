@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -23,7 +24,7 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/shared/grpcutils"
 	"github.com/prysmaticlabs/prysm/shared/params"
-	accountsv2 "github.com/prysmaticlabs/prysm/validator/accounts/v2"
+	"github.com/prysmaticlabs/prysm/validator/accounts/v2/wallet"
 	"github.com/prysmaticlabs/prysm/validator/db"
 	keymanager "github.com/prysmaticlabs/prysm/validator/keymanager/v1"
 	v2 "github.com/prysmaticlabs/prysm/validator/keymanager/v2"
@@ -42,6 +43,12 @@ var log = logrus.WithField("prefix", "validator")
 // going through chain synchronization.
 type SyncChecker interface {
 	Syncing(ctx context.Context) (bool, error)
+}
+
+// GenesisFetcher can retrieve genesis information such as
+// the genesis time and the validator deposit contract address.
+type GenesisFetcher interface {
+	GenesisInfo(ctx context.Context) (*ethpb.Genesis, error)
 }
 
 // ValidatorService represents a service to manage the validator client
@@ -204,13 +211,15 @@ func (v *ValidatorService) Status() error {
 }
 
 func (v *ValidatorService) recheckKeys(ctx context.Context) {
+	var validatingKeys [][48]byte
+	var err error
 	if featureconfig.Get().EnableAccountsV2 {
 		if v.useWeb {
-			initializedChan := make(chan *accountsv2.Wallet)
+			initializedChan := make(chan *wallet.Wallet)
 			sub := v.walletInitializedFeed.Subscribe(initializedChan)
 			defer sub.Unsubscribe()
-			wallet := <-initializedChan
-			keyManagerV2, err := wallet.InitializeKeymanager(
+			w := <-initializedChan
+			keyManagerV2, err := w.InitializeKeymanager(
 				ctx, true, /* skipMnemonicConfirm */
 			)
 			if err != nil {
@@ -218,7 +227,7 @@ func (v *ValidatorService) recheckKeys(ctx context.Context) {
 			}
 			v.keyManagerV2 = keyManagerV2
 		}
-		validatingKeys, err := v.keyManagerV2.FetchValidatingPublicKeys(ctx)
+		validatingKeys, err = v.keyManagerV2.FetchValidatingPublicKeys(ctx)
 		if err != nil {
 			log.WithError(err).Debug("Could not fetch validating keys")
 		}
@@ -227,13 +236,18 @@ func (v *ValidatorService) recheckKeys(ctx context.Context) {
 		}
 		go recheckValidatingKeysBucket(ctx, v.db, v.keyManagerV2)
 	} else {
-		validatingKeys, err := v.keyManager.FetchValidatingKeys()
+		validatingKeys, err = v.keyManager.FetchValidatingKeys()
 		if err != nil {
 			log.WithError(err).Debug("Could not fetch validating keys")
 		}
 		if err := v.db.UpdatePublicKeysBuckets(validatingKeys); err != nil {
 			log.WithError(err).Debug("Could not update public keys buckets")
 		}
+	}
+	for _, key := range validatingKeys {
+		log.WithField(
+			"publicKey", fmt.Sprintf("%#x", bytesutil.Trunc(key[:])),
+		).Info("Validating for public key")
 	}
 }
 
@@ -268,7 +282,7 @@ func (v *validator) signObject(
 	if err != nil {
 		return nil, err
 	}
-	return v.keyManager.Sign(pubKey, root)
+	return v.keyManager.Sign(ctx, pubKey, root)
 }
 
 // ConstructDialOptions constructs a list of grpc dial options
@@ -346,6 +360,13 @@ func (v *ValidatorService) Syncing(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	return resp.Syncing, nil
+}
+
+// GenesisInfo queries the beacon node for the chain genesis info containing
+// the genesis time along with the validator deposit contract address.
+func (v *ValidatorService) GenesisInfo(ctx context.Context) (*ethpb.Genesis, error) {
+	nc := ethpb.NewNodeClient(v.conn)
+	return nc.GetGenesis(ctx, &ptypes.Empty{})
 }
 
 // to accounts changes in the keymanager, then updates those keys'

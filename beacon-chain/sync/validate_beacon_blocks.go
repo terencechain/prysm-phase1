@@ -14,7 +14,7 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/state"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
-	"github.com/prysmaticlabs/prysm/shared/roughtime"
+	"github.com/prysmaticlabs/prysm/shared/timeutils"
 	"github.com/prysmaticlabs/prysm/shared/traceutil"
 	"go.opencensus.io/trace"
 )
@@ -142,7 +142,7 @@ func (s *Service) validateBeaconBlockPubSub(ctx context.Context, pid peer.ID, ms
 		return pubsub.ValidationReject
 	}
 
-	parentState, err = state.ProcessSlots(context.Background(), parentState, blk.Block.Slot)
+	parentState, err = state.ProcessSlots(ctx, parentState, blk.Block.Slot)
 	if err != nil {
 		log.Errorf("Could not advance slot to calculate proposer index: %v", err)
 		return pubsub.ValidationIgnore
@@ -203,7 +203,7 @@ func captureArrivalTimeMetric(genesisTime uint64, currentSlot uint64) error {
 	if err != nil {
 		return err
 	}
-	diffMs := roughtime.Now().Sub(startTime) / time.Millisecond
+	diffMs := timeutils.Now().Sub(startTime) / time.Millisecond
 	arrivalBlockPropagationHistogram.Observe(float64(diffMs))
 
 	return nil

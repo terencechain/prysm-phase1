@@ -5,6 +5,8 @@ import (
 	"path"
 	"testing"
 
+	"github.com/prysmaticlabs/prysm/shared/featureconfig"
+
 	"github.com/ghodss/yaml"
 	"github.com/prysmaticlabs/prysm/shared/bls"
 	"github.com/prysmaticlabs/prysm/shared/bls/iface"
@@ -15,6 +17,19 @@ import (
 
 func TestFastAggregateVerifyYaml(t *testing.T) {
 	t.Skip("Skipping for phase 1")
+
+	flags := &featureconfig.Flags{}
+	reset := featureconfig.InitWithReset(flags)
+	t.Run("herumi", testFastAggregateVerifyYaml)
+	reset()
+
+	flags.EnableBlst = true
+	reset = featureconfig.InitWithReset(flags)
+	t.Run("blst", testFastAggregateVerifyYaml)
+	reset()
+}
+
+func testFastAggregateVerifyYaml(t *testing.T) {
 	testFolders, testFolderPath := testutil.TestFolders(t, "general", "bls/fast_aggregate_verify/small")
 
 	for i, folder := range testFolders {

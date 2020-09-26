@@ -923,6 +923,8 @@ func TestServer_ListValidators_FromOldEpoch(t *testing.T) {
 }
 
 func TestServer_ListValidators_ProcessHeadStateSlots(t *testing.T) {
+	params.UseBeaconMinimalConfig()
+
 	db, _ := dbTest.SetupDB(t)
 	ctx := context.Background()
 

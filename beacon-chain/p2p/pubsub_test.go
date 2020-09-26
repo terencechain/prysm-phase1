@@ -6,12 +6,14 @@ import (
 	"sync"
 	"testing"
 
+	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
+	"github.com/prysmaticlabs/prysm/shared/hashutil"
 	"github.com/prysmaticlabs/prysm/shared/testutil/assert"
 	"github.com/prysmaticlabs/prysm/shared/testutil/require"
 )
 
 func TestService_PublishToTopicConcurrentMapWrite(t *testing.T) {
-	s, err := NewService(&Config{})
+	s, err := NewService(context.Background(), &Config{})
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -25,4 +27,12 @@ func TestService_PublishToTopicConcurrentMapWrite(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
+}
+
+func TestMessageIDFunction_HashesCorrectly(t *testing.T) {
+	msg := [32]byte{'J', 'U', 'N', 'K'}
+	pMsg := &pubsubpb.Message{Data: msg[:]}
+	hashedData := hashutil.Hash(pMsg.Data)
+	msgID := string(hashedData[:8])
+	assert.Equal(t, msgID, msgIDFunction(pMsg), "Got incorrect msg id")
 }
